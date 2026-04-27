@@ -15,8 +15,8 @@
 - 핵심 플레이 루프는 명세 기준으로 실제 동작합니다.
   player entry -> loadout -> queue -> WebSocket handoff -> battle -> result -> history/rating -> runtime persistence
 - 스토리 상태 집계
-  `done 24`
-  `partial 4`
+  `done 25`
+  `partial 3`
   `planned 0`
 - 현재 구현은 Phase 0 ~ Phase 8의 핵심 항목을 대부분 충족했습니다.
 - 남은 작업은 신규 시스템 추가보다 `입력 런타임 보강`, `battle UX polish`, `smoke coverage`에 가깝습니다.
@@ -29,6 +29,8 @@
   queue enter/cancel/status, socket token 인증, `battle.match_ready`, `battle.match_found`, `battle.started`, reconnect snapshot 복구가 구현되었습니다.
 - `E3` Server-Authoritative Battle Engine
   action validation, exact-once apply, rejection path, timeout, surrender, battle end와 outcome 기록이 구현되었습니다.
+- `E5-ST01` Battle Workspace State View
+  HP, mana, cooldown, turn owner, deadline, selected skill status, battle log가 최신 server snapshot 기준으로 렌더링됩니다.
 - `E6` Rating, History, and Leaderboard
   result persistence, compact action audit, rating update, history/leaderboard endpoint, client 전적/레이팅 화면이 구현되었습니다.
 - `E7` Local Verification and Handoff
@@ -42,13 +44,6 @@
   기본 `skillset`에 3개 skill sequence가 들어 있고 UI/서버가 같은 sequence를 사용합니다.
 - 남은 이유
   gesture token set 자체를 독립 계약이나 shared fixture로 명확히 고정한 문서/테스트가 부족합니다.
-
-### E5-ST01: battle state와 action log 렌더링
-
-- 현재 상태
-  HP, mana, turn owner, turn number, battle log는 렌더링됩니다.
-- 남은 이유
-  deadline timer, cooldown detail, richer battle state 표현은 아직 충분하지 않습니다.
 
 ### E5-ST02: sequence progress와 submission readiness 표시
 
@@ -87,7 +82,7 @@
 
 ## 다음 우선순위
 
-- `E5-ST01`, `E5-ST02`, `E5-ST04`
-  battle timer/deadline, cooldown 상세, compact/mobile UX, result polish를 보강합니다.
+- `E5-ST02`, `E5-ST04`
+  compact/mobile UX, local/server feedback separation, result polish를 보강합니다.
 - `E7-ST02`
   local smoke coverage를 실제 실행 기준으로 더 채웁니다.

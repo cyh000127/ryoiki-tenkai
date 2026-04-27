@@ -12,12 +12,11 @@
   `docs/planning-artifacts/mvp-v1/stories.ko.md`
   `docs/planning-artifacts/mvp-v1/implementation-order.ko.md`
 - 스토리 상태 집계
-  `done 24`
-  `partial 4`
+  `done 25`
+  `partial 3`
   `planned 0`
 - 현재 partial 항목
   `E4-ST01` MVP gesture token set과 skill sequence 정의
-  `E5-ST01` battle state와 action log 렌더링
   `E5-ST02` sequence progress와 submission readiness 표시
   `E5-ST04` battle result와 next action 렌더링
 - 상세 점검 문서
@@ -106,6 +105,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
   pending, rejected, confirmed, timeout, surrender, result 화면 반영
 - live camera 입력 surface와 debug fallback 입력 panel 분리
   deterministic sequence replay와 manual token 입력을 debug 전용 경계로 유지
+- battle deadline countdown, fighter cooldown detail, selected skill 상태 표시
 - 종료 사유 표시와 rematch 진입 흐름
 - reconnect 시 latest active battle snapshot 복구와 ended battle 결과 상태 복원
 - delayed/duplicate socket event를 최신 battle state 기준으로 정리해 UI rollback과 중복 결과 반영 방지
@@ -114,7 +114,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 
 ## 남은 작업
 
-- battle timer/deadline, cooldown 상세, compact/mobile UI polish
+- gesture token set contract/shared fixture 고정
+- compact/mobile battle UI polish와 local/server feedback separation
+- result presentation polish
 - end-to-end smoke coverage 추가
 
 ## 경계

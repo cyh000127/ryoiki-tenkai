@@ -72,6 +72,7 @@ export function BattleGameWorkspace() {
   const [draftSkillId, setDraftSkillId] = useState(initialBattleFlowState.selectedSkillId);
   const [selectedAnimsetId, setSelectedAnimsetId] = useState(initialBattleFlowState.equippedAnimsetId);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   const skillsetsQuery = useQuery({
     queryKey: ["skillsets"],
@@ -299,6 +300,21 @@ export function BattleGameWorkspace() {
     }
   }, [animsets, selectedAnimsetId]);
 
+  useEffect(() => {
+    if (state.screen !== "battle" || !state.battle || state.battle.status !== "ACTIVE") {
+      return;
+    }
+
+    setNowMs(Date.now());
+    const intervalId = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [state.battle, state.screen]);
+
   const isMyTurn = state.battle?.turnOwnerPlayerId === state.player.playerId;
   const isServerConfirming = state.input.serverConfirmationStatus === "PENDING";
   const canUseGestureInput =
@@ -318,6 +334,10 @@ export function BattleGameWorkspace() {
   const playerLeaderboardEntry =
     leaderboardEntries.find((entry) => entry.playerId === state.player.playerId) ?? null;
   const debugFallbackEnabled = DEBUG_FALLBACK_ENABLED;
+  const deadlinePresentation = state.battle
+    ? getDeadlinePresentation(state.battle.actionDeadlineAt, nowMs)
+    : null;
+  const selectedSkillCooldownTurns = state.battle?.self.cooldowns[state.selectedSkillId] ?? 0;
 
   function handleOpenLoadout() {
     if (!session) {
@@ -808,6 +828,7 @@ export function BattleGameWorkspace() {
           <>
             <div className="battle-board">
               <FighterPanel
+                cooldowns={state.battle.self.cooldowns}
                 title={copy.self}
                 hp={state.battle.self.hp}
                 isActive={isMyTurn && !isServerConfirming}
@@ -818,9 +839,18 @@ export function BattleGameWorkspace() {
                   {getTurnStatusLabel(isMyTurn, isServerConfirming)}
                 </StatusBadge>
                 <Metric label={copy.turnNumber} value={state.battle.turnNumber} />
+                {deadlinePresentation ? (
+                  <div className="battle-deadline">
+                    <span>{copy.turnDeadline}</span>
+                    <StatusBadge tone={deadlinePresentation.tone}>
+                      {deadlinePresentation.label}
+                    </StatusBadge>
+                  </div>
+                ) : null}
                 <p className="turn-hint">{getTurnHint(isMyTurn, isServerConfirming)}</p>
               </div>
               <FighterPanel
+                cooldowns={state.battle.opponent.cooldowns}
                 title={copy.opponent}
                 hp={state.battle.opponent.hp}
                 isActive={!isMyTurn && !isServerConfirming}
@@ -828,6 +858,18 @@ export function BattleGameWorkspace() {
               />
             </div>
             <div className="surface-grid">
+              <Panel title={copy.selectedSkillStatus}>
+                <Metric label={copy.skillDetail} value={selectedSkill.name} />
+                <Metric label={copy.mana} value={selectedSkill.manaCost} />
+                <Metric label={copy.damage} value={selectedSkill.damage} />
+                <Metric
+                  label={copy.skillCooldownStatus}
+                  value={formatCooldownTurns(selectedSkillCooldownTurns)}
+                />
+                {deadlinePresentation ? (
+                  <Metric label={copy.turnDeadline} value={deadlinePresentation.label} />
+                ) : null}
+              </Panel>
               <Panel title={copy.inputConsole}>
                 <ProgressMeter
                   current={completedStepCount}
@@ -1048,11 +1090,13 @@ function FighterPanel({
   title,
   hp,
   mana,
+  cooldowns,
   isActive = false
 }: {
   title: string;
   hp: number;
   mana: number;
+  cooldowns: Record<string, number>;
   isActive?: boolean;
 }) {
   return (
@@ -1060,7 +1104,27 @@ function FighterPanel({
       <h2 className="panel__title">{title}</h2>
       <Metric label={copy.hp} value={hp} />
       <Metric label={copy.mana} value={mana} />
+      <CooldownList cooldowns={cooldowns} />
     </section>
+  );
+}
+
+function CooldownList({ cooldowns }: { cooldowns: Record<string, number> }) {
+  const activeCooldowns = Object.entries(cooldowns).filter(([, turns]) => turns > 0);
+
+  return (
+    <div className="cooldown-list">
+      <span className="cooldown-list__label">{copy.activeCooldowns}</span>
+      {activeCooldowns.length === 0 ? (
+        <span className="cooldown-list__empty">{copy.noActiveCooldowns}</span>
+      ) : (
+        <ul className="cooldown-list__items">
+          {activeCooldowns.map(([skillId, turns]) => (
+            <li key={skillId}>{`${findSkill(skillId).name} · ${formatCooldownTurns(turns)}`}</li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -1186,6 +1250,46 @@ function getInputSourceLabel(source: GestureInputSource | null): string {
   }
 
   return copy.inputSourceWaiting;
+}
+
+function getDeadlinePresentation(
+  deadlineAt: string | undefined,
+  nowMs: number
+): {
+  label: string;
+  tone: "success" | "warning" | "neutral";
+} | null {
+  if (!deadlineAt) {
+    return {
+      label: copy.deadlineUnknown,
+      tone: "neutral"
+    };
+  }
+
+  const deadlineMs = Date.parse(deadlineAt);
+  if (Number.isNaN(deadlineMs)) {
+    return {
+      label: copy.deadlineUnknown,
+      tone: "neutral"
+    };
+  }
+
+  const remainingSeconds = Math.max(0, Math.ceil((deadlineMs - nowMs) / 1000));
+  if (remainingSeconds <= 0) {
+    return {
+      label: copy.deadlineExpired,
+      tone: "warning"
+    };
+  }
+
+  return {
+    label: `${remainingSeconds}초 남음`,
+    tone: remainingSeconds <= 5 ? "warning" : "success"
+  };
+}
+
+function formatCooldownTurns(turns: number): string {
+  return turns > 0 ? `${turns}T` : copy.ready;
 }
 
 function getFeedbackState(

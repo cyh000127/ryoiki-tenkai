@@ -162,7 +162,7 @@
 
 ### E5-ST01: battle state와 action log 렌더링
 
-- Status: partial
+- Status: done
 - User story: player는 현재 battle state를 빠르게 이해할 수 있다.
 - Scope: player/opponent HP, mana/cooldown, turn owner/deadline, recent battle log.
 - Acceptance criteria: state가 latest server snapshot 또는 event를 반영한다. opponent turn에서는 player action input이 비활성화된다. battle log가 accepted action과 주요 event를 보여준다.

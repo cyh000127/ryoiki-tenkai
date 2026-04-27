@@ -35,6 +35,10 @@ let mockLeaderboard: Array<Record<string, unknown>> = [];
 let mockHistoryError = false;
 let mockLeaderboardError = false;
 
+function createUser() {
+  return userEvent.setup();
+}
+
 vi.mock("../../src/platform/api/playerSession", () => ({
   loadStoredPlayerSession: () => storedSession,
   savePlayerSession: (session: MockSession) => {
@@ -298,11 +302,12 @@ describe("BattleGameWorkspace", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
   it("restores a saved player and blocks matchmaking until the loadout is saved", async () => {
-    const user = userEvent.setup();
+    const user = createUser();
     storedSession = {
       playerId: "pl_saved",
       guestToken: "gt_saved"
@@ -329,7 +334,7 @@ describe("BattleGameWorkspace", () => {
   });
 
   it("renders server-backed history and leaderboard on the history screen", async () => {
-    const user = userEvent.setup();
+    const user = createUser();
     storedSession = {
       playerId: "pl_saved",
       guestToken: "gt_saved"
@@ -383,7 +388,7 @@ describe("BattleGameWorkspace", () => {
   });
 
   it("shows history and leaderboard error states when their lookups fail", async () => {
-    const user = userEvent.setup();
+    const user = createUser();
     storedSession = {
       playerId: "pl_saved",
       guestToken: "gt_saved"
@@ -411,7 +416,7 @@ describe("BattleGameWorkspace", () => {
   });
 
   it("creates a guest, saves the loadout, and then enters battle from socket events", async () => {
-    const user = userEvent.setup();
+    const user = createUser();
     installGameApiMock();
 
     renderWorkspace();
@@ -430,6 +435,8 @@ describe("BattleGameWorkspace", () => {
     await user.click(screen.getByRole("button", { name: "랭크 1대1 매칭" }));
 
     expect(screen.getByText("SEARCHING")).toBeInTheDocument();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-04-27T00:00:00Z"));
 
     emitSocketEvent({
       type: "battle.match_ready",
@@ -478,12 +485,20 @@ describe("BattleGameWorkspace", () => {
       }
     });
 
-    expect(await screen.findByText("내 턴")).toBeInTheDocument();
+    expect(screen.getByText("내 턴")).toBeInTheDocument();
     expect(screen.getAllByText("HP")).toHaveLength(2);
+    expect(screen.getAllByText("30초 남음").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("활성 쿨다운 없음").length).toBeGreaterThan(0);
+
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
+
+    expect(screen.getAllByText("28초 남음").length).toBeGreaterThan(0);
   });
 
   it("submits a completed gesture sequence and applies server-authoritative battle updates", async () => {
-    const user = userEvent.setup();
+    const user = createUser();
     installGameApiMock();
 
     renderWorkspace();
@@ -621,10 +636,12 @@ describe("BattleGameWorkspace", () => {
     expect(screen.getAllByText("75")).toHaveLength(2);
     expect(screen.getByText("T1 pulse_strike dealt 25")).toBeInTheDocument();
     expect(screen.getByText("T2 pulse_strike dealt 25")).toBeInTheDocument();
+    expect(screen.getByText("파동격 · 1T")).toBeInTheDocument();
+    expect(screen.getByText("선택 스킬 상태")).toBeInTheDocument();
   });
 
   it("keeps debug fallback controls out of the main battle input surface", async () => {
-    const user = userEvent.setup();
+    const user = createUser();
     installGameApiMock();
 
     renderWorkspace();
@@ -699,7 +716,7 @@ describe("BattleGameWorkspace", () => {
   });
 
   it("renders timeout reason on the result screen when the server ends the battle", async () => {
-    const user = userEvent.setup();
+    const user = createUser();
     installGameApiMock();
 
     renderWorkspace();
@@ -839,7 +856,7 @@ describe("BattleGameWorkspace", () => {
   });
 
   it("ignores delayed queue and stale battle snapshot events once newer battle state is visible", async () => {
-    const user = userEvent.setup();
+    const user = createUser();
     installGameApiMock({
       playerId: "pl_saved",
       nickname: "saved_player",
@@ -1008,7 +1025,7 @@ describe("BattleGameWorkspace", () => {
   });
 
   it("reconnects and restores the latest active battle snapshot after socket disconnect", async () => {
-    const user = userEvent.setup();
+    const user = createUser();
     installGameApiMock({
       playerId: "pl_saved",
       nickname: "saved_player",

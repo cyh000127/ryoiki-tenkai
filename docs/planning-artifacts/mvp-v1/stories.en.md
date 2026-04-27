@@ -314,7 +314,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E5-ST01: Render Battle State and Action Log
 
-- Status: partial
+- Status: done
 - User story: As a player, I can understand current battle state at a glance.
 - Scope:
   - Player and opponent HP.

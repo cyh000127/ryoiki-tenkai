@@ -97,6 +97,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
   pending, rejected, confirmed, timeout, surrender, and result handling
 - live camera input surface and debug fallback controls are now separated
   deterministic sequence replay and manual token input stay in a debug-only panel
+- battle deadline countdown, fighter cooldown detail, and selected skill state are rendered from server snapshots
 - reconnect restore for the latest active battle snapshot and ended battle result state
 - delayed and duplicate socket events are reconciled so stale snapshots do not rewind the UI or reapply results
 - server-backed history, rating, and leaderboard screens with loading, empty, and error states
@@ -104,7 +105,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 
 ## Remaining Work
 
-- deadline/timer visibility, cooldown detail, and compact/mobile UX polish
+- formalize the gesture token set as a shared contract or fixture
+- compact/mobile battle UI polish and clearer separation between local and server feedback
+- result presentation polish
 - final end-to-end smoke coverage
 
 ## MVP Planning and QA

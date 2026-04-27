@@ -15,8 +15,8 @@ This document is a quick snapshot of how far the current implementation satisfie
 - The core playable loop is implemented end to end.
   player entry -> loadout -> queue -> WebSocket handoff -> battle -> result -> history/rating -> runtime persistence
 - Story status summary
-  `done 24`
-  `partial 4`
+  `done 25`
+  `partial 3`
   `planned 0`
 - The repository now covers the core items from Phase 0 through Phase 8.
 - Remaining work is mostly focused on `input runtime hardening`, `battle UX polish`, and `smoke coverage`, rather than missing product pillars.
@@ -29,6 +29,8 @@ This document is a quick snapshot of how far the current implementation satisfie
   queue enter/cancel/status, socket token auth, `battle.match_ready`, `battle.match_found`, `battle.started`, and reconnect snapshot restore are implemented.
 - `E3` Server-Authoritative Battle Engine
   action validation, exact-once apply, rejection paths, timeout, surrender, and battle end recording are implemented.
+- `E5-ST01` Battle Workspace State View
+  HP, mana, cooldown, turn owner, deadline, selected skill status, and battle log are rendered from the latest server snapshot.
 - `E6` Rating, History, and Leaderboard
   result persistence, compact action audit, rating update, history/leaderboard endpoints, and client history/rating screens are implemented.
 - `E7` Local Verification and Handoff
@@ -42,13 +44,6 @@ This document is a quick snapshot of how far the current implementation satisfie
   The default `skillset` already includes three skill sequences shared by the UI and backend.
 - Why it remains partial
   The gesture token set itself is not yet fully formalized as a dedicated contract or shared fixture.
-
-### E5-ST01: Render Battle State and Action Log
-
-- Current state
-  HP, mana, turn owner, turn number, and battle log are rendered.
-- Why it remains partial
-  Deadline timer, cooldown detail, and richer battle-state presentation still need work.
 
 ### E5-ST02: Show Sequence Progress and Submission Readiness
 
@@ -87,7 +82,7 @@ This document is a quick snapshot of how far the current implementation satisfie
 
 ## Recommended Next Priorities
 
-- `E5-ST01`, `E5-ST02`, `E5-ST04`
-  Improve battle timer/deadline visibility, cooldown detail, compact/mobile UX, and result polish.
+- `E5-ST02`, `E5-ST04`
+  Improve compact/mobile UX, local/server feedback separation, and result polish.
 - `E7-ST02`
   Expand practical local smoke coverage.
