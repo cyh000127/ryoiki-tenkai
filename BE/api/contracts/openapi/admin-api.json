@@ -25,9 +25,68 @@
     "/api/v1/players/guest": {
       "post": {
         "operationId": "createGuestPlayer",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGuestPlayerRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
-            "description": "Guest player created"
+            "description": "Guest player created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuestPlayerApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid guest player request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/players/me": {
+      "get": {
+        "operationId": "getMyProfile",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XPlayerIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current player profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerProfileApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Player not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -37,7 +96,73 @@
         "operationId": "listSkillsets",
         "responses": {
           "200": {
-            "description": "Skillset catalog"
+            "description": "Skillset catalog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkillsetListApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/animsets": {
+      "get": {
+        "operationId": "listAnimsets",
+        "responses": {
+          "200": {
+            "description": "Animset catalog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnimsetListApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/players/me/loadout": {
+      "post": {
+        "operationId": "updateMyLoadout",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XPlayerIdHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLoadoutRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Loadout saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid loadout selection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -45,9 +170,118 @@
     "/api/v1/matchmaking/queue": {
       "post": {
         "operationId": "enterMatchmakingQueue",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XPlayerIdHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueueRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Queue status"
+            "description": "Queue status after entry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueStatusApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Player not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "leaveMatchmakingQueue",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XPlayerIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Queue status after cancel",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueStatusApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/matchmaking/status": {
+      "get": {
+        "operationId": "getMatchmakingStatus",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XPlayerIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current queue or battle handoff status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueStatusApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/battles/{battleSessionId}": {
+      "get": {
+        "operationId": "getBattle",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BattleSessionIdPath"
+          },
+          {
+            "$ref": "#/components/parameters/XPlayerIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Battle snapshot for the requesting player",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BattleStateApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Battle not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -55,9 +289,137 @@
     "/api/v1/battles/{battleSessionId}/actions": {
       "post": {
         "operationId": "submitBattleAction",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BattleSessionIdPath"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitBattleActionRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "202": {
-            "description": "Battle action accepted or rejected"
+            "description": "Battle action accepted or rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BattleActionApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/battles/{battleSessionId}/surrender": {
+      "post": {
+        "operationId": "surrenderBattle",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BattleSessionIdPath"
+          },
+          {
+            "$ref": "#/components/parameters/XPlayerIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Surrender result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurrenderApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Battle not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/matches/history": {
+      "get": {
+        "operationId": "listMatchHistory",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XPlayerIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recent completed matches for the requesting player",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchHistoryListApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ratings/leaderboard": {
+      "get": {
+        "operationId": "getLeaderboard",
+        "responses": {
+          "200": {
+            "description": "Leaderboard view",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaderboardListApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ws-token": {
+      "get": {
+        "operationId": "createWsToken",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XPlayerIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "WebSocket token for the requesting player",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WsTokenApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Player not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -91,6 +453,26 @@
     }
   },
   "components": {
+    "parameters": {
+      "XPlayerIdHeader": {
+        "name": "X-Player-Id",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "BattleSessionIdPath": {
+        "name": "battleSessionId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
     "schemas": {
       "HealthResponse": {
         "type": "object",
@@ -101,21 +483,696 @@
           }
         }
       },
+      "ApiError": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiErrorResponse": {
+        "type": "object",
+        "required": ["success", "data", "error"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": false
+          },
+          "data": {
+            "type": "null"
+          },
+          "error": {
+            "$ref": "#/components/schemas/ApiError"
+          }
+        }
+      },
+      "CreateGuestPlayerRequest": {
+        "type": "object",
+        "required": ["nickname"],
+        "properties": {
+          "nickname": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          }
+        }
+      },
+      "GuestPlayerResponse": {
+        "type": "object",
+        "required": ["playerId", "guestToken", "rating"],
+        "properties": {
+          "playerId": {
+            "type": "string"
+          },
+          "guestToken": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "integer"
+          }
+        }
+      },
+      "GuestPlayerApiResponse": {
+        "type": "object",
+        "required": ["success", "data", "error"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/GuestPlayerResponse"
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "PlayerProfileResponse": {
+        "type": "object",
+        "required": [
+          "playerId",
+          "nickname",
+          "rating",
+          "wins",
+          "losses",
+          "equippedSkillsetId",
+          "equippedAnimsetId"
+        ],
+        "properties": {
+          "playerId": {
+            "type": "string"
+          },
+          "nickname": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "integer"
+          },
+          "wins": {
+            "type": "integer"
+          },
+          "losses": {
+            "type": "integer"
+          },
+          "equippedSkillsetId": {
+            "type": "string"
+          },
+          "equippedAnimsetId": {
+            "type": "string"
+          }
+        }
+      },
+      "PlayerProfileApiResponse": {
+        "type": "object",
+        "required": ["success", "data", "error"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/PlayerProfileResponse"
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "SkillResponse": {
+        "type": "object",
+        "required": [
+          "skillId",
+          "name",
+          "gestureSequence",
+          "manaCost",
+          "damage",
+          "cooldownTurn"
+        ],
+        "properties": {
+          "skillId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "gestureSequence": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "manaCost": {
+            "type": "integer"
+          },
+          "damage": {
+            "type": "integer"
+          },
+          "cooldownTurn": {
+            "type": "integer"
+          }
+        }
+      },
+      "SkillsetResponse": {
+        "type": "object",
+        "required": ["skillsetId", "name", "skills"],
+        "properties": {
+          "skillsetId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkillResponse"
+            }
+          }
+        }
+      },
+      "SkillsetListApiResponse": {
+        "type": "object",
+        "required": ["success", "data", "error"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkillsetResponse"
+            }
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "AnimsetResponse": {
+        "type": "object",
+        "required": ["animsetId", "name"],
+        "properties": {
+          "animsetId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "AnimsetListApiResponse": {
+        "type": "object",
+        "required": ["success", "data", "error"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnimsetResponse"
+            }
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "UpdateLoadoutRequest": {
+        "type": "object",
+        "required": ["skillsetId", "animsetId"],
+        "properties": {
+          "skillsetId": {
+            "type": "string"
+          },
+          "animsetId": {
+            "type": "string"
+          }
+        }
+      },
+      "LoadoutResponse": {
+        "type": "object",
+        "required": ["playerId", "equippedSkillsetId", "equippedAnimsetId"],
+        "properties": {
+          "playerId": {
+            "type": "string"
+          },
+          "equippedSkillsetId": {
+            "type": "string"
+          },
+          "equippedAnimsetId": {
+            "type": "string"
+          }
+        }
+      },
+      "LoadoutApiResponse": {
+        "type": "object",
+        "required": ["success", "data", "error"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/LoadoutResponse"
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "QueueRequest": {
+        "type": "object",
+        "required": ["mode"],
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": ["RANKED_1V1"]
+          }
+        }
+      },
+      "QueueStatusResponse": {
+        "type": "object",
+        "required": ["queueStatus"],
+        "properties": {
+          "queueStatus": {
+            "type": "string",
+            "enum": ["SEARCHING", "MATCHED", "IDLE"]
+          },
+          "queuedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "matchId": {
+            "type": ["string", "null"]
+          },
+          "battleSessionId": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "QueueStatusApiResponse": {
+        "type": "object",
+        "required": ["success", "data", "error"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/QueueStatusResponse"
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "BattleParticipantResponse": {
+        "type": "object",
+        "required": ["playerId", "hp", "mana", "cooldowns"],
+        "properties": {
+          "playerId": {
+            "type": "string"
+          },
+          "hp": {
+            "type": "integer"
+          },
+          "mana": {
+            "type": "integer"
+          },
+          "cooldowns": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "BattleLogResponse": {
+        "type": "object",
+        "required": ["turnNumber", "actorPlayerId", "message", "createdAt"],
+        "properties": {
+          "turnNumber": {
+            "type": "integer"
+          },
+          "actorPlayerId": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "BattleStateResponse": {
+        "type": "object",
+        "required": [
+          "battleSessionId",
+          "matchId",
+          "status",
+          "turnNumber",
+          "turnOwnerPlayerId",
+          "actionDeadlineAt",
+          "self",
+          "opponent",
+          "battleLog"
+        ],
+        "properties": {
+          "battleSessionId": {
+            "type": "string"
+          },
+          "matchId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["ACTIVE", "ENDED"]
+          },
+          "turnNumber": {
+            "type": "integer"
+          },
+          "turnOwnerPlayerId": {
+            "type": "string"
+          },
+          "actionDeadlineAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "self": {
+            "$ref": "#/components/schemas/BattleParticipantResponse"
+          },
+          "opponent": {
+            "$ref": "#/components/schemas/BattleParticipantResponse"
+          },
+          "battleLog": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BattleLogResponse"
+            }
+          },
+          "winnerPlayerId": {
+            "type": ["string", "null"]
+          },
+          "loserPlayerId": {
+            "type": ["string", "null"]
+          },
+          "endedReason": {
+            "type": ["string", "null"],
+            "enum": ["HP_ZERO", "SURRENDER", "TIMEOUT", "DISCONNECT", null]
+          }
+        }
+      },
+      "BattleStateApiResponse": {
+        "type": "object",
+        "required": ["success", "data", "error"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BattleStateResponse"
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "SubmitBattleActionRequest": {
+        "type": "object",
+        "required": ["playerId", "turnNumber", "actionId", "gestureSequence", "submittedAt"],
+        "properties": {
+          "playerId": {
+            "type": "string"
+          },
+          "turnNumber": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "actionId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "gestureSequence": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "BattleActionResponse": {
+        "type": "object",
+        "required": ["battleSessionId", "turnNumber", "actionId", "status"],
+        "properties": {
+          "battleSessionId": {
+            "type": "string"
+          },
+          "turnNumber": {
+            "type": "integer"
+          },
+          "actionId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["ACCEPTED", "REJECTED"]
+          },
+          "reason": {
+            "type": ["string", "null"]
+          },
+          "battle": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BattleStateResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "BattleActionApiResponse": {
+        "type": "object",
+        "required": ["success", "data", "error"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BattleActionResponse"
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "SurrenderResponse": {
+        "type": "object",
+        "required": ["battleSessionId", "status", "result", "endedReason"],
+        "properties": {
+          "battleSessionId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["ACTIVE", "ENDED"]
+          },
+          "result": {
+            "type": ["string", "null"],
+            "enum": ["WIN", "LOSE", null]
+          },
+          "endedReason": {
+            "type": ["string", "null"],
+            "enum": ["HP_ZERO", "SURRENDER", "TIMEOUT", "DISCONNECT", null]
+          }
+        }
+      },
+      "SurrenderApiResponse": {
+        "type": "object",
+        "required": ["success", "data", "error"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/SurrenderResponse"
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "MatchHistoryItemResponse": {
+        "type": "object",
+        "required": [
+          "matchId",
+          "battleSessionId",
+          "result",
+          "skillsetId",
+          "ratingChange",
+          "ratingAfter",
+          "endedReason",
+          "turnCount",
+          "playedAt"
+        ],
+        "properties": {
+          "matchId": {
+            "type": "string"
+          },
+          "battleSessionId": {
+            "type": "string"
+          },
+          "result": {
+            "type": "string",
+            "enum": ["WIN", "LOSE"]
+          },
+          "skillsetId": {
+            "type": "string"
+          },
+          "ratingChange": {
+            "type": "integer"
+          },
+          "ratingAfter": {
+            "type": "integer"
+          },
+          "endedReason": {
+            "type": "string",
+            "enum": ["HP_ZERO", "SURRENDER", "TIMEOUT", "DISCONNECT"]
+          },
+          "turnCount": {
+            "type": "integer"
+          },
+          "playedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MatchHistoryListApiResponse": {
+        "type": "object",
+        "required": ["success", "data", "error"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MatchHistoryItemResponse"
+            }
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "LeaderboardItemResponse": {
+        "type": "object",
+        "required": ["rank", "playerId", "nickname", "rating"],
+        "properties": {
+          "rank": {
+            "type": "integer"
+          },
+          "playerId": {
+            "type": "string"
+          },
+          "nickname": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "integer"
+          }
+        }
+      },
+      "LeaderboardListApiResponse": {
+        "type": "object",
+        "required": ["success", "data", "error"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LeaderboardItemResponse"
+            }
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "WsTokenResponse": {
+        "type": "object",
+        "required": ["wsToken", "expiresIn"],
+        "properties": {
+          "wsToken": {
+            "type": "string"
+          },
+          "expiresIn": {
+            "type": "integer"
+          }
+        }
+      },
+      "WsTokenApiResponse": {
+        "type": "object",
+        "required": ["success", "data", "error"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/WsTokenResponse"
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
       "CreateGestureCommandRequest": {
         "type": "object",
         "required": ["sessionId", "userId", "gestureKey", "confidence", "occurredAt"],
         "properties": {
           "sessionId": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "userId": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "gestureKey": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
           },
           "skillActionKey": {
-            "type": "string"
+            "type": ["string", "null"],
+            "maxLength": 120
           },
           "confidence": {
             "type": "number",
@@ -147,13 +1204,13 @@
             "type": "string"
           },
           "skillActionKey": {
-            "type": "string"
+            "type": ["string", "null"]
           },
           "confidence": {
             "type": "number"
           },
           "rejectReason": {
-            "type": "string"
+            "type": ["string", "null"]
           }
         }
       }

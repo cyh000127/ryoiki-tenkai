@@ -2,6 +2,110 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "battle-websocket-event.schema.json",
   "title": "BattleWebSocketEvent",
+  "$defs": {
+    "playerSeat": {
+      "type": "string",
+      "enum": ["PLAYER_ONE", "PLAYER_TWO"]
+    },
+    "battleParticipant": {
+      "type": "object",
+      "required": ["playerId", "hp", "mana", "cooldowns"],
+      "properties": {
+        "playerId": {
+          "type": "string"
+        },
+        "hp": {
+          "type": "integer"
+        },
+        "mana": {
+          "type": "integer"
+        },
+        "cooldowns": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "battleLogEntry": {
+      "type": "object",
+      "required": ["turnNumber", "actorPlayerId", "message", "createdAt"],
+      "properties": {
+        "turnNumber": {
+          "type": "integer"
+        },
+        "actorPlayerId": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "battleState": {
+      "type": "object",
+      "required": [
+        "battleSessionId",
+        "matchId",
+        "status",
+        "turnNumber",
+        "turnOwnerPlayerId",
+        "actionDeadlineAt",
+        "self",
+        "opponent",
+        "battleLog"
+      ],
+      "properties": {
+        "battleSessionId": {
+          "type": "string"
+        },
+        "matchId": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["ACTIVE", "ENDED"]
+        },
+        "turnNumber": {
+          "type": "integer"
+        },
+        "turnOwnerPlayerId": {
+          "type": "string"
+        },
+        "actionDeadlineAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "self": {
+          "$ref": "#/$defs/battleParticipant"
+        },
+        "opponent": {
+          "$ref": "#/$defs/battleParticipant"
+        },
+        "battleLog": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/battleLogEntry"
+          }
+        },
+        "winnerPlayerId": {
+          "type": ["string", "null"]
+        },
+        "loserPlayerId": {
+          "type": ["string", "null"]
+        },
+        "endedReason": {
+          "type": ["string", "null"],
+          "enum": ["HP_ZERO", "SURRENDER", "TIMEOUT", "DISCONNECT", null]
+        }
+      }
+    }
+  },
   "oneOf": [
     {
       "type": "object",
@@ -94,6 +198,86 @@
       "required": ["type", "payload"],
       "properties": {
         "type": {
+          "const": "battle.match_ready"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "object",
+          "required": ["queueStatus", "queuedAt"],
+          "properties": {
+            "queueStatus": {
+              "type": "string",
+              "enum": ["SEARCHING"]
+            },
+            "queuedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["type", "payload"],
+      "properties": {
+        "type": {
+          "const": "battle.match_found"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "object",
+          "required": ["matchId", "battleSessionId", "playerSeat"],
+          "properties": {
+            "matchId": {
+              "type": "string"
+            },
+            "battleSessionId": {
+              "type": "string"
+            },
+            "playerSeat": {
+              "$ref": "#/$defs/playerSeat"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["type", "payload"],
+      "properties": {
+        "type": {
+          "const": "battle.started"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "object",
+          "required": ["battleSessionId", "playerSeat", "battle"],
+          "properties": {
+            "battleSessionId": {
+              "type": "string"
+            },
+            "playerSeat": {
+              "$ref": "#/$defs/playerSeat"
+            },
+            "battle": {
+              "$ref": "#/$defs/battleState"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["type", "payload"],
+      "properties": {
+        "type": {
           "const": "battle.action_result"
         },
         "requestId": {
@@ -120,7 +304,141 @@
               "type": "string"
             },
             "battle": {
-              "type": ["object", "null"]
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/battleState"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["type", "payload"],
+      "properties": {
+        "type": {
+          "const": "battle.state_updated"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "object",
+          "required": ["battleSessionId", "battle"],
+          "properties": {
+            "battleSessionId": {
+              "type": "string"
+            },
+            "sourceActionId": {
+              "type": "string"
+            },
+            "battle": {
+              "$ref": "#/$defs/battleState"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["type", "payload"],
+      "properties": {
+        "type": {
+          "const": "battle.timeout"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "object",
+          "required": ["battleSessionId", "turnNumber", "timedOutPlayerId", "battle"],
+          "properties": {
+            "battleSessionId": {
+              "type": "string"
+            },
+            "turnNumber": {
+              "type": "integer"
+            },
+            "timedOutPlayerId": {
+              "type": "string"
+            },
+            "battle": {
+              "$ref": "#/$defs/battleState"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["type", "payload"],
+      "properties": {
+        "type": {
+          "const": "battle.surrendered"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "object",
+          "required": ["battleSessionId", "surrenderedPlayerId", "battle"],
+          "properties": {
+            "battleSessionId": {
+              "type": "string"
+            },
+            "surrenderedPlayerId": {
+              "type": "string"
+            },
+            "battle": {
+              "$ref": "#/$defs/battleState"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["type", "payload"],
+      "properties": {
+        "type": {
+          "const": "battle.ended"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "object",
+          "required": [
+            "battleSessionId",
+            "winnerPlayerId",
+            "loserPlayerId",
+            "endedReason",
+            "battle"
+          ],
+          "properties": {
+            "battleSessionId": {
+              "type": "string"
+            },
+            "winnerPlayerId": {
+              "type": "string"
+            },
+            "loserPlayerId": {
+              "type": "string"
+            },
+            "endedReason": {
+              "type": "string",
+              "enum": ["HP_ZERO", "SURRENDER", "TIMEOUT", "DISCONNECT"]
+            },
+            "ratingChange": {
+              "type": "integer"
+            },
+            "battle": {
+              "$ref": "#/$defs/battleState"
             }
           }
         }
