@@ -1,3 +1,5 @@
+from typing import TypeVar
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -12,3 +14,21 @@ class ApiSchema(BaseModel):
         populate_by_name=True,
         from_attributes=True,
     )
+
+
+DataT = TypeVar("DataT")
+
+
+class ApiError(ApiSchema):
+    code: str
+    message: str
+
+
+class ApiResponse[DataT](ApiSchema):
+    success: bool
+    data: DataT | None = None
+    error: ApiError | None = None
+
+
+def ok[DataT](data: DataT) -> ApiResponse[DataT]:
+    return ApiResponse(success=True, data=data, error=None)

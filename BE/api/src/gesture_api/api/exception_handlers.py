@@ -9,10 +9,11 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=exc.status_code,
             content={
-                "type": f"https://errors.local/{exc.code}",
-                "title": exc.title,
-                "status": exc.status_code,
-                "detail": exc.detail,
-                "code": exc.code,
+                "success": False,
+                "data": None,
+                "error": {
+                    "code": exc.code,
+                    "message": exc.detail,
+                },
             },
         )

@@ -22,6 +22,46 @@
         }
       }
     },
+    "/api/v1/players/guest": {
+      "post": {
+        "operationId": "createGuestPlayer",
+        "responses": {
+          "201": {
+            "description": "Guest player created"
+          }
+        }
+      }
+    },
+    "/api/v1/skillsets": {
+      "get": {
+        "operationId": "listSkillsets",
+        "responses": {
+          "200": {
+            "description": "Skillset catalog"
+          }
+        }
+      }
+    },
+    "/api/v1/matchmaking/queue": {
+      "post": {
+        "operationId": "enterMatchmakingQueue",
+        "responses": {
+          "200": {
+            "description": "Queue status"
+          }
+        }
+      }
+    },
+    "/api/v1/battles/{battleSessionId}/actions": {
+      "post": {
+        "operationId": "submitBattleAction",
+        "responses": {
+          "202": {
+            "description": "Battle action accepted or rejected"
+          }
+        }
+      }
+    },
     "/gesture-commands": {
       "post": {
         "operationId": "createGestureCommand",
