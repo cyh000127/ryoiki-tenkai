@@ -27,6 +27,10 @@ Use `-InstallDependencies` with `scripts\bootstrap.ps1` only when the local pack
 ## MVP Planning and QA
 
 - `docs/implementation-artifacts/mvp-v1-implementation-plan.md`: MVP implementation baseline for WebSocket flow, server authoritative rules, client hand recognition, and excluded scope.
+- `docs/planning-artifacts/mvp-v1/epics.md`: MVP implementation plan split into epic-level outcomes, boundaries, stories, and acceptance signals.
+- `docs/planning-artifacts/mvp-v1/stories.md`: story-sized implementation units with scope, dependencies, status, and verification notes.
+- `docs/planning-artifacts/mvp-v1/implementation-order.md`: recommended build order and commit order for the MVP.
+- `docs/planning-artifacts/mvp-v1/prerequisites.md`: prerequisites for product, contract, FE, BE, input runtime, persistence, QA, and merge readiness.
 - `docs/implementation-artifacts/smoke-test-checklist.md`: smoke checklist for repository, runtime, REST, WebSocket, battle, client recognition, and end-to-end verification.
 
 ## Scaffold Policy
