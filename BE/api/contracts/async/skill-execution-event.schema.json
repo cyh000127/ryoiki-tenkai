@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "skill-execution-event.schema.json",
+  "title": "SkillExecutionEvent",
+  "type": "object",
+  "required": ["eventId", "sessionId", "userId", "skillActionKey", "createdAt"],
+  "properties": {
+    "eventId": {
+      "type": "string"
+    },
+    "sessionId": {
+      "type": "string"
+    },
+    "userId": {
+      "type": "string"
+    },
+    "skillActionKey": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

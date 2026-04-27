@@ -1,0 +1,122 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Gesture Skill API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/healthz": {
+      "get": {
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "description": "Service health",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gesture-commands": {
+      "post": {
+        "operationId": "createGestureCommand",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGestureCommandRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Command accepted or rejected by policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GestureCommandResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HealthResponse": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateGestureCommandRequest": {
+        "type": "object",
+        "required": ["sessionId", "userId", "gestureKey", "confidence", "occurredAt"],
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "gestureKey": {
+            "type": "string"
+          },
+          "skillActionKey": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "handedness": {
+            "type": "string",
+            "enum": ["left", "right", "unknown"]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "GestureCommandResponse": {
+        "type": "object",
+        "required": ["commandId", "status", "gestureKey", "confidence"],
+        "properties": {
+          "commandId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["accepted", "rejected"]
+          },
+          "gestureKey": {
+            "type": "string"
+          },
+          "skillActionKey": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number"
+          },
+          "rejectReason": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
