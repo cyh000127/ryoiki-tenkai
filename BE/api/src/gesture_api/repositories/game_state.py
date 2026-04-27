@@ -30,6 +30,7 @@ class InMemoryGameStateRepository:
             guest_token="practice",
             nickname="Practice Rival",
             rating=1000,
+            loadout_configured=True,
         )
 
     def create_guest_player(self, nickname: str) -> PlayerRecord:
@@ -62,6 +63,7 @@ class InMemoryGameStateRepository:
             return None
         player.equipped_skillset_id = skillset_id
         player.equipped_animset_id = animset_id
+        player.loadout_configured = True
         return player
 
     def enter_queue(self, player_id: str) -> BattleSession | None:

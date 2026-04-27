@@ -32,6 +32,7 @@ class PlayerProfileResponse(ApiSchema):
     losses: int
     equipped_skillset_id: str
     equipped_animset_id: str
+    loadout_configured: bool
 
     @classmethod
     def from_record(cls, player: PlayerRecord) -> "PlayerProfileResponse":
@@ -75,6 +76,7 @@ class LoadoutResponse(ApiSchema):
     player_id: str
     equipped_skillset_id: str
     equipped_animset_id: str
+    loadout_configured: bool
 
     @classmethod
     def from_record(cls, player: PlayerRecord) -> "LoadoutResponse":
@@ -82,6 +84,7 @@ class LoadoutResponse(ApiSchema):
             player_id=player.player_id,
             equipped_skillset_id=player.equipped_skillset_id,
             equipped_animset_id=player.equipped_animset_id,
+            loadout_configured=player.loadout_configured,
         )
 
 

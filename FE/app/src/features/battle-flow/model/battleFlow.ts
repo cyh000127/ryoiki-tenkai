@@ -48,6 +48,8 @@ export type BattleFlowState = {
 export type BattleFlowAction =
   | { type: "go"; screen: ScreenKey }
   | { type: "createGuest"; nickname: string }
+  | { type: "hydratePlayer"; player: PlayerSummary }
+  | { type: "hydrateLoadout"; skillsetId: string; animsetId: string; skillId: string }
   | { type: "equip"; skillsetId: string; animsetId: string; skillId: string }
   | { type: "startQueue" }
   | { type: "matchFound" }
@@ -102,6 +104,28 @@ export function battleFlowReducer(
         player: { ...state.player, nickname: action.nickname || state.player.nickname },
         recentEvents: prependEvent(state, "guest.created")
       };
+    case "hydratePlayer":
+      return {
+        ...state,
+        player: action.player,
+        recentEvents: prependEvent(state, "player.restored")
+      };
+    case "hydrateLoadout":
+      return {
+        ...state,
+        equippedSkillsetId: action.skillsetId,
+        equippedAnimsetId: action.animsetId,
+        selectedSkillId: action.skillId,
+        input: {
+          ...state.input,
+          targetSequence: findSkill(action.skillId).gestureSequence,
+          currentStep: 0,
+          currentGesture: null,
+          failureReason: null,
+          serverConfirmationStatus: "IDLE"
+        },
+        recentEvents: prependEvent(state, "loadout.restored")
+      };
     case "equip":
       return {
         ...state,
@@ -112,10 +136,10 @@ export function battleFlowReducer(
           ...state.input,
           targetSequence: findSkill(action.skillId).gestureSequence,
           currentStep: 0,
+          currentGesture: null,
           failureReason: null,
           serverConfirmationStatus: "IDLE"
         },
-        screen: "matchmaking",
         recentEvents: prependEvent(state, "loadout.updated")
       };
     case "startQueue":
@@ -174,7 +198,10 @@ export function battleFlowReducer(
         queueStatus: "IDLE",
         socketStatus: "DISCONNECTED",
         battle: null,
-        input: initialBattleFlowState.input,
+        input: {
+          ...initialBattleFlowState.input,
+          targetSequence: findSkill(state.selectedSkillId).gestureSequence
+        },
         recentEvents: prependEvent(state, "battle.reset")
       };
     default:

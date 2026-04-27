@@ -45,6 +45,7 @@ def test_battle_event_serializer_uses_wire_aliases() -> None:
 def test_battle_websocket_handler_submits_action_with_in_memory_engine() -> None:
     repository = InMemoryGameStateRepository()
     player = repository.create_guest_player("ws-player")
+    player.loadout_configured = True
     battle = repository.enter_queue(player.player_id)
     assert battle is not None
     handler = BattleWebSocketEventHandler(repository)
@@ -81,6 +82,15 @@ def test_ws_endpoint_handles_ping_and_submit_action() -> None:
     guest_response = client.post("/api/v1/players/guest", json={"nickname": "ws-client"})
     player_id = guest_response.json()["data"]["playerId"]
     skill = client.get("/api/v1/skillsets").json()["data"][0]["skills"][0]
+    loadout_response = client.post(
+        "/api/v1/players/me/loadout",
+        headers={"X-Player-Id": player_id},
+        json={
+            "skillsetId": "skillset_seal_basic",
+            "animsetId": "animset_basic_2d",
+        },
+    )
+    assert loadout_response.status_code == 200
     queue_response = client.post(
         "/api/v1/matchmaking/queue",
         headers={"X-Player-Id": player_id},

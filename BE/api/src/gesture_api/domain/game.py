@@ -53,6 +53,7 @@ class PlayerRecord:
     losses: int = 0
     equipped_skillset_id: str = "skillset_seal_basic"
     equipped_animset_id: str = "animset_basic_2d"
+    loadout_configured: bool = False
 
 
 @dataclass

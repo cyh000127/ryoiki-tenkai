@@ -1,6 +1,7 @@
-import { type ReactNode, useEffect, useReducer } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type ReactNode, useEffect, useReducer, useState } from "react";
 
-import { DEFAULT_ANIMSETS, DEFAULT_SKILLSET } from "../../entities/game/model";
+import { DEFAULT_ANIMSETS, DEFAULT_SKILLSET, type Skillset } from "../../entities/game/model";
 import {
   battleFlowReducer,
   findSkill,
@@ -9,6 +10,21 @@ import {
   type ServerConfirmationStatus,
   type ScreenKey
 } from "../../features/battle-flow/model/battleFlow";
+import {
+  ApiClientError,
+  createGuestPlayer,
+  getMyProfile,
+  listAnimsets,
+  listSkillsets,
+  toPlayerSummary,
+  updateLoadout
+} from "../../platform/api/gameClient";
+import {
+  clearPlayerSession,
+  loadStoredPlayerSession,
+  savePlayerSession,
+  type PlayerSession
+} from "../../platform/api/playerSession";
 import { copy } from "../../platform/i18n/catalog";
 import { Button } from "../../platform/ui/Button";
 import { StatusBadge } from "../../platform/ui/StatusBadge";
@@ -18,16 +34,87 @@ const screenOrder: ScreenKey[] = ["home", "loadout", "matchmaking", "battle", "r
 const serverConfirmationDelayMs = 320;
 
 export function BattleGameWorkspace() {
+  const queryClient = useQueryClient();
   const [state, dispatch] = useReducer(battleFlowReducer, initialBattleFlowState);
-  const selectedSkill = findSkill(state.selectedSkillId);
-  const isMyTurn = state.battle?.turnOwnerPlayerId === state.player.playerId;
-  const isServerConfirming = state.input.serverConfirmationStatus === "PENDING";
-  const canUseGestureInput = state.screen === "battle" && Boolean(state.battle) && isMyTurn && !isServerConfirming;
-  const completedStepCount = Math.min(state.input.currentStep, state.input.targetSequence.length);
-  const progressPercent = getSequenceProgress(completedStepCount, state.input.targetSequence.length);
+  const [nicknameDraft, setNicknameDraft] = useState("local_player");
+  const [session, setSession] = useState<PlayerSession | null>(() => loadStoredPlayerSession());
+  const [draftSkillsetId, setDraftSkillsetId] = useState(initialBattleFlowState.equippedSkillsetId);
+  const [draftSkillId, setDraftSkillId] = useState(initialBattleFlowState.selectedSkillId);
+  const [selectedAnimsetId, setSelectedAnimsetId] = useState(initialBattleFlowState.equippedAnimsetId);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  const skillsetsQuery = useQuery({
+    queryKey: ["skillsets"],
+    queryFn: listSkillsets
+  });
+  const animsetsQuery = useQuery({
+    queryKey: ["animsets"],
+    queryFn: listAnimsets
+  });
+  const profileQuery = useQuery({
+    queryKey: ["playerProfile", session?.playerId],
+    enabled: session !== null,
+    queryFn: () => getMyProfile(session!.playerId),
+    retry: false
+  });
+
+  const skillsets = skillsetsQuery.data?.length ? skillsetsQuery.data : [DEFAULT_SKILLSET];
+  const animsets = animsetsQuery.data?.length ? animsetsQuery.data : DEFAULT_ANIMSETS;
+  const equippedSkillset =
+    skillsets.find((skillset) => skillset.skillsetId === state.equippedSkillsetId) ?? skillsets[0];
+  const equippedSkill =
+    equippedSkillset.skills.find((skill) => skill.skillId === state.selectedSkillId) ??
+    equippedSkillset.skills[0] ??
+    findSkill(state.selectedSkillId);
+  const activeSkillset =
+    skillsets.find((skillset) => skillset.skillsetId === draftSkillsetId) ?? skillsets[0];
+  const selectedSkill =
+    activeSkillset.skills.find((skill) => skill.skillId === draftSkillId) ??
+    activeSkillset.skills[0] ??
+    equippedSkill;
+
+  const createGuestMutation = useMutation({
+    mutationFn: createGuestPlayer,
+    onSuccess: (guest) => {
+      const nextSession = {
+        playerId: guest.playerId,
+        guestToken: guest.guestToken
+      };
+      savePlayerSession(nextSession);
+      setSession(nextSession);
+      dispatch({ type: "createGuest", nickname: nicknameDraft.trim() || state.player.nickname });
+      dispatch({ type: "go", screen: "loadout" });
+      setStatusMessage(null);
+    },
+    onError: () => {
+      setStatusMessage(copy.playerCreateFailed);
+    }
+  });
+
+  const saveLoadoutMutation = useMutation({
+    mutationFn: (payload: { playerId: string; skillsetId: string; animsetId: string }) =>
+      updateLoadout(payload.playerId, payload.skillsetId, payload.animsetId),
+    onSuccess: async (loadout) => {
+      dispatch({
+        type: "equip",
+        skillsetId: loadout.equippedSkillsetId,
+        animsetId: loadout.equippedAnimsetId,
+        skillId: selectedSkill.skillId
+      });
+      dispatch({ type: "go", screen: "home" });
+      setSelectedAnimsetId(loadout.equippedAnimsetId);
+      setStatusMessage(copy.loadoutSaved);
+      await queryClient.invalidateQueries({
+        queryKey: ["playerProfile", loadout.playerId]
+      });
+    },
+    onError: () => {
+      setStatusMessage(copy.loadoutSaveFailed);
+    }
+  });
 
   useEffect(() => {
-    if (state.screen !== "battle" || !isServerConfirming) {
+    if (state.screen !== "battle" || state.input.serverConfirmationStatus !== "PENDING") {
       return undefined;
     }
 
@@ -36,7 +123,169 @@ export function BattleGameWorkspace() {
     }, serverConfirmationDelayMs);
 
     return () => window.clearTimeout(timerId);
-  }, [isServerConfirming, state.screen]);
+  }, [state.input.serverConfirmationStatus, state.screen]);
+
+  useEffect(() => {
+    if (!profileQuery.data) {
+      return;
+    }
+
+    dispatch({
+      type: "hydratePlayer",
+      player: toPlayerSummary(profileQuery.data)
+    });
+
+    const restoredSkillset =
+      skillsets.find((skillset) => skillset.skillsetId === profileQuery.data.equippedSkillsetId) ??
+      skillsets[0];
+    const restoredSkill = restoredSkillset?.skills[0] ?? DEFAULT_SKILLSET.skills[0];
+
+    dispatch({
+      type: "hydrateLoadout",
+      skillsetId: profileQuery.data.equippedSkillsetId,
+      animsetId: profileQuery.data.equippedAnimsetId,
+      skillId: restoredSkill.skillId
+    });
+    setDraftSkillsetId(restoredSkillset.skillsetId);
+    setDraftSkillId(restoredSkill.skillId);
+    setSelectedAnimsetId(profileQuery.data.equippedAnimsetId);
+  }, [profileQuery.data, skillsets]);
+
+  useEffect(() => {
+    if (!profileQuery.error) {
+      return;
+    }
+
+    if (
+      profileQuery.error instanceof ApiClientError &&
+      (profileQuery.error.code === "PLAYER_NOT_FOUND" || profileQuery.error.status === 404)
+    ) {
+      clearPlayerSession();
+      setSession(null);
+    }
+    setStatusMessage(copy.restoreFailed);
+  }, [profileQuery.error]);
+
+  useEffect(() => {
+    if (!skillsets.length) {
+      return;
+    }
+
+    const selectedSkillsetExists = skillsets.some(
+      (skillset) => skillset.skillsetId === draftSkillsetId
+    );
+    if (!selectedSkillsetExists) {
+      const fallbackSkillset = skillsets[0];
+      setDraftSkillsetId(fallbackSkillset.skillsetId);
+      setDraftSkillId(fallbackSkillset.skills[0]?.skillId ?? initialBattleFlowState.selectedSkillId);
+      return;
+    }
+
+    const selectedSkillExists = activeSkillset.skills.some((skill) => skill.skillId === draftSkillId);
+    if (!selectedSkillExists) {
+      setDraftSkillId(activeSkillset.skills[0]?.skillId ?? initialBattleFlowState.selectedSkillId);
+    }
+  }, [activeSkillset.skills, draftSkillId, draftSkillsetId, skillsets]);
+
+  useEffect(() => {
+    if (!animsets.length) {
+      return;
+    }
+
+    const selectedAnimsetExists = animsets.some(
+      (animset) => animset.animsetId === selectedAnimsetId
+    );
+    if (!selectedAnimsetExists) {
+      setSelectedAnimsetId(animsets[0].animsetId);
+    }
+  }, [animsets, selectedAnimsetId]);
+
+  const isMyTurn = state.battle?.turnOwnerPlayerId === state.player.playerId;
+  const isServerConfirming = state.input.serverConfirmationStatus === "PENDING";
+  const canUseGestureInput =
+    state.screen === "battle" && Boolean(state.battle) && isMyTurn && !isServerConfirming;
+  const completedStepCount = Math.min(state.input.currentStep, state.input.targetSequence.length);
+  const progressPercent = getSequenceProgress(
+    completedStepCount,
+    state.input.targetSequence.length
+  );
+  const isRestoringPlayer = profileQuery.isLoading;
+  const hasPlayerSession = session !== null && profileQuery.data !== undefined;
+  const hasConfiguredLoadout = profileQuery.data?.loadoutConfigured ?? false;
+  const isCatalogLoading = skillsetsQuery.isLoading || animsetsQuery.isLoading;
+  const catalogFailed = skillsetsQuery.isError || animsetsQuery.isError;
+
+  function handleOpenLoadout() {
+    if (!session) {
+      setStatusMessage(copy.matchEntryBlocked);
+      return;
+    }
+
+    setStatusMessage(null);
+    dispatch({ type: "go", screen: "loadout" });
+  }
+
+  function handleStartQueue() {
+    if (!hasPlayerSession) {
+      setStatusMessage(copy.matchEntryBlocked);
+      return;
+    }
+    if (!hasConfiguredLoadout) {
+      setStatusMessage(copy.loadoutRequired);
+      return;
+    }
+
+    setStatusMessage(null);
+    dispatch({ type: "startQueue" });
+  }
+
+  function handleSaveLoadout() {
+    if (!session) {
+      setStatusMessage(copy.selectionRequired);
+      return;
+    }
+
+    setStatusMessage(null);
+    saveLoadoutMutation.mutate({
+      playerId: session.playerId,
+      skillsetId: draftSkillsetId,
+      animsetId: selectedAnimsetId
+    });
+  }
+
+  function handleSelectSkillset(skillset: Skillset) {
+    const nextSkill = skillset.skills[0];
+    if (!nextSkill) {
+      return;
+    }
+
+    setDraftSkillsetId(skillset.skillsetId);
+    setDraftSkillId(nextSkill.skillId);
+  }
+
+  function handleSelectSkill(skillId: string) {
+    setDraftSkillId(skillId);
+  }
+
+  function handleCreateGuest() {
+    const nickname = nicknameDraft.trim();
+    if (!nickname) {
+      setStatusMessage(copy.nicknamePlaceholder);
+      return;
+    }
+
+    setStatusMessage(null);
+    createGuestMutation.mutate(nickname);
+  }
+
+  const playerStatusLabel = isRestoringPlayer
+    ? copy.sessionRestoring
+    : hasConfiguredLoadout
+      ? copy.playerReady
+      : hasPlayerSession
+        ? copy.loadoutPending
+      : copy.playerMissing;
+  const playerStatusTone = hasConfiguredLoadout ? "success" : "warning";
 
   return (
     <section className="play-workspace" aria-label={copy.appTitle}>
@@ -58,21 +307,38 @@ export function BattleGameWorkspace() {
         {state.screen === "home" ? (
           <div className="surface-grid">
             <Panel title={copy.playerRating}>
+              <StatusBadge tone={playerStatusTone}>{playerStatusLabel}</StatusBadge>
+              <Metric label={copy.playerStatus} value={state.player.nickname} />
               <Metric label={copy.playerRating} value={state.player.rating} />
               <Metric label={copy.record} value={`${state.player.wins}W / ${state.player.losses}L`} />
-              <Metric label={copy.skillDetail} value={selectedSkill.name} />
+              <Metric label={copy.skillDetail} value={equippedSkill.name} />
             </Panel>
             <Panel title={copy.matchmaking}>
-              <div className="action-row">
-                <Button onClick={() => dispatch({ type: "createGuest", nickname: "local_player" })}>
-                  {copy.startGuest}
-                </Button>
-                <Button onClick={() => dispatch({ type: "go", screen: "loadout" })}>
-                  {copy.editLoadout}
-                </Button>
-                <Button variant="primary" onClick={() => dispatch({ type: "startQueue" })}>
-                  {copy.startMatch}
-                </Button>
+              <div className="field-stack">
+                <label className="field">
+                  <span className="field__label">{copy.nickname}</span>
+                  <input
+                    className="text-input"
+                    name="nickname"
+                    onChange={(event) => setNicknameDraft(event.target.value)}
+                    placeholder={copy.nicknamePlaceholder}
+                    value={nicknameDraft}
+                  />
+                </label>
+                <p className="helper-text">{copy.createGuestHelp}</p>
+                {statusMessage ? <p className="status-text">{statusMessage}</p> : null}
+                <div className="action-row">
+                  <Button
+                    disabled={createGuestMutation.isPending}
+                    onClick={handleCreateGuest}
+                  >
+                    {copy.startGuest}
+                  </Button>
+                  <Button onClick={handleOpenLoadout}>{copy.editLoadout}</Button>
+                  <Button variant="primary" onClick={handleStartQueue}>
+                    {copy.startMatch}
+                  </Button>
+                </div>
               </div>
             </Panel>
             <DebugPanel events={state.recentEvents} latency={state.input.networkLatencyMs} />
@@ -82,13 +348,32 @@ export function BattleGameWorkspace() {
         {state.screen === "loadout" ? (
           <div className="surface-grid surface-grid--two">
             <Panel title={copy.loadout}>
+              {!session ? <p className="helper-text">{copy.matchEntryBlocked}</p> : null}
+              {isCatalogLoading ? <p className="helper-text">{copy.catalogLoading}</p> : null}
+              {catalogFailed ? <p className="status-text">{copy.catalogFailed}</p> : null}
               <div className="skill-list">
-                {DEFAULT_SKILLSET.skills.map((skill) => (
+                {skillsets.map((skillset) => (
                   <button
-                    aria-pressed={state.selectedSkillId === skill.skillId}
+                    aria-pressed={draftSkillsetId === skillset.skillsetId}
+                    className="skill-card"
+                    key={skillset.skillsetId}
+                    onClick={() => handleSelectSkillset(skillset)}
+                    type="button"
+                  >
+                    <strong>{skillset.name}</strong>
+                    <div>
+                      {copy.skillset} {skillset.skillsetId}
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <div className="skill-list">
+                {activeSkillset.skills.map((skill) => (
+                  <button
+                    aria-pressed={draftSkillId === skill.skillId}
                     className="skill-card"
                     key={skill.skillId}
-                    onClick={() => dispatch({ type: "selectSkill", skillId: skill.skillId })}
+                    onClick={() => handleSelectSkill(skill.skillId)}
                     type="button"
                   >
                     <strong>{skill.name}</strong>
@@ -104,20 +389,36 @@ export function BattleGameWorkspace() {
               <Metric label={copy.targetSequence} value={selectedSkill.gestureSequence.join(" -> ")} />
               <Metric label={copy.mana} value={selectedSkill.manaCost} />
               <Metric label={copy.cooldown} value={selectedSkill.cooldownTurn} />
-              <Metric label={copy.animset} value={DEFAULT_ANIMSETS[0].name} />
-              <Button
-                variant="primary"
-                onClick={() =>
-                  dispatch({
-                    type: "equip",
-                    skillsetId: DEFAULT_SKILLSET.skillsetId,
-                    animsetId: DEFAULT_ANIMSETS[0].animsetId,
-                    skillId: selectedSkill.skillId
-                  })
-                }
-              >
-                {copy.equipAndQueue}
-              </Button>
+              <div className="field-stack">
+                <span className="field__label">{copy.animsetCatalog}</span>
+                <div className="skill-list">
+                  {animsets.map((animset) => (
+                    <button
+                      aria-pressed={selectedAnimsetId === animset.animsetId}
+                      className="skill-card"
+                      key={animset.animsetId}
+                      onClick={() => setSelectedAnimsetId(animset.animsetId)}
+                      type="button"
+                    >
+                      <strong>{animset.name}</strong>
+                      <div>{animset.animsetId}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {statusMessage ? <p className="status-text">{statusMessage}</p> : null}
+              <div className="action-row">
+                <Button
+                  disabled={!session || saveLoadoutMutation.isPending || isCatalogLoading || catalogFailed}
+                  variant="primary"
+                  onClick={handleSaveLoadout}
+                >
+                  {copy.saveLoadout}
+                </Button>
+                <Button onClick={() => dispatch({ type: "go", screen: "home" })}>
+                  {copy.home}
+                </Button>
+              </div>
             </Panel>
           </div>
         ) : null}
@@ -131,6 +432,7 @@ export function BattleGameWorkspace() {
                 label={copy.cameraStatus}
                 value={state.input.cameraReady ? copy.ready : copy.checkRequired}
               />
+              {statusMessage ? <p className="status-text">{statusMessage}</p> : null}
               <div className="action-row">
                 <Button variant="primary" onClick={() => dispatch({ type: "matchFound" })}>
                   match.found
@@ -147,7 +449,12 @@ export function BattleGameWorkspace() {
         {state.screen === "battle" && state.battle ? (
           <>
             <div className="battle-board">
-              <FighterPanel title={copy.self} hp={state.battle.self.hp} mana={state.battle.self.mana} isActive={isMyTurn && !isServerConfirming} />
+              <FighterPanel
+                title={copy.self}
+                hp={state.battle.self.hp}
+                isActive={isMyTurn && !isServerConfirming}
+                mana={state.battle.self.mana}
+              />
               <div className="battle-center" data-state={getTurnState(isMyTurn, isServerConfirming)}>
                 <StatusBadge tone={getTurnTone(isMyTurn, isServerConfirming)}>
                   {getTurnStatusLabel(isMyTurn, isServerConfirming)}
@@ -155,7 +462,12 @@ export function BattleGameWorkspace() {
                 <Metric label={copy.turnNumber} value={state.battle.turnNumber} />
                 <p className="turn-hint">{getTurnHint(isMyTurn, isServerConfirming)}</p>
               </div>
-              <FighterPanel title={copy.opponent} hp={state.battle.opponent.hp} mana={state.battle.opponent.mana} isActive={!isMyTurn && !isServerConfirming} />
+              <FighterPanel
+                title={copy.opponent}
+                hp={state.battle.opponent.hp}
+                isActive={!isMyTurn && !isServerConfirming}
+                mana={state.battle.opponent.mana}
+              />
             </div>
             <div className="surface-grid">
               <Panel title={copy.inputConsole}>
@@ -185,16 +497,26 @@ export function BattleGameWorkspace() {
                     </button>
                   ))}
                 </div>
-                <Metric label={copy.currentStep} value={`${completedStepCount}/${state.input.targetSequence.length}`} />
+                <Metric
+                  label={copy.currentStep}
+                  value={`${completedStepCount}/${state.input.targetSequence.length}`}
+                />
                 <Metric label={copy.targetProgress} value={`${progressPercent}%`} />
-                <Metric label={copy.confidence} value={`${Math.round(state.input.confidence * 100)}%`} />
+                <Metric
+                  label={copy.confidence}
+                  value={`${Math.round(state.input.confidence * 100)}%`}
+                />
                 <div
                   className="input-feedback"
                   data-state={getFeedbackState(state.input.failureReason, isServerConfirming)}
                   role="status"
                 >
                   <strong>{copy.inputFeedback}</strong>
-                  <span>{isServerConfirming ? copy.serverConfirmPendingHelp : getFailureMessage(state.input.failureReason)}</span>
+                  <span>
+                    {isServerConfirming
+                      ? copy.serverConfirmPendingHelp
+                      : getFailureMessage(state.input.failureReason)}
+                  </span>
                 </div>
                 <div className="confirmation-strip" data-state={state.input.serverConfirmationStatus}>
                   <StatusBadge tone={getConfirmationTone(state.input.serverConfirmationStatus)}>
@@ -204,9 +526,9 @@ export function BattleGameWorkspace() {
                 </div>
                 <div className="action-row">
                   <Button
-                    variant="primary"
                     disabled={!isMyTurn || isServerConfirming}
                     onClick={() => dispatch({ type: "submitSkill" })}
+                    variant="primary"
                   >
                     {isServerConfirming ? copy.serverConfirmPending : copy.submitAction}
                   </Button>
@@ -243,7 +565,7 @@ export function BattleGameWorkspace() {
               <Metric label={copy.ratingChange} value={state.history[0]?.ratingChange ?? 0} />
               <Metric label={copy.playerRating} value={state.player.rating} />
               <div className="action-row">
-                <Button variant="primary" onClick={() => dispatch({ type: "startQueue" })}>
+                <Button onClick={() => dispatch({ type: "startQueue" })} variant="primary">
                   {copy.rematch}
                 </Button>
                 <Button onClick={() => dispatch({ type: "resetBattle" })}>{copy.home}</Button>
@@ -293,7 +615,17 @@ function Metric({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function FighterPanel({ title, hp, mana, isActive = false }: { title: string; hp: number; mana: number; isActive?: boolean }) {
+function FighterPanel({
+  title,
+  hp,
+  mana,
+  isActive = false
+}: {
+  title: string;
+  hp: number;
+  mana: number;
+  isActive?: boolean;
+}) {
   return (
     <section className="fighter" data-active={isActive}>
       <h2 className="panel__title">{title}</h2>

@@ -205,6 +205,16 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Loadout required before queue entry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
           }
         }
       },
@@ -562,7 +572,8 @@
           "wins",
           "losses",
           "equippedSkillsetId",
-          "equippedAnimsetId"
+          "equippedAnimsetId",
+          "loadoutConfigured"
         ],
         "properties": {
           "playerId": {
@@ -585,6 +596,9 @@
           },
           "equippedAnimsetId": {
             "type": "string"
+          },
+          "loadoutConfigured": {
+            "type": "boolean"
           }
         }
       },
@@ -721,7 +735,12 @@
       },
       "LoadoutResponse": {
         "type": "object",
-        "required": ["playerId", "equippedSkillsetId", "equippedAnimsetId"],
+        "required": [
+          "playerId",
+          "equippedSkillsetId",
+          "equippedAnimsetId",
+          "loadoutConfigured"
+        ],
         "properties": {
           "playerId": {
             "type": "string"
@@ -731,6 +750,9 @@
           },
           "equippedAnimsetId": {
             "type": "string"
+          },
+          "loadoutConfigured": {
+            "type": "boolean"
           }
         }
       },

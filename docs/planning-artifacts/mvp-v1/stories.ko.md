@@ -10,7 +10,7 @@
 
 ### E1-ST01: lightweight player identity 생성 또는 복구
 
-- Status: partial
+- Status: done
 - User story: player는 full account system 없이 battle loop에 들어가기 위해 lightweight local identity를 생성하거나 복구할 수 있다.
 - Scope: player identifier/display name 생성, REST/socket setup에 쓸 session token 발급, stored local state에서 profile 복구.
 - Acceptance criteria: profile lookup이 player id, nickname, rating, record, current loadout을 반환한다. local state가 없거나 만료되면 broken screen 대신 new start flow로 간다. 외부 identity provider가 필요하지 않다.
@@ -19,7 +19,7 @@
 
 ### E1-ST02: approved skillset과 animset catalog 제공
 
-- Status: partial
+- Status: done
 - User story: player는 battle에 선택 가능한 approved skillset과 animset preset을 볼 수 있다.
 - Scope: skill id/name/cost/cooldown/gesture sequence 반환, UI에 필요한 animset metadata 반환, MVP catalog를 deterministic하게 유지.
 - Acceptance criteria: catalog endpoint가 stable `skillset_id`와 `animset_id`를 반환한다. skill sequence metadata가 normalized gesture token을 사용한다. invalid `skillset_id` 또는 `animset_id`는 loadout update에서 수락되지 않는다.
@@ -28,7 +28,7 @@
 
 ### E1-ST03: player loadout 저장과 검증
 
-- Status: partial
+- Status: done
 - User story: player는 matchmaking 전에 battle-ready configuration을 저장할 수 있다.
 - Scope: skillset과 animset selection 검증, current loadout 저장, profile/battle setup view에 loadout 노출.
 - Acceptance criteria: valid loadout이 저장되고 profile lookup에 반환된다. invalid loadout은 standard validation error를 반환한다. valid loadout 없이는 matchmaking entry가 차단된다.

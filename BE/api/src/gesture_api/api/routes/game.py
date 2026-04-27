@@ -99,6 +99,16 @@ def enter_matchmaking_queue(
     _: QueueRequest,
     player_id: PlayerIdHeader,
 ) -> ApiResponse[QueueStatusResponse]:
+    player = game_state_repository.get_player(player_id)
+    if player is None:
+        raise DomainError("PLAYER_NOT_FOUND", "Player not found", "Unknown player.", 404)
+    if not player.loadout_configured:
+        raise DomainError(
+            "LOADOUT_REQUIRED",
+            "Loadout required",
+            "Save a valid loadout before entering matchmaking.",
+            400,
+        )
     battle = game_state_repository.enter_queue(player_id)
     if battle is None:
         raise DomainError("PLAYER_NOT_FOUND", "Player not found", "Unknown player.", 404)

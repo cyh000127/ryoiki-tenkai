@@ -222,6 +222,44 @@ textarea {
   font-size: 14px;
 }
 
+.field-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field__label {
+  font-size: 14px;
+  color: #3a4758;
+}
+
+.text-input {
+  min-height: 42px;
+  border: 1px solid #c7d0dc;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #17202a;
+  padding: 0 12px;
+}
+
+.helper-text {
+  margin: 0;
+  color: #546274;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.status-text {
+  margin: 0;
+  color: #2e6fbb;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .skill-list {
   display: grid;
   gap: 8px;

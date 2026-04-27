@@ -29,6 +29,8 @@ def test_openapi_contract_covers_mvp_rest_surface() -> None:
         contract["paths"]["/api/v1/battles/{battleSessionId}/surrender"]["post"]["operationId"]
         == "surrenderBattle"
     )
+    assert "loadoutConfigured" in contract["components"]["schemas"]["PlayerProfileResponse"]["required"]
+    assert "loadoutConfigured" in contract["components"]["schemas"]["LoadoutResponse"]["required"]
     assert "/gesture-commands" in contract["paths"]
     assert contract["paths"]["/gesture-commands"]["post"]["operationId"] == "createGestureCommand"
     assert {"skillsetId", "animsetId"} == set(
