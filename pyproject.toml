@@ -1,0 +1,27 @@
+[project]
+name = "gesture-skill-workspace"
+version = "0.1.0"
+requires-python = ">=3.13"
+description = "Workspace tooling for a gesture command runtime."
+
+[tool.uv.workspace]
+members = [
+  "BE/api",
+  "BE/core",
+  "BE/worker",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["BE"]
+pythonpath = [
+  "BE/api/src",
+  "BE/core/src",
+  "BE/worker/src",
+]

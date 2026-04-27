@@ -1,0 +1,41 @@
+services:
+  api:
+    build:
+      context: ./BE/api
+    env_file:
+      - ./BE/api/.env.example
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_started
+
+  web:
+    build:
+      context: ./FE/app
+    env_file:
+      - ./FE/app/.env.example
+    ports:
+      - "5173:80"
+    depends_on:
+      api:
+        condition: service_started
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: gesture_skill
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  cache:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  db-data:
