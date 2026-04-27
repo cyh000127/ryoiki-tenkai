@@ -6,30 +6,30 @@
 
 ### 목표
 
-플레이어가 가벼운 identity로 앱에 진입하고, 승인된 skill/presentation preset을 확인한 뒤 valid battle loadout을 저장합니다.
+플레이어가 가벼운 identity로 앱에 진입하고, 승인된 skillset과 animset preset을 확인한 뒤 valid battle loadout을 저장합니다.
 
 ### 제품 결과
 
 - full account system 없이 시작할 수 있습니다.
 - client가 local session에서 player profile을 복구할 수 있습니다.
-- matchmaking 전에 선택한 skillset과 presentation set이 서버에서 승인됩니다.
+- matchmaking 전에 선택한 skillset과 animset이 서버에서 승인됩니다.
 
 ### 엔지니어링 경계
 
-- Backend는 player profile, token issuance, preset catalog, loadout validation을 소유합니다.
-- Frontend는 start, restore, preset selection, loadout confirmation screen을 소유합니다.
+- Backend는 player profile, token issuance, skillset과 animset catalog, loadout validation을 소유합니다.
+- Frontend는 start, restore, skillset과 animset selection, loadout confirmation screen을 소유합니다.
 - Storage는 MVP loop에 필요한 최소 profile/loadout state만 보관합니다.
 
 ### 스토리
 
 - E1-ST01: lightweight player identity 생성 또는 복구.
-- E1-ST02: approved skillset과 presentation-set catalog 제공.
+- E1-ST02: approved skillset과 animset catalog 제공.
 - E1-ST03: player loadout 저장과 검증.
 
 ### 수용 신호
 
 - profile lookup이 identifier, nickname, rating, record, current loadout을 반환합니다.
-- invalid preset identifier는 standard error shape로 거부됩니다.
+- invalid `skillset_id` 또는 `animset_id`는 standard error shape로 거부됩니다.
 - battle entry UI는 valid loadout이 없으면 matchmaking을 막습니다.
 
 ## Epic E2: Matchmaking and Session Handoff

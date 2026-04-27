@@ -6,30 +6,30 @@ This document breaks the MVP into implementation epics. Each epic describes the 
 
 ### Goal
 
-Let a player enter the app with a lightweight identity, inspect approved skill and presentation presets, and save a valid battle loadout.
+Let a player enter the app with a lightweight identity, inspect approved skillset and animset presets, and save a valid battle loadout.
 
 ### Product Outcome
 
 - A player can start without a full account system.
 - The client can restore the player profile across local sessions.
-- The selected skillset and presentation set are server-approved before matchmaking.
+- The selected skillset and animset are server-approved before matchmaking.
 
 ### Engineering Boundary
 
-- Backend owns player profile, token issuance, preset catalogs, and loadout validation.
-- Frontend owns the start, restore, preset selection, and loadout confirmation screens.
+- Backend owns player profile, token issuance, skillset and animset catalogs, and loadout validation.
+- Frontend owns the start, restore, skillset and animset selection, and loadout confirmation screens.
 - Storage keeps only the minimum profile and loadout state needed for the MVP loop.
 
 ### Stories
 
 - E1-ST01: Create or restore lightweight player identity.
-- E1-ST02: Expose approved skillset and presentation-set catalogs.
+- E1-ST02: Expose approved skillset and animset catalogs.
 - E1-ST03: Save and validate player loadout.
 
 ### Acceptance Signals
 
 - Player profile lookup returns identifier, nickname, rating, record, and current loadout.
-- Invalid preset identifiers are rejected with the standard error shape.
+- Invalid `skillset_id` or `animset_id` values are rejected with the standard error shape.
 - The battle entry UI blocks matchmaking until a valid loadout exists.
 
 ## Epic E2: Matchmaking and Session Handoff

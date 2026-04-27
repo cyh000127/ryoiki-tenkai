@@ -24,6 +24,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 
 로컬 패키지 도구가 이미 설치되어 있을 때만 `scripts\bootstrap.ps1`에 `-InstallDependencies`를 사용합니다.
 
+## 용어 기준
+
+- `skillset`: 제스처 시퀀스, cost, cooldown 같은 전투 규칙이 포함된 서버 승인 스킬 프리셋.
+- `animset`: 플레이어가 선택하는 서버 승인 시각 연출 프리셋.
+- `loadout`: queue entry 전에 저장하는 `skillset + animset` 조합.
+
 ## MVP 계획과 QA
 
 ### 한국어 문서

@@ -49,7 +49,7 @@ player가 battle-ready state에 도달하게 합니다.
 ### 작업
 
 1. lightweight player create/restore flow를 구현하거나 보강합니다.
-2. approved skillset과 presentation-set catalog를 구현합니다.
+2. approved skillset과 animset catalog를 구현합니다.
 3. loadout save와 validation을 구현합니다.
 4. start와 loadout screen을 렌더링합니다.
 

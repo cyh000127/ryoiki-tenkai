@@ -17,20 +17,20 @@
 - Dependencies: player profile storage model, standard error response shape.
 - Verification: backend create/lookup test, frontend restored player rendering test.
 
-### E1-ST02: approved skillset과 presentation catalog 제공
+### E1-ST02: approved skillset과 animset catalog 제공
 
 - Status: partial
-- User story: player는 battle에 선택 가능한 approved skill/presentation preset을 볼 수 있다.
-- Scope: skill id/name/cost/cooldown/gesture sequence 반환, UI에 필요한 presentation-set metadata 반환, MVP catalog를 deterministic하게 유지.
-- Acceptance criteria: catalog endpoint가 stable preset identifier를 반환한다. skill sequence metadata가 normalized gesture token을 사용한다. invalid preset reference는 loadout update에서 수락되지 않는다.
+- User story: player는 battle에 선택 가능한 approved skillset과 animset preset을 볼 수 있다.
+- Scope: skill id/name/cost/cooldown/gesture sequence 반환, UI에 필요한 animset metadata 반환, MVP catalog를 deterministic하게 유지.
+- Acceptance criteria: catalog endpoint가 stable `skillset_id`와 `animset_id`를 반환한다. skill sequence metadata가 normalized gesture token을 사용한다. invalid `skillset_id` 또는 `animset_id`는 loadout update에서 수락되지 않는다.
 - Dependencies: MVP gesture token set, skill rule model.
-- Verification: catalog payload contract test, selectable preset frontend rendering test.
+- Verification: catalog payload contract test, selectable skillset과 animset frontend rendering test.
 
 ### E1-ST03: player loadout 저장과 검증
 
 - Status: partial
 - User story: player는 matchmaking 전에 battle-ready configuration을 저장할 수 있다.
-- Scope: skillset/presentation-set selection 검증, current loadout 저장, profile/battle setup view에 loadout 노출.
+- Scope: skillset과 animset selection 검증, current loadout 저장, profile/battle setup view에 loadout 노출.
 - Acceptance criteria: valid loadout이 저장되고 profile lookup에 반환된다. invalid loadout은 standard validation error를 반환한다. valid loadout 없이는 matchmaking entry가 차단된다.
 - Dependencies: E1-ST02 approved catalog.
 - Verification: backend validation test, frontend battle-entry guard test.

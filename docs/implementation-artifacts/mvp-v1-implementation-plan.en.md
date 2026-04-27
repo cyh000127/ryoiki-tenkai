@@ -10,6 +10,12 @@ This document records the MVP implementation baseline derived from the v1 produc
 - `docs/planning-artifacts/mvp-v1/implementation-order.en.md`: recommended build order and commit order.
 - `docs/planning-artifacts/mvp-v1/prerequisites.en.md`: prerequisites for product, contracts, FE, BE, input runtime, persistence, QA, and merge readiness.
 
+## Terminology
+
+- `skillset`: a server-approved combat ruleset preset with gesture sequences and battle metadata.
+- `animset`: a server-approved visual presentation preset.
+- `loadout`: the saved `skillset + animset` combination required before queue entry.
+
 ## Product Baseline
 
 - Build a browser-based, turn-based 1v1 battle loop driven by hand gesture input.
@@ -48,7 +54,7 @@ This document records the MVP implementation baseline derived from the v1 produc
 ## MVP Scope
 
 - Guest or simple player identity.
-- Skillset and presentation-set selection from server-approved presets.
+- Skillset and animset selection from server-approved presets.
 - Ranked 1v1 matchmaking entry, cancel, and matched state.
 - Turn-based battle session start, action submission, timeout, surrender, and end.
 - Gesture sequence validation against skill rules.

@@ -30,7 +30,7 @@ This document lists the conditions that should be true before starting or mergin
   - Player create or restore.
   - Profile lookup.
   - Skillset catalog.
-  - Presentation-set catalog.
+  - Animset catalog.
   - Loadout update.
   - Queue enter, cancel, and status.
   - Battle snapshot lookup.

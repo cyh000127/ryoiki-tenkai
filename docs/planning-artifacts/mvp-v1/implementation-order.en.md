@@ -49,7 +49,7 @@ Let a player reach a battle-ready state.
 ### Work
 
 1. Implement or harden lightweight player create and restore flow.
-2. Implement approved skillset and presentation-set catalogs.
+2. Implement approved skillset and animset catalogs.
 3. Implement loadout save and validation.
 4. Render start and loadout screens.
 

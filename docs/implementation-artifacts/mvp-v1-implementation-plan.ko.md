@@ -10,6 +10,12 @@
 - `docs/planning-artifacts/mvp-v1/implementation-order.ko.md`: 권장 구현 순서와 커밋 순서.
 - `docs/planning-artifacts/mvp-v1/prerequisites.ko.md`: 제품, 계약, FE, BE, 입력 런타임, 영속성, QA, 병합 선행조건.
 
+## 용어 기준
+
+- `skillset`: 서버가 승인한 전투 규칙과 gesture sequence 프리셋.
+- `animset`: 서버가 승인한 시각 연출 프리셋.
+- `loadout`: queue entry 전에 저장하는 `skillset + animset` 조합.
+
 ## 제품 기준
 
 - 손동작 입력으로 동작하는 브라우저 기반 턴제 1v1 전투 루프를 만든다.
@@ -48,7 +54,7 @@
 ## MVP 범위
 
 - guest 또는 simple player identity.
-- 서버 승인 skillset과 presentation-set 선택.
+- 서버 승인 skillset과 animset 선택.
 - ranked 1v1 matchmaking entry, cancel, matched 상태.
 - turn-based battle session start, action submission, timeout, surrender, end.
 - skill rule에 따른 gesture sequence validation.

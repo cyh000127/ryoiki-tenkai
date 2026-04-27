@@ -24,7 +24,7 @@ Use this checklist for local handoff verification after FE, BE, or input-runtime
 - [ ] Guest or simple player creation returns a stable player identifier and usable token.
 - [ ] Profile lookup returns nickname, rating, record, and current loadout fields.
 - [ ] Skillset list returns server-approved gesture sequences and cost/cooldown metadata.
-- [ ] Presentation-set list returns selectable metadata.
+- [ ] Animset list returns selectable metadata.
 - [ ] Loadout update accepts valid selections and rejects invalid selections with a standard error shape.
 - [ ] Matchmaking queue entry, cancel, and status endpoints behave consistently across repeated calls.
 

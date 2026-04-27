@@ -26,6 +26,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 
 Use `-InstallDependencies` with `scripts\bootstrap.ps1` only when the local package tools are already installed.
 
+## Terminology
+
+- `skillset`: a server-approved combat preset that includes gesture sequences, costs, cooldowns, and related battle rules.
+- `animset`: a server-approved visual presentation preset selected by the player.
+- `loadout`: the saved `skillset + animset` combination required before queue entry.
+
 ## MVP Planning and QA
 
 - `docs/implementation-artifacts/mvp-v1-implementation-plan.en.md`: MVP implementation baseline for WebSocket flow, server authoritative rules, client hand recognition, and excluded scope.

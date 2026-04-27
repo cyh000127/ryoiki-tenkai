@@ -30,7 +30,7 @@
   - player create 또는 restore.
   - profile lookup.
   - skillset catalog.
-  - presentation-set catalog.
+  - animset catalog.
   - loadout update.
   - queue enter, cancel, status.
   - battle snapshot lookup.

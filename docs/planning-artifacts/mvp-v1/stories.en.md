@@ -27,31 +27,31 @@ This document expands the MVP epics into story-sized implementation units. Story
   - Backend unit tests for create and lookup paths.
   - Frontend test for restored player rendering.
 
-### E1-ST02: Expose Approved Skillset and Presentation Catalogs
+### E1-ST02: Expose Approved Skillset and Animset Catalogs
 
 - Status: partial
-- User story: As a player, I can view approved skill and presentation presets so I know what can be selected for battle.
+- User story: As a player, I can view approved skillset and animset presets so I know what can be selected for battle.
 - Scope:
   - Return skill identifiers, names, costs, cooldowns, and gesture sequences.
-  - Return presentation-set metadata required by the UI.
+  - Return animset metadata required by the UI.
   - Keep catalogs server-approved and deterministic for the MVP.
 - Acceptance criteria:
-  - Catalog endpoints return stable preset identifiers.
+  - Catalog endpoints return stable `skillset_id` and `animset_id` values.
   - Skill sequence metadata uses normalized gesture tokens.
-  - Invalid preset references are never accepted by loadout update.
+  - Invalid `skillset_id` or `animset_id` values are never accepted by loadout update.
 - Dependencies:
   - MVP gesture token set.
   - Skill rule model.
 - Verification:
   - Contract tests for catalog payload shape.
-  - Frontend rendering test for selectable presets.
+  - Frontend rendering test for selectable skillset and animset options.
 
 ### E1-ST03: Save and Validate Player Loadout
 
 - Status: partial
 - User story: As a player, I can save a valid loadout so matchmaking starts with a battle-ready configuration.
 - Scope:
-  - Validate skillset and presentation-set selections.
+  - Validate skillset and animset selections.
   - Persist current loadout.
   - Expose loadout in profile and battle setup views.
 - Acceptance criteria:
