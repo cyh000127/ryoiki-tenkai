@@ -1,6 +1,97 @@
 # Gesture Skill Workspace
 
-이 저장소는 브라우저 기반 손동작 제어 화면과 백엔드 명령 런타임을 위한 중립 스캐폴드입니다.
+이 저장소는 브라우저 기반 손동작 배틀 MVP를 위한 프론트엔드/백엔드 워크스페이스입니다.
+
+영문 문서는 `README.en.md`에 있습니다.
+
+## 현재 상태
+
+현재 구현은 아래 흐름까지 실제로 연결되어 있습니다.
+
+- 게스트 플레이어 생성 또는 복구
+- `skillset` / `animset` catalog 조회와 `loadout` 저장
+- ranked 1v1 queue 진입, 취소, 상태 조회
+- WebSocket 인증과 `battle.match_ready` / `battle.match_found` / `battle.started` handoff
+- 서버 권위 전투 액션 검증, 중복 방지, 상태 반영
+- practice rival 자동 턴 처리
+- `HP_ZERO`, `TIMEOUT`, `SURRENDER` 종료 처리와 결과 화면 반영
+
+## 실행 방법
+
+### 준비물
+
+- `uv`
+- `pnpm`
+- Python `3.13+`
+- Node.js
+
+### 의존성 설치
+
+```bash
+uv sync
+pnpm --dir FE/app install
+cp FE/app/.env.example FE/app/.env
+```
+
+`FE/app/.env`는 선택 사항이며, 기본값은 `http://localhost:8000`입니다.
+
+### 백엔드 실행
+
+```bash
+uv run --package gesture-api uvicorn gesture_api.main:app --app-dir BE/api/src --reload --host 0.0.0.0 --port 8000
+```
+
+### 프론트엔드 실행
+
+```bash
+pnpm --dir FE/app dev
+```
+
+브라우저에서 `http://localhost:5173`을 열면 됩니다.
+
+## 검증 명령
+
+현재 저장소 기준 기본 검증 명령은 아래입니다.
+
+```bash
+pnpm --dir FE/app typecheck
+pnpm --dir FE/app test
+uv run pytest BE/api/tests/unit
+git diff --check
+```
+
+PowerShell 보조 스크립트도 유지하고 있습니다.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\bootstrap.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\check-boundaries.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\backend-check.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.ps1
+```
+
+## 완료된 작업
+
+- lightweight guest identity 생성/복구와 profile lookup
+- `skillset`, `animset` catalog API와 `loadout` 저장/검증
+- matchmaking queue 진입, 취소, 상태 조회의 idempotent 처리
+- WebSocket token 인증과 battle handoff
+- 서버 권위 전투 규칙
+  액션 검증, exact-once 적용, duplicate/out-of-turn/invalid gesture/insufficient mana/cooldown 거부
+- practice rival 자동 턴 처리
+- `battle.state_updated`, `battle.timeout`, `battle.surrendered`, `battle.ended` 이벤트 발행
+- 프론트 battle workspace의 실제 REST/WS 연동
+  pending, rejected, confirmed, timeout, surrender, result 화면 반영
+- 종료 사유 표시와 rematch 진입 흐름
+
+## 남은 작업
+
+- reconnect 이후 latest battle snapshot 복구
+- delayed event를 latest snapshot 기준으로 정리하는 hardening
+- live camera recognition adapter와 deterministic fallback input 경계 강화
+- battle timer/deadline, cooldown 상세, compact/mobile UI polish
+- 결과, 전적, 레이팅, leaderboard의 실제 영속화
+- client history/rating/leaderboard 화면 완성
+- end-to-end smoke와 reconnect/timeout hardening 추가
 
 ## 경계
 
@@ -12,17 +103,6 @@
 - `scripts`: 저장소 소유 설정 및 검증 진입점.
 - `infra/runtime`: 로컬 런타임 토폴로지 메모.
 - `ops`: 운영 설정 자리.
-
-## 로컬 진입점
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\bootstrap.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\check-boundaries.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\backend-check.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.ps1
-```
-
-로컬 패키지 도구가 이미 설치되어 있을 때만 `scripts\bootstrap.ps1`에 `-InstallDependencies`를 사용합니다.
 
 ## 용어 기준
 

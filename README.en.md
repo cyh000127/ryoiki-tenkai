@@ -1,8 +1,71 @@
 # Gesture Skill Workspace
 
-This repository is a neutral scaffold for a browser-based hand gesture control surface and a backend command runtime.
+This repository is a frontend/backend workspace for a browser-based gesture battle MVP.
 
 Korean documentation is available in `README.ko.md`.
+
+## Current Status
+
+The repository is currently wired through the following playable flow:
+
+- guest player create or restore
+- `skillset` / `animset` catalog lookup and `loadout` save
+- ranked 1v1 queue entry, cancel, and status lookup
+- WebSocket auth and `battle.match_ready` / `battle.match_found` / `battle.started` handoff
+- server-authoritative battle action validation and state mutation
+- automatic practice rival turns
+- `HP_ZERO`, `TIMEOUT`, and `SURRENDER` resolution with result screen rendering
+
+## Run Locally
+
+### Prerequisites
+
+- `uv`
+- `pnpm`
+- Python `3.13+`
+- Node.js
+
+### Install
+
+```bash
+uv sync
+pnpm --dir FE/app install
+cp FE/app/.env.example FE/app/.env
+```
+
+`FE/app/.env` is optional when the default backend URL `http://localhost:8000` is used.
+
+### Backend
+
+```bash
+uv run --package gesture-api uvicorn gesture_api.main:app --app-dir BE/api/src --reload --host 0.0.0.0 --port 8000
+```
+
+### Frontend
+
+```bash
+pnpm --dir FE/app dev
+```
+
+Open `http://localhost:5173`.
+
+## Verification
+
+```bash
+pnpm --dir FE/app typecheck
+pnpm --dir FE/app test
+uv run pytest BE/api/tests/unit
+git diff --check
+```
+
+Optional PowerShell helper scripts are still available:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\bootstrap.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\check-boundaries.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\backend-check.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.ps1
+```
 
 ## Boundaries
 
@@ -15,22 +78,33 @@ Korean documentation is available in `README.ko.md`.
 - `infra/runtime`: local runtime topology notes.
 - `ops`: operational configuration placeholders.
 
-## Local Entry Points
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\bootstrap.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\check-boundaries.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\backend-check.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.ps1
-```
-
-Use `-InstallDependencies` with `scripts\bootstrap.ps1` only when the local package tools are already installed.
-
 ## Terminology
 
 - `skillset`: a server-approved combat preset that includes gesture sequences, costs, cooldowns, and related battle rules.
 - `animset`: a server-approved visual presentation preset selected by the player.
 - `loadout`: the saved `skillset + animset` combination required before queue entry.
+
+## Completed Work
+
+- lightweight guest identity create/restore and profile lookup
+- `skillset`, `animset`, and `loadout` APIs with validation
+- idempotent matchmaking queue entry, cancel, and status lookup
+- WebSocket token auth and battle handoff events
+- server-authoritative battle validation and mutation
+  duplicate, invalid gesture, out-of-turn, insufficient mana, cooldown, timeout, surrender, and battle end paths
+- automatic practice rival turns
+- frontend battle workspace connected to real REST and WebSocket flow
+  pending, rejected, confirmed, timeout, surrender, and result handling
+
+## Remaining Work
+
+- reconnect and latest battle snapshot restore
+- delayed event reconciliation against the latest server snapshot
+- live camera recognition adapter hardening and clearer separation from deterministic fallback input
+- deadline/timer visibility, cooldown detail, and compact/mobile UX polish
+- durable persistence for results, compact action audit, rating history, and leaderboard data
+- client history, rating, and leaderboard screens
+- final end-to-end smoke and reconnect hardening
 
 ## MVP Planning and QA
 
