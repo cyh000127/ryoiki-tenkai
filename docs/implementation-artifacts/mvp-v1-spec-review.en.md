@@ -15,8 +15,8 @@ This document is a quick snapshot of how far the current implementation satisfie
 - The core playable loop is implemented end to end.
   player entry -> loadout -> queue -> WebSocket handoff -> battle -> result -> history/rating -> runtime persistence
 - Story status summary
-  `done 25`
-  `partial 3`
+  `done 26`
+  `partial 2`
   `planned 0`
 - The repository now covers the core items from Phase 0 through Phase 8.
 - Remaining work is mostly focused on `input runtime hardening`, `battle UX polish`, and `smoke coverage`, rather than missing product pillars.
@@ -31,6 +31,8 @@ This document is a quick snapshot of how far the current implementation satisfie
   action validation, exact-once apply, rejection paths, timeout, surrender, and battle end recording are implemented.
 - `E5-ST01` Battle Workspace State View
   HP, mana, cooldown, turn owner, deadline, selected skill status, and battle log are rendered from the latest server snapshot.
+- `E5-ST02` Sequence Progress and Submission Readiness
+  current step, remaining step, progress indicator, submission readiness, local progress state, and server rejection feedback are rendered separately.
 - `E6` Rating, History, and Leaderboard
   result persistence, compact action audit, rating update, history/leaderboard endpoints, and client history/rating screens are implemented.
 - `E7` Local Verification and Handoff
@@ -44,13 +46,6 @@ This document is a quick snapshot of how far the current implementation satisfie
   The default `skillset` already includes three skill sequences shared by the UI and backend.
 - Why it remains partial
   The gesture token set itself is not yet fully formalized as a dedicated contract or shared fixture.
-
-### E5-ST02: Show Sequence Progress and Submission Readiness
-
-- Current state
-  Progress, current step, confirmation status, and local failure reasons are rendered.
-- Why it remains partial
-  Compact/desktop layout polish and clearer separation between local and server feedback still need refinement.
 
 ### E5-ST04: Render Battle Result and Next Action
 
@@ -82,7 +77,7 @@ This document is a quick snapshot of how far the current implementation satisfie
 
 ## Recommended Next Priorities
 
-- `E5-ST02`, `E5-ST04`
-  Improve compact/mobile UX, local/server feedback separation, and result polish.
+- `E4-ST01`, `E5-ST04`
+  Formalize the gesture token contract/shared fixture and improve result presentation polish.
 - `E7-ST02`
   Expand practical local smoke coverage.

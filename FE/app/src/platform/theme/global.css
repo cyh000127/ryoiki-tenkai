@@ -464,9 +464,16 @@ textarea {
   background: #fff8df;
 }
 
+.input-feedback[data-state="success"],
 .confirmation-strip[data-state="CONFIRMED"] {
   border-color: #a7dfba;
   background: #f0fbf4;
+}
+
+.confirmation-strip[data-state="REJECTED"] {
+  border-color: #f0b6b6;
+  background: #fff1f1;
+  color: #7a2323;
 }
 
 .action-row {

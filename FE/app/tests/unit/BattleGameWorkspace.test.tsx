@@ -640,6 +640,113 @@ describe("BattleGameWorkspace", () => {
     expect(screen.getByText("선택 스킬 상태")).toBeInTheDocument();
   });
 
+  it("separates local sequence progress from server rejection feedback", async () => {
+    const user = createUser();
+    installGameApiMock();
+
+    renderWorkspace();
+
+    await user.clear(screen.getByRole("textbox", { name: "닉네임" }));
+    await user.type(screen.getByRole("textbox", { name: "닉네임" }), "rookie");
+    await user.click(screen.getByRole("button", { name: "게스트 시작" }));
+    await user.click(await screen.findByRole("button", { name: "로드아웃 저장" }));
+    await user.click(await screen.findByRole("button", { name: "랭크 1대1 매칭" }));
+
+    emitSocketEvent({
+      type: "battle.match_ready",
+      payload: {
+        queueStatus: "SEARCHING",
+        queuedAt: "2026-04-27T00:00:00Z"
+      }
+    });
+    emitSocketEvent({
+      type: "battle.match_found",
+      payload: {
+        matchId: "match_test",
+        battleSessionId: "battle_test",
+        playerSeat: "PLAYER_ONE"
+      }
+    });
+    emitSocketEvent({
+      type: "battle.started",
+      payload: {
+        battleSessionId: "battle_test",
+        playerSeat: "PLAYER_ONE",
+        battle: {
+          battleSessionId: "battle_test",
+          matchId: "match_test",
+          status: "ACTIVE",
+          turnNumber: 1,
+          turnOwnerPlayerId: "pl_guest",
+          actionDeadlineAt: "2026-04-27T00:00:30Z",
+          self: {
+            playerId: "pl_guest",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          opponent: {
+            playerId: "pl_practice",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          battleLog: [],
+          winnerPlayerId: null,
+          loserPlayerId: null,
+          endedReason: null
+        }
+      }
+    });
+
+    const debugFallbackPanel = screen
+      .getByRole("heading", { name: "디버그 fallback 입력" })
+      .closest("section");
+    const localFeedback = screen.getByText("로컬 입력 상태").closest("div");
+    const serverFeedback = screen.getByText("서버 판정 상태").closest("div");
+    const readinessMetric = screen.getByText("제출 준비").closest("div");
+
+    expect(debugFallbackPanel).not.toBeNull();
+    expect(localFeedback).not.toBeNull();
+    expect(serverFeedback).not.toBeNull();
+    expect(readinessMetric).not.toBeNull();
+
+    expect(within(localFeedback!).getByText("대기")).toBeInTheDocument();
+    expect(within(readinessMetric!).getByText("순서 입력 중")).toBeInTheDocument();
+
+    await user.click(within(debugFallbackPanel!).getByRole("button", { name: "seal_1" }));
+    expect(within(localFeedback!).getByText("입력 진행 중")).toBeInTheDocument();
+    expect(
+      within(localFeedback!).getByText(/다음 제스처: seal_3/)
+    ).toBeInTheDocument();
+
+    await user.click(within(debugFallbackPanel!).getByRole("button", { name: "seal_3" }));
+    expect(within(localFeedback!).getByText("입력 완료")).toBeInTheDocument();
+    expect(within(readinessMetric!).getByText("제출 가능")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "서버 판정 요청" }));
+
+    emitSocketEvent({
+      type: "battle.action_result",
+      requestId: submittedSocketActions[0].requestId,
+      payload: {
+        battleSessionId: "battle_test",
+        turnNumber: 1,
+        actionId: submittedSocketActions[0].actionId,
+        status: "REJECTED",
+        reason: "INVALID_TURN",
+        battle: null
+      }
+    });
+
+    expect(within(localFeedback!).getByText("입력 완료")).toBeInTheDocument();
+    expect(within(serverFeedback!).getByText("서버 거부")).toBeInTheDocument();
+    expect(
+      within(serverFeedback!).getByText(/상대 턴에는 입력할 수 없습니다\./)
+    ).toBeInTheDocument();
+    expect(within(readinessMetric!).getByText("제출 불가")).toBeInTheDocument();
+  });
+
   it("keeps debug fallback controls out of the main battle input surface", async () => {
     const user = createUser();
     installGameApiMock();

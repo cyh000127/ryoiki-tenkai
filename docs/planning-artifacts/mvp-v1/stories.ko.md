@@ -171,7 +171,7 @@
 
 ### E5-ST02: sequence progress와 submission readiness 표시
 
-- Status: partial
+- Status: done
 - User story: player는 기대되는 gesture step과 제출 준비 여부를 볼 수 있다.
 - Scope: current step, remaining steps, progress indicator, local failure reason.
 - Acceptance criteria: UI가 waiting, progressing, complete, failed, reset state를 구분한다. local feedback과 server rejection feedback이 분리된다. compact/desktop layout에서 text가 맞는다.

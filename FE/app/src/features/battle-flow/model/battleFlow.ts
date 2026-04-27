@@ -18,7 +18,7 @@ export type InputFailureReason =
   | "insufficient_mana"
   | "server_pending";
 
-export type ServerConfirmationStatus = "IDLE" | "PENDING" | "CONFIRMED";
+export type ServerConfirmationStatus = "IDLE" | "PENDING" | "CONFIRMED" | "REJECTED";
 
 export type InputFeedback = {
   cameraReady: boolean;
@@ -27,7 +27,8 @@ export type InputFeedback = {
   currentGesture: string | null;
   targetSequence: string[];
   currentStep: number;
-  failureReason: InputFailureReason | null;
+  localFailureReason: InputFailureReason | null;
+  serverRejectionReason: InputFailureReason | null;
   confidence: number;
   networkLatencyMs: number;
   serverConfirmationStatus: ServerConfirmationStatus;
@@ -91,7 +92,8 @@ export const initialBattleFlowState: BattleFlowState = {
     currentGesture: null,
     targetSequence: DEFAULT_SKILLSET.skills[0].gestureSequence,
     currentStep: 0,
-    failureReason: null,
+    localFailureReason: null,
+    serverRejectionReason: null,
     confidence: 0,
     networkLatencyMs: 0,
     serverConfirmationStatus: "IDLE"
@@ -131,7 +133,8 @@ export function battleFlowReducer(
           lastInputSource: null,
           currentStep: 0,
           currentGesture: null,
-          failureReason: null,
+          localFailureReason: null,
+          serverRejectionReason: null,
           serverConfirmationStatus: "IDLE"
         },
         recentEvents: prependEvent(state, "loadout.restored")
@@ -148,7 +151,8 @@ export function battleFlowReducer(
           lastInputSource: null,
           currentStep: 0,
           currentGesture: null,
-          failureReason: null,
+          localFailureReason: null,
+          serverRejectionReason: null,
           serverConfirmationStatus: "IDLE"
         },
         recentEvents: prependEvent(state, "loadout.updated")
@@ -172,9 +176,10 @@ export function battleFlowReducer(
         ...state,
         input: {
           ...state.input,
-          failureReason: mapBattleRejectionReason(action.reason),
+          localFailureReason: null,
+          serverRejectionReason: mapBattleRejectionReason(action.reason),
           networkLatencyMs: action.latencyMs,
-          serverConfirmationStatus: "IDLE"
+          serverConfirmationStatus: "REJECTED"
         },
         recentEvents: prependEvent(state, "battle.action_rejected")
       };
@@ -196,7 +201,8 @@ export function battleFlowReducer(
           lastInputSource: null,
           currentGesture: null,
           currentStep: 0,
-          failureReason: null,
+          localFailureReason: null,
+          serverRejectionReason: null,
           networkLatencyMs: 0,
           serverConfirmationStatus: "IDLE"
         },
@@ -232,7 +238,8 @@ export function battleFlowReducer(
           lastInputSource: null,
           currentStep: 0,
           currentGesture: null,
-          failureReason: null,
+          localFailureReason: null,
+          serverRejectionReason: null,
           serverConfirmationStatus: "IDLE"
         }
       };
@@ -280,7 +287,8 @@ function applyGestureStep(
         lastInputSource: source,
         currentGesture: gesture,
         confidence,
-        failureReason: "server_pending"
+        localFailureReason: "server_pending",
+        serverRejectionReason: null
       },
       recentEvents: prependEvent(state, "gesture.rejected")
     };
@@ -295,7 +303,9 @@ function applyGestureStep(
         lastInputSource: source,
         currentGesture: gesture,
         confidence,
-        failureReason: "not_your_turn"
+        localFailureReason: "not_your_turn",
+        serverRejectionReason: null,
+        serverConfirmationStatus: "IDLE"
       },
       recentEvents: prependEvent(state, "gesture.rejected")
     };
@@ -311,7 +321,8 @@ function applyGestureStep(
         lastInputSource: source,
         currentGesture: gesture,
         confidence,
-        failureReason: "confidence_low",
+        localFailureReason: "confidence_low",
+        serverRejectionReason: null,
         serverConfirmationStatus: "IDLE"
       },
       recentEvents: prependEvent(state, "gesture.rejected")
@@ -328,7 +339,8 @@ function applyGestureStep(
         currentGesture: gesture,
         confidence,
         currentStep: 0,
-        failureReason: "sequence_mismatch",
+        localFailureReason: "sequence_mismatch",
+        serverRejectionReason: null,
         serverConfirmationStatus: "IDLE"
       },
       recentEvents: prependEvent(state, "gesture.sequence_reset")
@@ -344,7 +356,8 @@ function applyGestureStep(
       currentGesture: gesture,
       confidence,
       currentStep: state.input.currentStep + 1,
-      failureReason: null,
+      localFailureReason: null,
+      serverRejectionReason: null,
       serverConfirmationStatus: "IDLE"
     },
     recentEvents: prependEvent(state, "gesture.step.accepted")
@@ -358,7 +371,8 @@ function resetGestureProgress(state: BattleFlowState): BattleFlowState {
       ...state.input,
       currentGesture: null,
       currentStep: 0,
-      failureReason: null,
+      localFailureReason: null,
+      serverRejectionReason: null,
       serverConfirmationStatus: "IDLE"
     },
     recentEvents: prependEvent(state, "gesture.reset")
@@ -370,7 +384,12 @@ function submitSelectedSkill(state: BattleFlowState): BattleFlowState {
   if (failureReason !== null) {
     return {
       ...state,
-      input: { ...state.input, failureReason },
+      input: {
+        ...state.input,
+        localFailureReason: failureReason,
+        serverRejectionReason: null,
+        serverConfirmationStatus: "IDLE"
+      },
       recentEvents: prependEvent(state, "battle.action_rejected")
     };
   }
@@ -383,7 +402,8 @@ function submitSelectedSkill(state: BattleFlowState): BattleFlowState {
     ...state,
     input: {
       ...state.input,
-      failureReason: null,
+      localFailureReason: null,
+      serverRejectionReason: null,
       networkLatencyMs: state.input.networkLatencyMs,
       serverConfirmationStatus: "PENDING"
     },
@@ -437,7 +457,8 @@ function applyBattleStarted(state: BattleFlowState, battle: BattleState): Battle
       lastInputSource: null,
       currentGesture: null,
       currentStep: 0,
-      failureReason: null,
+      localFailureReason: null,
+      serverRejectionReason: null,
       networkLatencyMs: state.input.networkLatencyMs,
       serverConfirmationStatus: "IDLE"
     },
@@ -465,7 +486,8 @@ function applyBattleStateUpdated(
       targetSequence: findSkill(state.selectedSkillId).gestureSequence,
       currentStep: 0,
       currentGesture: null,
-      failureReason: null,
+      localFailureReason: null,
+      serverRejectionReason: null,
       networkLatencyMs: latencyMs,
       serverConfirmationStatus: "CONFIRMED"
     },
@@ -512,7 +534,8 @@ function finishBattleFromServer(
       ...state.input,
       currentStep: 0,
       currentGesture: null,
-      failureReason: null,
+      localFailureReason: null,
+      serverRejectionReason: null,
       serverConfirmationStatus: "CONFIRMED"
     },
     history: nextHistory,

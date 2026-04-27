@@ -333,7 +333,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E5-ST02: Show Sequence Progress and Submission Readiness
 
-- Status: partial
+- Status: done
 - User story: As a player, I can see what gesture step is expected and whether I am ready to submit.
 - Scope:
   - Current step.

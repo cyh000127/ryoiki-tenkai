@@ -80,7 +80,8 @@ describe("battleFlowReducer", () => {
     const matched = createMatchedBattle();
     const rejected = battleFlowReducer(matched, { type: "submitSkill" });
 
-    expect(rejected.input.failureReason).toBe("sequence_incomplete");
+    expect(rejected.input.localFailureReason).toBe("sequence_incomplete");
+    expect(rejected.input.serverRejectionReason).toBeNull();
   });
 
   it("waits for server confirmation before applying completed skill damage", () => {
@@ -142,8 +143,10 @@ describe("battleFlowReducer", () => {
       source: "debug_fallback"
     });
 
-    expect(lowConfidence.input.failureReason).toBe("confidence_low");
-    expect(mismatch.input.failureReason).toBe("sequence_mismatch");
+    expect(lowConfidence.input.localFailureReason).toBe("confidence_low");
+    expect(lowConfidence.input.serverRejectionReason).toBeNull();
+    expect(mismatch.input.localFailureReason).toBe("sequence_mismatch");
+    expect(mismatch.input.serverRejectionReason).toBeNull();
   });
 
   it("keeps debug fallback input separate from live hand-detection state", () => {
@@ -176,8 +179,9 @@ describe("battleFlowReducer", () => {
       latencyMs: 41
     });
 
-    expect(rejected.input.serverConfirmationStatus).toBe("IDLE");
-    expect(rejected.input.failureReason).toBe("not_your_turn");
+    expect(rejected.input.serverConfirmationStatus).toBe("REJECTED");
+    expect(rejected.input.localFailureReason).toBeNull();
+    expect(rejected.input.serverRejectionReason).toBe("not_your_turn");
     expect(rejected.input.networkLatencyMs).toBe(41);
     expect(rejected.recentEvents[0]).toBe("battle.action_rejected");
   });

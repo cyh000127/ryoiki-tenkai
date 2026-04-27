@@ -320,6 +320,7 @@ export function BattleGameWorkspace() {
   const canUseGestureInput =
     state.screen === "battle" && Boolean(state.battle) && isMyTurn && !isServerConfirming;
   const completedStepCount = Math.min(state.input.currentStep, state.input.targetSequence.length);
+  const remainingStepCount = Math.max(0, state.input.targetSequence.length - completedStepCount);
   const progressPercent = getSequenceProgress(
     completedStepCount,
     state.input.targetSequence.length
@@ -338,6 +339,18 @@ export function BattleGameWorkspace() {
     ? getDeadlinePresentation(state.battle.actionDeadlineAt, nowMs)
     : null;
   const selectedSkillCooldownTurns = state.battle?.self.cooldowns[state.selectedSkillId] ?? 0;
+  const localProgressState = getLocalProgressState(
+    state.input.localFailureReason,
+    completedStepCount,
+    state.input.targetSequence.length,
+    state.recentEvents[0] ?? null
+  );
+  const submitFailureReason = getSubmitFailureReason(state);
+  const submissionReadinessState = getSubmissionReadinessState(
+    submitFailureReason,
+    state.input.serverConfirmationStatus,
+    state.input.serverRejectionReason
+  );
 
   function handleOpenLoadout() {
     if (!session) {
@@ -892,7 +905,12 @@ export function BattleGameWorkspace() {
                   label={copy.currentStep}
                   value={`${completedStepCount}/${state.input.targetSequence.length}`}
                 />
+                <Metric label={copy.remainingSteps} value={remainingStepCount} />
                 <Metric label={copy.targetProgress} value={`${progressPercent}%`} />
+                <Metric
+                  label={copy.submissionReadiness}
+                  value={getSubmissionReadinessLabel(submissionReadinessState)}
+                />
                 <Metric
                   label={copy.inputSource}
                   value={getInputSourceLabel(state.input.lastInputSource)}
@@ -907,21 +925,32 @@ export function BattleGameWorkspace() {
                 />
                 <div
                   className="input-feedback"
-                  data-state={getFeedbackState(state.input.failureReason, isServerConfirming)}
+                  data-state={getLocalFeedbackState(localProgressState)}
                   role="status"
                 >
-                  <strong>{copy.inputFeedback}</strong>
+                  <strong>{copy.localInputStatus}</strong>
+                  <StatusBadge tone={getLocalProgressTone(localProgressState)}>
+                    {getLocalProgressLabel(localProgressState)}
+                  </StatusBadge>
                   <span>
-                    {isServerConfirming
-                      ? copy.serverConfirmPendingHelp
-                      : getFailureMessage(state.input.failureReason)}
+                    {getLocalProgressHelp(
+                      localProgressState,
+                      state.input.localFailureReason,
+                      state.input.targetSequence[state.input.currentStep] ?? null
+                    )}
                   </span>
                 </div>
                 <div className="confirmation-strip" data-state={state.input.serverConfirmationStatus}>
+                  <strong>{copy.serverDecisionStatus}</strong>
                   <StatusBadge tone={getConfirmationTone(state.input.serverConfirmationStatus)}>
                     {getConfirmationLabel(state.input.serverConfirmationStatus)}
                   </StatusBadge>
-                  <span>{getConfirmationHelp(state.input.serverConfirmationStatus)}</span>
+                  <span>
+                    {getConfirmationHelp(
+                      state.input.serverConfirmationStatus,
+                      state.input.serverRejectionReason
+                    )}
+                  </span>
                 </div>
                 {statusMessage ? <p className="status-text">{statusMessage}</p> : null}
                 <div className="action-row">
@@ -1240,6 +1269,154 @@ function getFailureMessage(reason: InputFailureReason | null): string {
   return reason ? copy.failureReasonText[reason] : copy.failureReasonNone;
 }
 
+type LocalProgressState = "waiting" | "progressing" | "complete" | "failed" | "reset";
+type SubmissionReadinessState = "ready" | "building" | "blocked" | "locked";
+
+function getLocalProgressState(
+  reason: InputFailureReason | null,
+  completedStepCount: number,
+  totalStepCount: number,
+  recentEvent: string | null
+): LocalProgressState {
+  if (recentEvent === "gesture.reset") {
+    return "reset";
+  }
+
+  if (reason !== null) {
+    return "failed";
+  }
+
+  if (totalStepCount > 0 && completedStepCount >= totalStepCount) {
+    return "complete";
+  }
+
+  if (completedStepCount > 0) {
+    return "progressing";
+  }
+
+  return "waiting";
+}
+
+function getLocalFeedbackState(
+  progressState: LocalProgressState
+): "idle" | "error" | "pending" | "success" {
+  if (progressState === "failed") {
+    return "error";
+  }
+
+  if (progressState === "progressing") {
+    return "pending";
+  }
+
+  if (progressState === "complete") {
+    return "success";
+  }
+
+  return "idle";
+}
+
+function getLocalProgressTone(
+  progressState: LocalProgressState
+): "neutral" | "success" | "warning" {
+  if (progressState === "failed") {
+    return "warning";
+  }
+
+  if (progressState === "progressing" || progressState === "complete") {
+    return "success";
+  }
+
+  return "neutral";
+}
+
+function getLocalProgressLabel(progressState: LocalProgressState): string {
+  if (progressState === "progressing") {
+    return copy.localProgressProgressing;
+  }
+
+  if (progressState === "complete") {
+    return copy.localProgressComplete;
+  }
+
+  if (progressState === "failed") {
+    return copy.localProgressFailed;
+  }
+
+  if (progressState === "reset") {
+    return copy.localProgressReset;
+  }
+
+  return copy.localProgressWaiting;
+}
+
+function getLocalProgressHelp(
+  progressState: LocalProgressState,
+  reason: InputFailureReason | null,
+  nextGesture: string | null
+): string {
+  if (progressState === "progressing") {
+    return nextGesture
+      ? `${copy.localProgressProgressingHelp} 다음 제스처: ${nextGesture}`
+      : copy.localProgressProgressingHelp;
+  }
+
+  if (progressState === "complete") {
+    return copy.localProgressCompleteHelp;
+  }
+
+  if (progressState === "failed") {
+    return getFailureMessage(reason);
+  }
+
+  if (progressState === "reset") {
+    return copy.localProgressResetHelp;
+  }
+
+  return nextGesture
+    ? `${copy.localProgressWaitingHelp} 다음 제스처: ${nextGesture}`
+    : copy.localProgressWaitingHelp;
+}
+
+function getSubmissionReadinessState(
+  failureReason: InputFailureReason | null,
+  confirmationStatus: ServerConfirmationStatus,
+  rejectionReason: InputFailureReason | null
+): SubmissionReadinessState {
+  if (confirmationStatus === "PENDING" || failureReason === "server_pending") {
+    return "locked";
+  }
+
+  if (confirmationStatus === "REJECTED") {
+    return rejectionReason === "server_pending" ? "locked" : "blocked";
+  }
+
+  if (failureReason === null) {
+    return "ready";
+  }
+
+  if (failureReason === "sequence_incomplete") {
+    return "building";
+  }
+
+  return "blocked";
+}
+
+function getSubmissionReadinessLabel(state: SubmissionReadinessState): string {
+  if (state === "ready") {
+    return copy.readinessReady;
+  }
+
+  if (state === "building") {
+    return copy.readinessBuilding;
+  }
+
+  if (state === "locked") {
+    return copy.readinessLocked;
+  }
+
+  return copy.readinessBlocked;
+}
+
 function getInputSourceLabel(source: GestureInputSource | null): string {
   if (source === "debug_fallback") {
     return copy.inputSourceDebugFallback;
@@ -1292,17 +1469,6 @@ function formatCooldownTurns(turns: number): string {
   return turns > 0 ? `${turns}T` : copy.ready;
 }
 
-function getFeedbackState(
-  reason: InputFailureReason | null,
-  isServerConfirming: boolean
-): "idle" | "error" | "pending" {
-  if (isServerConfirming) {
-    return "pending";
-  }
-
-  return reason ? "error" : "idle";
-}
-
 function getTurnState(isMyTurn: boolean, isServerConfirming: boolean): "mine" | "opponent" | "pending" {
   if (isServerConfirming) {
     return "pending";
@@ -1340,7 +1506,11 @@ function getConfirmationTone(status: ServerConfirmationStatus): "neutral" | "suc
     return "warning";
   }
 
-  return status === "CONFIRMED" ? "success" : "neutral";
+  if (status === "CONFIRMED") {
+    return "success";
+  }
+
+  return status === "REJECTED" ? "warning" : "neutral";
 }
 
 function getConfirmationLabel(status: ServerConfirmationStatus): string {
@@ -1348,15 +1518,32 @@ function getConfirmationLabel(status: ServerConfirmationStatus): string {
     return copy.serverConfirmPending;
   }
 
-  return status === "CONFIRMED" ? copy.serverConfirmConfirmed : copy.serverConfirmReady;
+  if (status === "CONFIRMED") {
+    return copy.serverConfirmConfirmed;
+  }
+
+  return status === "REJECTED" ? copy.serverConfirmRejected : copy.serverConfirmReady;
 }
 
-function getConfirmationHelp(status: ServerConfirmationStatus): string {
+function getConfirmationHelp(
+  status: ServerConfirmationStatus,
+  rejectionReason: InputFailureReason | null
+): string {
   if (status === "PENDING") {
     return copy.serverConfirmPendingHelp;
   }
 
-  return status === "CONFIRMED" ? copy.serverConfirmConfirmedHelp : copy.serverConfirmReadyHelp;
+  if (status === "CONFIRMED") {
+    return copy.serverConfirmConfirmedHelp;
+  }
+
+  if (status === "REJECTED") {
+    return rejectionReason
+      ? `${copy.serverConfirmRejectedHelp} ${getFailureMessage(rejectionReason)}`
+      : copy.serverConfirmRejectedHelp;
+  }
+
+  return copy.serverConfirmReadyHelp;
 }
 
 function getEndedReasonText(
