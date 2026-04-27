@@ -5,6 +5,8 @@ from fastapi import WebSocket
 from gesture_api.api.schemas.game import BattleActionResponse, BattleStateResponse
 from gesture_api.api.schemas.websocket import (
     BattleActionResultEvent,
+    BattleEndedEvent,
+    BattleEndedPayload,
     BattleInboundEvent,
     BattleMatchFoundEvent,
     BattleMatchFoundPayload,
@@ -12,6 +14,8 @@ from gesture_api.api.schemas.websocket import (
     BattleMatchReadyPayload,
     BattlePingEvent,
     BattlePongEvent,
+    BattleStateUpdatedEvent,
+    BattleStateUpdatedPayload,
     BattleStartedEvent,
     BattleStartedPayload,
     BattleOutboundEvent,
@@ -126,6 +130,41 @@ def build_started_event(
             battle_session_id=battle.battle_session_id,
             player_seat=get_player_seat(battle, player_id),
             battle=BattleStateResponse.from_session(battle, player_id),
+        )
+    )
+
+
+def build_state_updated_event(
+    battle: BattleSession,
+    player_id: str,
+    source_action_id: str | None = None,
+) -> BattleStateUpdatedEvent:
+    return BattleStateUpdatedEvent(
+        payload=BattleStateUpdatedPayload(
+            battle_session_id=battle.battle_session_id,
+            battle=BattleStateResponse.from_session(battle, player_id),
+            source_action_id=source_action_id,
+        )
+    )
+
+
+def build_ended_event(
+    battle: BattleSession,
+    player_id: str,
+) -> BattleEndedEvent:
+    if battle.winner_player_id is None or battle.loser_player_id is None or battle.ended_reason is None:
+        raise ValueError("Ended battle must include winner, loser, and ended reason.")
+    rating_change = None
+    if battle.rating_delta is not None:
+        rating_change = battle.rating_delta if battle.winner_player_id == player_id else -battle.rating_delta
+    return BattleEndedEvent(
+        payload=BattleEndedPayload(
+            battle_session_id=battle.battle_session_id,
+            winner_player_id=battle.winner_player_id,
+            loser_player_id=battle.loser_player_id,
+            ended_reason=battle.ended_reason,
+            battle=BattleStateResponse.from_session(battle, player_id),
+            rating_change=rating_change,
         )
     )
 

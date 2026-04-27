@@ -22,8 +22,10 @@ from gesture_api.api.schemas.game import (
     WsTokenResponse,
 )
 from gesture_api.api.schemas.websocket import (
+    BattleActionResultEvent,
     BattleErrorEvent,
     BattleErrorPayload,
+    BattleSubmitActionEvent,
     deserialize_battle_event,
     extract_battle_request_id,
     serialize_battle_event,
@@ -34,8 +36,10 @@ from gesture_api.repositories.game_state import game_state_repository
 from gesture_api.services.battle_websocket import (
     BattleWebSocketEventHandler,
     battle_connection_manager,
+    build_ended_event,
     build_match_found_event,
     build_match_ready_event,
+    build_state_updated_event,
     build_started_event,
 )
 from pydantic import ValidationError
@@ -199,7 +203,7 @@ def get_battle(
     response_model=ApiResponse[BattleActionResponse],
     status_code=status.HTTP_202_ACCEPTED,
 )
-def submit_battle_action(
+async def submit_battle_action(
     battle_session_id: str,
     request: SubmitBattleActionRequest,
 ) -> ApiResponse[BattleActionResponse]:
@@ -211,7 +215,7 @@ def submit_battle_action(
         gesture_sequence=request.gesture_sequence,
     )
     response_status = "ACCEPTED" if action_status == "accepted" else "REJECTED"
-    return ok(
+    response = ok(
         BattleActionResponse(
             battle_session_id=battle_session_id,
             turn_number=request.turn_number,
@@ -221,19 +225,26 @@ def submit_battle_action(
             battle=BattleStateResponse.from_session(battle, request.player_id) if battle else None,
         )
     )
+    if action_status == "accepted" and battle is not None:
+        await emit_battle_resolution_events(battle, request.action_id)
+    return response
 
 
 @api_router.post(
     "/battles/{battle_session_id}/surrender",
     response_model=ApiResponse[SurrenderResponse],
 )
-def surrender_battle(
+async def surrender_battle(
     battle_session_id: str,
     player_id: PlayerIdHeader,
 ) -> ApiResponse[SurrenderResponse]:
+    existing_battle = game_state_repository.get_battle(battle_session_id)
+    was_active = existing_battle is not None and existing_battle.status == "ACTIVE"
     battle = game_state_repository.surrender(battle_session_id, player_id)
     if battle is None:
         raise DomainError("BATTLE_NOT_FOUND", "Battle not found", "Unknown battle session.", 404)
+    if was_active and battle.status == "ENDED":
+        await emit_battle_resolution_events(battle, "surrender")
     return ok(SurrenderResponse.from_session(battle, player_id))
 
 
@@ -319,7 +330,13 @@ async def battle_websocket(websocket: WebSocket, token: str | None = None) -> No
                 )
                 continue
 
-            await websocket.send_json(serialize_battle_event(handler.handle(event)))
+            response = handler.handle(event)
+            await websocket.send_json(serialize_battle_event(response))
+            if isinstance(event, BattleSubmitActionEvent) and isinstance(response, BattleActionResultEvent):
+                if response.payload.status == "ACCEPTED":
+                    battle = game_state_repository.get_battle(event.payload.battle_session_id)
+                    if battle is not None:
+                        await emit_battle_resolution_events(battle, event.payload.action_id)
     finally:
         battle_connection_manager.disconnect(player_id, websocket)
 
@@ -360,6 +377,29 @@ async def emit_battle_handoff(
         await battle_connection_manager.send_event(
             participant_id,
             build_started_event(battle, participant_id),
+        )
+
+
+async def emit_battle_resolution_events(
+    battle: BattleSession,
+    source_action_id: str,
+) -> None:
+    for participant_id in battle.player_ids:
+        if not battle_connection_manager.is_connected(participant_id):
+            continue
+        if battle.status == "ENDED":
+            await battle_connection_manager.send_event(
+                participant_id,
+                build_ended_event(battle, participant_id),
+            )
+            continue
+        await battle_connection_manager.send_event(
+            participant_id,
+            build_state_updated_event(
+                battle,
+                participant_id,
+                source_action_id=source_action_id,
+            ),
         )
 
 

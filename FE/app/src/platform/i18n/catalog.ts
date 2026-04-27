@@ -103,6 +103,8 @@ export const copy = {
   queueJoinFailed: "매칭 대기 시작에 실패했습니다.",
   queueCancelFailed: "매칭 대기 취소에 실패했습니다.",
   socketDisconnected: "소켓 연결이 종료되었습니다. 다시 매칭을 시작해 주세요.",
+  actionSubmitFailed: "액션 제출에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+  surrenderFailed: "항복 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.",
   selectionRequired: "스킬셋과 애니셋을 확인해 주세요.",
   failureReasonNone: "입력 오류가 없습니다.",
   failureReasonText: {

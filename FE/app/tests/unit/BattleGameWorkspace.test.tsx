@@ -1,10 +1,13 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { AppProviders } from "../../src/app/AppProviders";
 import { DEFAULT_ANIMSETS, DEFAULT_SKILLSET } from "../../src/entities/game/model";
 import { BattleGameWorkspace } from "../../src/widgets/battle-game/BattleGameWorkspace";
-import type { BattleSocketEvent } from "../../src/platform/api/battleSocket";
+import type {
+  BattleSocketEvent,
+  SubmitBattleActionPayload
+} from "../../src/platform/api/battleSocket";
 
 type MockSession = {
   playerId: string;
@@ -25,6 +28,7 @@ type MockProfile = {
 let storedSession: MockSession | null = null;
 let socketEventHandler: ((event: BattleSocketEvent) => void) | null = null;
 let socketCloseHandler: (() => void) | null = null;
+let submittedSocketActions: SubmitBattleActionPayload[] = [];
 
 vi.mock("../../src/platform/api/playerSession", () => ({
   loadStoredPlayerSession: () => storedSession,
@@ -49,6 +53,9 @@ vi.mock("../../src/platform/api/battleSocket", async () => {
       return {
         close: () => {
           socketCloseHandler?.();
+        },
+        sendSubmitAction: (payload: SubmitBattleActionPayload) => {
+          submittedSocketActions.push(payload);
         }
       };
     })
@@ -232,6 +239,7 @@ describe("BattleGameWorkspace", () => {
     storedSession = null;
     socketEventHandler = null;
     socketCloseHandler = null;
+    submittedSocketActions = [];
   });
 
   afterEach(() => {
@@ -332,5 +340,136 @@ describe("BattleGameWorkspace", () => {
 
     expect(await screen.findByText("내 턴")).toBeInTheDocument();
     expect(screen.getAllByText("HP")).toHaveLength(2);
+  });
+
+  it("submits a completed gesture sequence and applies server-authoritative battle updates", async () => {
+    const user = userEvent.setup();
+    installGameApiMock();
+
+    renderWorkspace();
+
+    await user.clear(screen.getByRole("textbox", { name: "닉네임" }));
+    await user.type(screen.getByRole("textbox", { name: "닉네임" }), "rookie");
+    await user.click(screen.getByRole("button", { name: "게스트 시작" }));
+    await user.click(await screen.findByRole("button", { name: "로드아웃 저장" }));
+    await user.click(await screen.findByRole("button", { name: "랭크 1대1 매칭" }));
+
+    emitSocketEvent({
+      type: "battle.match_ready",
+      payload: {
+        queueStatus: "SEARCHING",
+        queuedAt: "2026-04-27T00:00:00Z"
+      }
+    });
+    emitSocketEvent({
+      type: "battle.match_found",
+      payload: {
+        matchId: "match_test",
+        battleSessionId: "battle_test",
+        playerSeat: "PLAYER_ONE"
+      }
+    });
+    emitSocketEvent({
+      type: "battle.started",
+      payload: {
+        battleSessionId: "battle_test",
+        playerSeat: "PLAYER_ONE",
+        battle: {
+          battleSessionId: "battle_test",
+          matchId: "match_test",
+          status: "ACTIVE",
+          turnNumber: 1,
+          turnOwnerPlayerId: "pl_guest",
+          self: {
+            playerId: "pl_guest",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          opponent: {
+            playerId: "pl_practice",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          battleLog: [],
+          winnerPlayerId: null
+        }
+      }
+    });
+
+    await user.click(screen.getByRole("button", { name: "seal_1" }));
+    await user.click(screen.getByRole("button", { name: "seal_3" }));
+    await user.click(screen.getByRole("button", { name: "서버 판정 요청" }));
+
+    expect(submittedSocketActions).toHaveLength(1);
+    expect(submittedSocketActions[0]).toMatchObject({
+      battleSessionId: "battle_test",
+      playerId: "pl_guest",
+      turnNumber: 1,
+      gestureSequence: ["seal_1", "seal_3"]
+    });
+    expect(screen.getAllByText("서버 확정 대기 중").length).toBeGreaterThan(0);
+
+    emitSocketEvent({
+      type: "battle.action_result",
+      requestId: submittedSocketActions[0].requestId,
+      payload: {
+        battleSessionId: "battle_test",
+        turnNumber: 1,
+        actionId: submittedSocketActions[0].actionId,
+        status: "ACCEPTED",
+        reason: null,
+        battle: null
+      }
+    });
+    emitSocketEvent({
+      type: "battle.state_updated",
+      payload: {
+        battleSessionId: "battle_test",
+        sourceActionId: submittedSocketActions[0].actionId,
+        battle: {
+          battleSessionId: "battle_test",
+          matchId: "match_test",
+          status: "ACTIVE",
+          turnNumber: 3,
+          turnOwnerPlayerId: "pl_guest",
+          self: {
+            playerId: "pl_guest",
+            hp: 75,
+            mana: 90,
+            cooldowns: {
+              pulse_strike: 0
+            }
+          },
+          opponent: {
+            playerId: "pl_practice",
+            hp: 75,
+            mana: 80,
+            cooldowns: {
+              pulse_strike: 1
+            }
+          },
+          battleLog: [
+            {
+              turnNumber: 1,
+              message: "pulse_strike dealt 25"
+            },
+            {
+              turnNumber: 2,
+              message: "pulse_strike dealt 25"
+            }
+          ],
+          winnerPlayerId: null
+        }
+      }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("서버 확정 완료")).toBeInTheDocument();
+    });
+    expect(screen.getAllByText("75")).toHaveLength(2);
+    expect(screen.getByText("T1 pulse_strike dealt 25")).toBeInTheDocument();
+    expect(screen.getByText("T2 pulse_strike dealt 25")).toBeInTheDocument();
   });
 });

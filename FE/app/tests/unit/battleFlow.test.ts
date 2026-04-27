@@ -82,30 +82,41 @@ describe("battleFlowReducer", () => {
     expect(submitted.input.serverConfirmationStatus).toBe("PENDING");
     expect(submitted.battle?.opponent.hp).toBe(100);
 
-    const confirmed = battleFlowReducer(submitted, { type: "confirmSkill" });
+    const confirmed = battleFlowReducer(submitted, {
+      type: "battleStateUpdated",
+      latencyMs: 72,
+      battle: {
+        ...submitted.battle!,
+        turnNumber: 3,
+        turnOwnerPlayerId: submitted.player.playerId,
+        self: {
+          ...submitted.battle!.self,
+          hp: 75,
+          mana: 90
+        },
+        opponent: {
+          ...submitted.battle!.opponent,
+          hp: 75,
+          mana: 80
+        },
+        battleLog: [
+          {
+            turnNumber: 1,
+            message: "pulse_strike dealt 25"
+          },
+          {
+            turnNumber: 2,
+            message: "pulse_strike dealt 25"
+          }
+        ]
+      }
+    });
 
     expect(confirmed.input.serverConfirmationStatus).toBe("CONFIRMED");
     expect(confirmed.battle?.opponent.hp).toBe(75);
-    expect(confirmed.battle?.turnOwnerPlayerId).toBe(confirmed.battle?.opponent.playerId);
+    expect(confirmed.battle?.self.hp).toBe(75);
+    expect(confirmed.battle?.turnOwnerPlayerId).toBe(confirmed.player.playerId);
     expect(confirmed.recentEvents[0]).toBe("battle.state_updated");
-  });
-
-  it("blocks player input during the opponent turn until it resolves", () => {
-    const submitted = battleFlowReducer(completeDefaultSequence(), { type: "submitSkill" });
-    const opponentTurn = battleFlowReducer(submitted, { type: "confirmSkill" });
-    const blocked = battleFlowReducer(opponentTurn, {
-      type: "simulateGestureStep",
-      gesture: "seal_1",
-      confidence: 0.91
-    });
-
-    expect(blocked.input.failureReason).toBe("not_your_turn");
-
-    const nextPlayerTurn = battleFlowReducer(blocked, { type: "resolveOpponentTurn" });
-
-    expect(nextPlayerTurn.battle?.turnOwnerPlayerId).toBe(nextPlayerTurn.player.playerId);
-    expect(nextPlayerTurn.battle?.self.hp).toBe(88);
-    expect(nextPlayerTurn.input.failureReason).toBeNull();
   });
 
   it("records specific gesture failure reasons", () => {
@@ -123,5 +134,44 @@ describe("battleFlowReducer", () => {
 
     expect(lowConfidence.input.failureReason).toBe("confidence_low");
     expect(mismatch.input.failureReason).toBe("sequence_mismatch");
+  });
+
+  it("maps server rejection reasons into UI failure states", () => {
+    const ready = completeDefaultSequence();
+    const submitted = battleFlowReducer(ready, { type: "submitSkill" });
+    const rejected = battleFlowReducer(submitted, {
+      type: "actionRejected",
+      reason: "INVALID_TURN",
+      latencyMs: 41
+    });
+
+    expect(rejected.input.serverConfirmationStatus).toBe("IDLE");
+    expect(rejected.input.failureReason).toBe("not_your_turn");
+    expect(rejected.input.networkLatencyMs).toBe(41);
+    expect(rejected.recentEvents[0]).toBe("battle.action_rejected");
+  });
+
+  it("moves to the result screen from a server battle-ended event", () => {
+    const matched = createMatchedBattle();
+    const ended = battleFlowReducer(matched, {
+      type: "battleEnded",
+      ratingChange: 18,
+      battle: {
+        ...matched.battle!,
+        status: "ENDED",
+        turnNumber: 4,
+        winnerPlayerId: matched.player.playerId
+      }
+    });
+
+    expect(ended.screen).toBe("result");
+    expect(ended.player.rating).toBe(initialBattleFlowState.player.rating + 18);
+    expect(ended.player.wins).toBe(initialBattleFlowState.player.wins + 1);
+    expect(ended.history[0]).toMatchObject({
+      matchId: "match_test",
+      result: "WIN",
+      ratingChange: 18,
+      turnCount: 4
+    });
   });
 });

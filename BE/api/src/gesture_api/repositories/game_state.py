@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 from gesture_api.domain.catalog import ANIMSETS, SKILLSETS, find_animset, find_skillset
@@ -9,6 +9,7 @@ from gesture_api.domain.game import (
     BattleParticipant,
     BattleSession,
     PlayerRecord,
+    TURN_SECONDS,
 )
 from gesture_api.domain.rating import calculate_elo_delta
 
@@ -165,6 +166,12 @@ class InMemoryGameStateRepository:
             )
         else:
             self._advance_turn(battle, next_player_id=opponent_id)
+            if opponent_id == "pl_practice":
+                self._resolve_practice_turn(
+                    battle=battle,
+                    opponent_id=opponent_id,
+                    target_player_id=player_id,
+                )
 
         return "accepted", battle, None
 
@@ -207,10 +214,52 @@ class InMemoryGameStateRepository:
     def _advance_turn(self, battle: BattleSession, next_player_id: str) -> None:
         battle.turn_number += 1
         battle.turn_owner_player_id = next_player_id
+        battle.action_deadline_at = datetime.now(UTC) + timedelta(seconds=TURN_SECONDS)
         next_participant = battle.participants[next_player_id]
         next_participant.mana = min(100, next_participant.mana + 10)
         for skill_id, remaining in list(next_participant.cooldowns.items()):
             next_participant.cooldowns[skill_id] = max(0, remaining - 1)
+
+    def _resolve_practice_turn(
+        self,
+        battle: BattleSession,
+        opponent_id: str,
+        target_player_id: str,
+    ) -> None:
+        if battle.status != "ACTIVE" or battle.turn_owner_player_id != opponent_id:
+            return
+
+        practice_player = self.players[opponent_id]
+        skillset = find_skillset(practice_player.equipped_skillset_id)
+        if skillset is None or not skillset.skills:
+            self._advance_turn(battle, next_player_id=target_player_id)
+            return
+
+        skill = skillset.skills[0]
+        actor = battle.participants[opponent_id]
+        target = battle.participants[target_player_id]
+        actor.mana = max(0, actor.mana - skill.mana_cost)
+        actor.cooldowns[skill.skill_id] = skill.cooldown_turn
+        target.hp = max(0, target.hp - skill.damage)
+        battle.battle_log.append(
+            BattleLogEntry(
+                turn_number=battle.turn_number,
+                actor_player_id=opponent_id,
+                message=f"{skill.skill_id} dealt {skill.damage}",
+                created_at=datetime.now(UTC),
+            )
+        )
+
+        if target.hp <= 0:
+            self._finish_battle(
+                battle,
+                winner_player_id=opponent_id,
+                loser_player_id=target_player_id,
+                reason="HP_ZERO",
+            )
+            return
+
+        self._advance_turn(battle, next_player_id=target_player_id)
 
     def _finish_battle(
         self,
@@ -232,6 +281,8 @@ class InMemoryGameStateRepository:
         battle.winner_player_id = winner_player_id
         battle.loser_player_id = loser_player_id
         battle.ended_reason = reason  # type: ignore[assignment]
+        battle.rating_delta = rating_delta
+        battle.action_deadline_at = datetime.now(UTC)
         played_at = datetime.now(UTC)
         for player_id, result in ((winner_player_id, "WIN"), (loser_player_id, "LOSE")):
             player = self.players[player_id]

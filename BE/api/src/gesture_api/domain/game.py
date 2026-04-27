@@ -89,6 +89,7 @@ class BattleSession:
     winner_player_id: str | None = None
     loser_player_id: str | None = None
     ended_reason: EndedReason | None = None
+    rating_delta: int | None = None
 
     def opponent_of(self, player_id: str) -> str:
         first, second = self.player_ids

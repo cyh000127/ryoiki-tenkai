@@ -71,6 +71,10 @@ def test_battle_websocket_handler_submits_action_with_in_memory_engine() -> None
     assert response.payload.status == "ACCEPTED"
     assert response.payload.battle is not None
     assert response.payload.battle.opponent.hp == 75
+    assert response.payload.battle.self.hp == 75
+    assert response.payload.battle.turn_number == 3
+    assert response.payload.battle.turn_owner_player_id == player.player_id
+    assert len(response.payload.battle.battle_log) == 2
 
     duplicate_response = handler.handle(event)
 
@@ -137,11 +141,19 @@ def test_ws_endpoint_replays_queue_handoff_and_handles_submit_action() -> None:
             }
         )
         response = websocket.receive_json()
+        state_updated_event = websocket.receive_json()
 
     assert response["type"] == "battle.action_result"
     assert response["requestId"] == "req-action"
     assert response["payload"]["status"] == "ACCEPTED"
     assert response["payload"]["battle"]["opponent"]["hp"] == 75
+    assert response["payload"]["battle"]["self"]["hp"] == 75
+    assert response["payload"]["battle"]["turnNumber"] == 3
+    assert state_updated_event["type"] == "battle.state_updated"
+    assert state_updated_event["payload"]["sourceActionId"] == "act-ws-endpoint"
+    assert state_updated_event["payload"]["battle"]["turnOwnerPlayerId"] == player_id
+    assert state_updated_event["payload"]["battle"]["self"]["hp"] == 75
+    assert state_updated_event["payload"]["battle"]["opponent"]["hp"] == 75
 
 
 def test_ws_endpoint_rejects_invalid_token() -> None:

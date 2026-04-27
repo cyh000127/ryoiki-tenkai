@@ -48,6 +48,13 @@ type WsTokenResponse = {
   expiresIn: number;
 };
 
+type SurrenderResponse = {
+  battleSessionId: string;
+  status: "ACTIVE" | "ENDED";
+  result: "WIN" | "LOSE" | null;
+  endedReason: string | null;
+};
+
 export class ApiClientError extends Error {
   code: string;
   status: number;
@@ -153,6 +160,19 @@ export async function leaveMatchmakingQueue(playerId: string): Promise<QueueStat
 
 export async function getWsToken(playerId: string): Promise<WsTokenResponse> {
   return request<WsTokenResponse>("/api/v1/ws-token", {}, playerId);
+}
+
+export async function surrenderBattle(
+  battleSessionId: string,
+  playerId: string
+): Promise<SurrenderResponse> {
+  return request<SurrenderResponse>(
+    `/api/v1/battles/${battleSessionId}/surrender`,
+    {
+      method: "POST"
+    },
+    playerId
+  );
 }
 
 export function toPlayerSummary(profile: PlayerProfileResponse): PlayerSummary {

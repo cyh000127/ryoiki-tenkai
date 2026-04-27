@@ -86,7 +86,7 @@
 
 ### E3-ST02: accepted action을 정확히 한 번 적용
 
-- Status: partial
+- Status: done
 - User story: backend는 valid battle action을 한 번만 적용해 state consistency를 유지한다.
 - Scope: action id deduplication, damage/resource cost/cooldown/battle log/turn progression 적용, mutation 후 state update event emit.
 - Acceptance criteria: duplicate action id는 duplicate mutation 없이 stable result를 반환한다. state update는 changed HP, mana, cooldown, log entry, turn owner, next deadline을 포함한다. replayed accepted action이 rating/history write를 중복하지 않는다.
@@ -95,7 +95,7 @@
 
 ### E3-ST03: invalid battle action path 거부
 
-- Status: partial
+- Status: done
 - User story: backend는 battle rule 위반 action을 state change 없이 거부한다.
 - Scope: out-of-turn action, invalid gesture sequence, insufficient mana, active cooldown, ended battle action.
 - Acceptance criteria: rejected action이 reason code를 emit하고 snapshot은 unchanged다. client가 reason code를 localized copy에 mapping할 수 있다. rejection path가 focused test로 커버된다.
@@ -104,7 +104,7 @@
 
 ### E3-ST04: timeout과 surrender path 해결
 
-- Status: planned
+- Status: partial
 - User story: system은 멈춘 턴이나 포기를 처리해 battle이 멈추지 않게 한다.
 - Scope: turn timeout rule, surrender command, timeout/surrender/resulting state event emission.
 - Acceptance criteria: timeout은 documented rule에 따라 turn을 넘기거나 battle을 끝낸다. surrender는 battle을 즉시 종료하고 winner를 정확히 기록한다. result는 한 번만 기록된다.
@@ -113,7 +113,7 @@
 
 ### E3-ST05: battle 종료와 outcome 기록
 
-- Status: planned
+- Status: done
 - User story: backend는 win/loss condition이 충족되면 battle을 종료하고 outcome을 기록한다.
 - Scope: HP depletion end condition, final event emission, result write.
 - Acceptance criteria: battle end가 winner, loser, reason, final stat, rating delta placeholder/value를 emit한다. ended battle은 이후 action을 거부한다. result는 history/result view에서 조회된다.
@@ -151,7 +151,7 @@
 
 ### E4-ST04: recognized sequence를 battle action submission에 연결
 
-- Status: planned
+- Status: done
 - User story: player는 valid local sequence 완료 시 backend confirmation을 위한 battle action을 제출한다.
 - Scope: complete sequence를 action payload로 변환, battle session id/turn number/skill id/action id/gesture sequence 포함, accepted/rejected server response 대기.
 - Acceptance criteria: completion이 하나의 pending action submission을 만든다. UI는 server confirmation을 기다린다. failed local sequence는 submit하지 않는다.
@@ -189,7 +189,7 @@
 
 ### E5-ST04: battle result와 next action 렌더링
 
-- Status: planned
+- Status: partial
 - User story: player는 battle 종료 후 match outcome과 다음 행동을 볼 수 있다.
 - Scope: winner/loser, end reason, rating delta, rematch 또는 return action.
 - Acceptance criteria: final battle event 후 result screen이 보인다. rating delta가 backend result와 일치한다. player는 queue 또는 history로 돌아갈 수 있다.

@@ -161,7 +161,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E3-ST02: Apply Accepted Action Exactly Once
 
-- Status: partial
+- Status: done
 - User story: As the backend, I apply a valid battle action once so state remains consistent.
 - Scope:
   - Deduplicate by action id.
@@ -179,7 +179,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E3-ST03: Reject Invalid Battle Action Paths
 
-- Status: partial
+- Status: done
 - User story: As the backend, I reject actions that violate battle rules without changing state.
 - Scope:
   - Out-of-turn action.
@@ -200,7 +200,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E3-ST04: Resolve Timeout and Surrender Paths
 
-- Status: planned
+- Status: partial
 - User story: As the system, I can resolve stalled or conceded turns so battles do not hang.
 - Scope:
   - Turn timeout rule.
@@ -218,7 +218,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E3-ST05: End Battle and Record Outcome
 
-- Status: planned
+- Status: done
 - User story: As the backend, I end a battle when win/loss conditions are met and record the outcome.
 - Scope:
   - HP depletion end condition.
@@ -292,7 +292,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E4-ST04: Connect Recognized Sequence to Battle Action Submission
 
-- Status: planned
+- Status: done
 - User story: As a player, completing a valid local sequence submits a battle action for backend confirmation.
 - Scope:
   - Convert complete sequence into action payload.
@@ -369,7 +369,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E5-ST04: Render Battle Result and Next Actions
 
-- Status: planned
+- Status: partial
 - User story: As a player, I can see match outcome and choose the next action after battle ends.
 - Scope:
   - Winner and loser.

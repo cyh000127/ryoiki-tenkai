@@ -25,6 +25,15 @@ type BattleStateResponse = {
   winnerPlayerId: string | null;
 };
 
+type BattleActionResultPayload = {
+  battleSessionId: string;
+  turnNumber: number;
+  actionId: string;
+  status: "ACCEPTED" | "REJECTED";
+  reason: string | null;
+  battle: BattleStateResponse | null;
+};
+
 type BattleMatchReadyEvent = {
   type: "battle.match_ready";
   payload: {
@@ -51,13 +60,64 @@ type BattleStartedEvent = {
   };
 };
 
+type BattleActionResultEvent = {
+  type: "battle.action_result";
+  requestId?: string;
+  payload: BattleActionResultPayload;
+};
+
+type BattleStateUpdatedEvent = {
+  type: "battle.state_updated";
+  payload: {
+    battleSessionId: string;
+    battle: BattleStateResponse;
+    sourceActionId?: string;
+  };
+};
+
+type BattleEndedEvent = {
+  type: "battle.ended";
+  payload: {
+    battleSessionId: string;
+    winnerPlayerId: string;
+    loserPlayerId: string;
+    endedReason: string;
+    battle: BattleStateResponse;
+    ratingChange?: number;
+  };
+};
+
+type BattleErrorEvent = {
+  type: "battle.error";
+  requestId?: string;
+  payload: {
+    code: string;
+    message: string;
+  };
+};
+
 export type BattleSocketEvent =
   | BattleMatchReadyEvent
   | BattleMatchFoundEvent
-  | BattleStartedEvent;
+  | BattleStartedEvent
+  | BattleActionResultEvent
+  | BattleStateUpdatedEvent
+  | BattleEndedEvent
+  | BattleErrorEvent;
 
 export type BattleSocketConnection = {
   close: () => void;
+  sendSubmitAction: (payload: SubmitBattleActionPayload) => void;
+};
+
+export type SubmitBattleActionPayload = {
+  battleSessionId: string;
+  playerId: string;
+  turnNumber: number;
+  actionId: string;
+  gestureSequence: string[];
+  submittedAt: string;
+  requestId: string;
 };
 
 type ConnectBattleSocketOptions = {
@@ -82,6 +142,25 @@ export function connectBattleSocket({
           if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
             socket.close();
           }
+        },
+        sendSubmitAction: (payload) => {
+          if (socket.readyState !== WebSocket.OPEN) {
+            throw new Error("Battle socket is not connected.");
+          }
+          socket.send(
+            JSON.stringify({
+              type: "battle.submit_action",
+              requestId: payload.requestId,
+              payload: {
+                battleSessionId: payload.battleSessionId,
+                playerId: payload.playerId,
+                turnNumber: payload.turnNumber,
+                actionId: payload.actionId,
+                gestureSequence: payload.gestureSequence,
+                submittedAt: payload.submittedAt
+              }
+            })
+          );
         }
       });
     });
@@ -138,6 +217,10 @@ function isSupportedBattleSocketEvent(
   return (
     payload.type === "battle.match_ready" ||
     payload.type === "battle.match_found" ||
-    payload.type === "battle.started"
+    payload.type === "battle.started" ||
+    payload.type === "battle.action_result" ||
+    payload.type === "battle.state_updated" ||
+    payload.type === "battle.ended" ||
+    payload.type === "battle.error"
   );
 }

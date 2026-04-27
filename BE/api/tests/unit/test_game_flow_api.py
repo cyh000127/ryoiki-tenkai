@@ -176,6 +176,9 @@ def test_guest_player_can_match_and_submit_turn_action() -> None:
     assert action_response.status_code == 202
     assert action_response.json()["data"]["status"] == "ACCEPTED"
     assert action_response.json()["data"]["battle"]["opponent"]["hp"] == 75
+    assert action_response.json()["data"]["battle"]["self"]["hp"] == 75
+    assert action_response.json()["data"]["battle"]["turnNumber"] == 3
+    assert action_response.json()["data"]["battle"]["turnOwnerPlayerId"] == player_id
 
 
 def test_rejects_duplicate_action_id() -> None:
@@ -198,3 +201,38 @@ def test_rejects_duplicate_action_id() -> None:
     assert duplicate_response.status_code == 202
     assert duplicate_response.json()["data"]["status"] == "REJECTED"
     assert duplicate_response.json()["data"]["reason"] == "DUPLICATE_ACTION"
+
+
+def test_surrender_ends_battle_and_emits_ended_event() -> None:
+    client = TestClient(create_app())
+    player_id = create_configured_guest(client, "player-surrender")
+    ws_token = client.get("/api/v1/ws-token", headers={"X-Player-Id": player_id}).json()["data"][
+        "wsToken"
+    ]
+
+    with client.websocket_connect(f"/ws?token={ws_token}") as websocket:
+        queue_response = client.post(
+            "/api/v1/matchmaking/queue",
+            headers={"X-Player-Id": player_id},
+            json={"mode": "RANKED_1V1"},
+        )
+        assert queue_response.status_code == 200
+
+        websocket.receive_json()
+        websocket.receive_json()
+        started_event = websocket.receive_json()
+        battle_session_id = started_event["payload"]["battleSessionId"]
+
+        surrender_response = client.post(
+            f"/api/v1/battles/{battle_session_id}/surrender",
+            headers={"X-Player-Id": player_id},
+        )
+        ended_event = websocket.receive_json()
+
+    assert surrender_response.status_code == 200
+    assert surrender_response.json()["data"]["status"] == "ENDED"
+    assert surrender_response.json()["data"]["result"] == "LOSE"
+    assert ended_event["type"] == "battle.ended"
+    assert ended_event["payload"]["loserPlayerId"] == player_id
+    assert ended_event["payload"]["endedReason"] == "SURRENDER"
+    assert ended_event["payload"]["battle"]["status"] == "ENDED"

@@ -55,14 +55,14 @@ export type BattleFlowAction =
   | { type: "queueReady" }
   | { type: "matchFound" }
   | { type: "battleStarted"; battle: BattleState }
+  | { type: "actionRejected"; reason: string | null; latencyMs: number }
+  | { type: "battleStateUpdated"; battle: BattleState; latencyMs: number }
+  | { type: "battleEnded"; battle: BattleState; ratingChange: number }
   | { type: "leaveQueue" }
   | { type: "socketDisconnected" }
   | { type: "selectSkill"; skillId: string }
   | { type: "simulateGestureStep"; gesture: string; confidence: number }
   | { type: "submitSkill" }
-  | { type: "confirmSkill" }
-  | { type: "resolveOpponentTurn" }
-  | { type: "surrender" }
   | { type: "resetBattle" };
 
 export const initialBattleFlowState: BattleFlowState = {
@@ -190,6 +190,34 @@ export function battleFlowReducer(
         },
         recentEvents: prependEvent(state, "battle.started")
       };
+    case "actionRejected":
+      return {
+        ...state,
+        input: {
+          ...state.input,
+          failureReason: mapBattleRejectionReason(action.reason),
+          networkLatencyMs: action.latencyMs,
+          serverConfirmationStatus: "IDLE"
+        },
+        recentEvents: prependEvent(state, "battle.action_rejected")
+      };
+    case "battleStateUpdated":
+      return {
+        ...state,
+        battle: action.battle,
+        input: {
+          ...state.input,
+          targetSequence: findSkill(state.selectedSkillId).gestureSequence,
+          currentStep: 0,
+          currentGesture: null,
+          failureReason: null,
+          networkLatencyMs: action.latencyMs,
+          serverConfirmationStatus: "CONFIRMED"
+        },
+        recentEvents: prependEvent(state, "battle.state_updated")
+      };
+    case "battleEnded":
+      return finishBattleFromServer(state, action.battle, action.ratingChange);
     case "leaveQueue":
       return {
         ...state,
@@ -240,12 +268,6 @@ export function battleFlowReducer(
       return applyGestureStep(state, action.gesture, action.confidence);
     case "submitSkill":
       return submitSelectedSkill(state);
-    case "confirmSkill":
-      return confirmSelectedSkill(state);
-    case "resolveOpponentTurn":
-      return resolveOpponentTurn(state);
-    case "surrender":
-      return finishBattle(state, false, "battle.ended.surrender");
     case "resetBattle":
       return {
         ...state,
@@ -336,37 +358,17 @@ function applyGestureStep(
 }
 
 function submitSelectedSkill(state: BattleFlowState): BattleFlowState {
-  if (!state.battle || state.battle.status !== "ACTIVE") {
+  const failureReason = getSubmitFailureReason(state);
+  if (failureReason !== null) {
+    return {
+      ...state,
+      input: { ...state.input, failureReason },
+      recentEvents: prependEvent(state, "battle.action_rejected")
+    };
+  }
+
+  if (!state.battle) {
     return state;
-  }
-  if (state.input.serverConfirmationStatus === "PENDING") {
-    return {
-      ...state,
-      input: { ...state.input, failureReason: "server_pending" },
-      recentEvents: prependEvent(state, "battle.action_rejected")
-    };
-  }
-  const skill = findSkill(state.selectedSkillId);
-  if (state.battle.turnOwnerPlayerId !== state.player.playerId) {
-    return {
-      ...state,
-      input: { ...state.input, failureReason: "not_your_turn" },
-      recentEvents: prependEvent(state, "battle.action_rejected")
-    };
-  }
-  if (state.input.currentStep < skill.gestureSequence.length) {
-    return {
-      ...state,
-      input: { ...state.input, failureReason: "sequence_incomplete" },
-      recentEvents: prependEvent(state, "battle.action_rejected")
-    };
-  }
-  if (state.battle.self.mana < skill.manaCost) {
-    return {
-      ...state,
-      input: { ...state.input, failureReason: "insufficient_mana" },
-      recentEvents: prependEvent(state, "battle.action_rejected")
-    };
   }
 
   return {
@@ -374,163 +376,25 @@ function submitSelectedSkill(state: BattleFlowState): BattleFlowState {
     input: {
       ...state.input,
       failureReason: null,
-      networkLatencyMs: 64,
+      networkLatencyMs: state.input.networkLatencyMs,
       serverConfirmationStatus: "PENDING"
     },
     recentEvents: prependEvent(state, "battle.action_submitted")
   };
 }
 
-function confirmSelectedSkill(state: BattleFlowState): BattleFlowState {
-  if (
-    !state.battle ||
-    state.battle.status !== "ACTIVE" ||
-    state.input.serverConfirmationStatus !== "PENDING"
-  ) {
-    return state;
-  }
-
-  const skill = findSkill(state.selectedSkillId);
-  const nextOpponentHp = Math.max(0, state.battle.opponent.hp - skill.damage);
-  const ended = nextOpponentHp <= 0;
-  const battle: BattleState = {
-    ...state.battle,
-    status: ended ? "ENDED" : "ACTIVE",
-    turnNumber: state.battle.turnNumber + 1,
-    turnOwnerPlayerId: ended ? state.player.playerId : state.battle.opponent.playerId,
-    self: {
-      ...state.battle.self,
-      mana: state.battle.self.mana - skill.manaCost,
-      cooldowns: {
-        ...state.battle.self.cooldowns,
-        [skill.skillId]: skill.cooldownTurn
-      }
-    },
-    opponent: {
-      ...state.battle.opponent,
-      hp: nextOpponentHp
-    },
-    battleLog: [
-      {
-        turnNumber: state.battle.turnNumber,
-        message: `${skill.name} / ${skill.damage}`
-      },
-      ...state.battle.battleLog
-    ],
-    winnerPlayerId: ended ? state.player.playerId : null
-  };
-
-  if (ended) {
-    return finishBattle({ ...state, battle }, true, "battle.ended.hp_zero");
-  }
-
-  return {
-    ...state,
-    battle,
-    input: {
-      ...state.input,
-      currentStep: 0,
-      currentGesture: null,
-      failureReason: null,
-      networkLatencyMs: 38,
-      serverConfirmationStatus: "CONFIRMED"
-    },
-    recentEvents: prependEvent(state, "battle.state_updated")
-  };
-}
-
-function resolveOpponentTurn(state: BattleFlowState): BattleFlowState {
-  if (
-    !state.battle ||
-    state.battle.status !== "ACTIVE" ||
-    state.battle.turnOwnerPlayerId === state.player.playerId ||
-    state.input.serverConfirmationStatus === "PENDING"
-  ) {
-    return state;
-  }
-
-  const opponentDamage = 12;
-  const nextSelfHp = Math.max(0, state.battle.self.hp - opponentDamage);
-  const ended = nextSelfHp <= 0;
-  const battle: BattleState = {
-    ...state.battle,
-    status: ended ? "ENDED" : "ACTIVE",
-    turnNumber: state.battle.turnNumber + 1,
-    turnOwnerPlayerId: ended ? state.battle.opponent.playerId : state.player.playerId,
-    self: {
-      ...state.battle.self,
-      hp: nextSelfHp
-    },
-    battleLog: [
-      {
-        turnNumber: state.battle.turnNumber,
-        message: `opponent_action / ${opponentDamage}`
-      },
-      ...state.battle.battleLog
-    ],
-    winnerPlayerId: ended ? state.battle.opponent.playerId : null
-  };
-
-  if (ended) {
-    return finishBattle({ ...state, battle }, false, "battle.ended.hp_zero");
-  }
-
-  return {
-    ...state,
-    battle,
-    input: {
-      ...state.input,
-      currentStep: 0,
-      currentGesture: null,
-      failureReason: null,
-      networkLatencyMs: 46,
-      serverConfirmationStatus: "IDLE"
-    },
-    recentEvents: prependEvent(state, "battle.turn_ready")
-  };
-}
-
-function createInitialBattle(playerId: string): BattleState {
-  return {
-    battleSessionId: "battle_local",
-    matchId: "match_local",
-    status: "ACTIVE",
-    turnNumber: 1,
-    turnOwnerPlayerId: playerId,
-    self: {
-      playerId,
-      hp: 100,
-      mana: 100,
-      cooldowns: {}
-    },
-    opponent: {
-      playerId: "pl_practice",
-      hp: 100,
-      mana: 100,
-      cooldowns: {}
-    },
-    battleLog: [],
-    winnerPlayerId: null
-  };
-}
-
-function finishBattle(
+function finishBattleFromServer(
   state: BattleFlowState,
-  didWin: boolean,
-  eventName: string
+  battle: BattleState,
+  ratingChange: number
 ): BattleFlowState {
-  const ratingChange = didWin ? 18 : -18;
-  const battle = state.battle
-    ? {
-        ...state.battle,
-        status: "ENDED" as const,
-        winnerPlayerId: didWin ? state.player.playerId : state.battle.opponent.playerId
-      }
-    : null;
+  const didWin = battle.winnerPlayerId === state.player.playerId;
   return {
     ...state,
     screen: "result",
     battle,
+    queueStatus: "IDLE",
+    socketStatus: "CONNECTED",
     player: {
       ...state.player,
       rating: state.player.rating + ratingChange,
@@ -542,22 +406,55 @@ function finishBattle(
       currentStep: 0,
       currentGesture: null,
       failureReason: null,
-      serverConfirmationStatus:
-        state.input.serverConfirmationStatus === "PENDING"
-          ? "CONFIRMED"
-          : state.input.serverConfirmationStatus
+      serverConfirmationStatus: "CONFIRMED"
     },
     history: [
       {
-        matchId: state.battle?.matchId ?? "match_local",
+        matchId: battle.matchId,
         result: didWin ? "WIN" : "LOSE",
         ratingChange,
-        turnCount: state.battle?.turnNumber ?? 0
+        turnCount: battle.turnNumber
       },
       ...state.history
     ],
-    recentEvents: prependEvent(state, eventName)
+    recentEvents: prependEvent(state, "battle.ended")
   };
+}
+
+export function getSubmitFailureReason(state: BattleFlowState): InputFailureReason | null {
+  if (!state.battle || state.battle.status !== "ACTIVE") {
+    return null;
+  }
+  if (state.input.serverConfirmationStatus === "PENDING") {
+    return "server_pending";
+  }
+  if (state.battle.turnOwnerPlayerId !== state.player.playerId) {
+    return "not_your_turn";
+  }
+  const skill = findSkill(state.selectedSkillId);
+  if (state.input.currentStep < skill.gestureSequence.length) {
+    return "sequence_incomplete";
+  }
+  if (state.battle.self.mana < skill.manaCost) {
+    return "insufficient_mana";
+  }
+  return null;
+}
+
+function mapBattleRejectionReason(reason: string | null): InputFailureReason | null {
+  if (reason === "INVALID_GESTURE_SEQUENCE") {
+    return "sequence_mismatch";
+  }
+  if (reason === "NOT_YOUR_TURN" || reason === "INVALID_TURN") {
+    return "not_your_turn";
+  }
+  if (reason === "INSUFFICIENT_MANA" || reason === "SKILL_ON_COOLDOWN") {
+    return "insufficient_mana";
+  }
+  if (reason === "DUPLICATE_ACTION") {
+    return "server_pending";
+  }
+  return null;
 }
 
 function prependEvent(state: BattleFlowState, eventName: string): string[] {

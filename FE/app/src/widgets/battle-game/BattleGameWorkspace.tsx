@@ -5,6 +5,7 @@ import { DEFAULT_ANIMSETS, DEFAULT_SKILLSET, type Skillset } from "../../entitie
 import {
   battleFlowReducer,
   findSkill,
+  getSubmitFailureReason,
   initialBattleFlowState,
   type InputFailureReason,
   type ServerConfirmationStatus,
@@ -25,6 +26,7 @@ import {
   leaveMatchmakingQueue,
   listAnimsets,
   listSkillsets,
+  surrenderBattle,
   toPlayerSummary,
   updateLoadout
 } from "../../platform/api/gameClient";
@@ -40,12 +42,19 @@ import { StatusBadge } from "../../platform/ui/StatusBadge";
 import { formatLatency } from "../../shared/time/formatLatency";
 
 const screenOrder: ScreenKey[] = ["home", "loadout", "matchmaking", "battle", "result", "history"];
-const serverConfirmationDelayMs = 320;
+
+type PendingAction = {
+  actionId: string;
+  requestId: string;
+  submittedAtMs: number;
+};
 
 export function BattleGameWorkspace() {
   const queryClient = useQueryClient();
   const [state, dispatch] = useReducer(battleFlowReducer, initialBattleFlowState);
+  const stateRef = useRef(state);
   const socketConnectionRef = useRef<BattleSocketConnection | null>(null);
+  const pendingActionRef = useRef<PendingAction | null>(null);
   const ignoreSocketCloseRef = useRef(false);
   const [nicknameDraft, setNicknameDraft] = useState("local_player");
   const [session, setSession] = useState<PlayerSession | null>(() => loadStoredPlayerSession());
@@ -153,6 +162,21 @@ export function BattleGameWorkspace() {
     }
   });
 
+  const surrenderMutation = useMutation({
+    mutationFn: async (payload: { battleSessionId: string; playerId: string }) =>
+      surrenderBattle(payload.battleSessionId, payload.playerId),
+    onSuccess: () => {
+      setStatusMessage(null);
+    },
+    onError: () => {
+      setStatusMessage(copy.surrenderFailed);
+    }
+  });
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
   useEffect(() => {
     return () => {
       closeBattleSocket(true);
@@ -164,18 +188,6 @@ export function BattleGameWorkspace() {
       closeBattleSocket(true);
     }
   }, [state.socketStatus]);
-
-  useEffect(() => {
-    if (state.screen !== "battle" || state.input.serverConfirmationStatus !== "PENDING") {
-      return undefined;
-    }
-
-    const timerId = window.setTimeout(() => {
-      dispatch({ type: "confirmSkill" });
-    }, serverConfirmationDelayMs);
-
-    return () => window.clearTimeout(timerId);
-  }, [state.input.serverConfirmationStatus, state.screen]);
 
   useEffect(() => {
     if (!profileQuery.data) {
@@ -340,22 +352,121 @@ export function BattleGameWorkspace() {
     cancelQueueMutation.mutate(session.playerId);
   }
 
-  function handleBattleSocketEvent(event: BattleSocketEvent) {
-    if (event.type === "battle.match_ready") {
-      dispatch({ type: "queueReady" });
+  function handleSubmitAction() {
+    const failureReason = getSubmitFailureReason(state);
+    dispatch({ type: "submitSkill" });
+
+    if (failureReason !== null || !state.battle || !session) {
       return;
     }
 
-    if (event.type === "battle.match_found") {
-      dispatch({ type: "matchFound" });
+    const connection = socketConnectionRef.current;
+    if (!connection) {
+      dispatch({ type: "actionRejected", reason: null, latencyMs: 0 });
+      setStatusMessage(copy.actionSubmitFailed);
       return;
     }
 
-    dispatch({
-      type: "battleStarted",
-      battle: toBattleState(event.payload.battle)
-    });
+    const actionId = createClientActionId();
+    const requestId = createClientRequestId();
+    pendingActionRef.current = {
+      actionId,
+      requestId,
+      submittedAtMs: Date.now()
+    };
+
+    try {
+      connection.sendSubmitAction({
+        battleSessionId: state.battle.battleSessionId,
+        playerId: session.playerId,
+        turnNumber: state.battle.turnNumber,
+        actionId,
+        gestureSequence: [...findSkill(state.selectedSkillId).gestureSequence],
+        submittedAt: new Date().toISOString(),
+        requestId
+      });
+      setStatusMessage(null);
+    } catch {
+      pendingActionRef.current = null;
+      dispatch({ type: "actionRejected", reason: null, latencyMs: 0 });
+      setStatusMessage(copy.actionSubmitFailed);
+    }
+  }
+
+  function handleSurrender() {
+    if (!session || !state.battle) {
+      return;
+    }
+
     setStatusMessage(null);
+    surrenderMutation.mutate({
+      battleSessionId: state.battle.battleSessionId,
+      playerId: session.playerId
+    });
+  }
+
+  function handleBattleSocketEvent(event: BattleSocketEvent) {
+    switch (event.type) {
+      case "battle.match_ready":
+        dispatch({ type: "queueReady" });
+        return;
+      case "battle.match_found":
+        dispatch({ type: "matchFound" });
+        return;
+      case "battle.started":
+        pendingActionRef.current = null;
+        dispatch({
+          type: "battleStarted",
+          battle: toBattleState(event.payload.battle)
+        });
+        setStatusMessage(null);
+        return;
+      case "battle.action_result": {
+        if (event.payload.status === "ACCEPTED") {
+          return;
+        }
+        const latencyMs = consumePendingActionLatency({
+          actionId: event.payload.actionId,
+          requestId: event.requestId
+        });
+        dispatch({
+          type: "actionRejected",
+          reason: event.payload.reason,
+          latencyMs
+        });
+        return;
+      }
+      case "battle.state_updated": {
+        const latencyMs = consumePendingActionLatency({
+          actionId: event.payload.sourceActionId
+        });
+        dispatch({
+          type: "battleStateUpdated",
+          battle: toBattleState(event.payload.battle),
+          latencyMs
+        });
+        setStatusMessage(null);
+        return;
+      }
+      case "battle.ended": {
+        consumePendingActionLatency();
+        dispatch({
+          type: "battleEnded",
+          battle: toBattleState(event.payload.battle),
+          ratingChange: event.payload.ratingChange ?? 0
+        });
+        setStatusMessage(null);
+        return;
+      }
+      case "battle.error": {
+        const latencyMs = consumePendingActionLatency({
+          requestId: event.requestId
+        });
+        dispatch({ type: "actionRejected", reason: null, latencyMs });
+        setStatusMessage(event.payload.message || copy.actionSubmitFailed);
+        return;
+      }
+    }
   }
 
   async function ensureBattleSocketConnection(playerId: string): Promise<void> {
@@ -390,6 +501,26 @@ export function BattleGameWorkspace() {
     ignoreSocketCloseRef.current = suppressCloseMessage;
     socketConnectionRef.current = null;
     connection.close();
+  }
+
+  function consumePendingActionLatency(match?: {
+    actionId?: string;
+    requestId?: string;
+  }): number {
+    const pendingAction = pendingActionRef.current;
+    if (!pendingAction) {
+      return stateRef.current.input.networkLatencyMs;
+    }
+
+    const matchesActionId = match?.actionId === undefined || match.actionId === pendingAction.actionId;
+    const matchesRequestId =
+      match?.requestId === undefined || match.requestId === pendingAction.requestId;
+    if (!matchesActionId || !matchesRequestId) {
+      return stateRef.current.input.networkLatencyMs;
+    }
+
+    pendingActionRef.current = null;
+    return Math.max(0, Date.now() - pendingAction.submittedAtMs);
   }
 
   const playerStatusLabel = isRestoringPlayer
@@ -645,17 +776,17 @@ export function BattleGameWorkspace() {
                 <div className="action-row">
                   <Button
                     disabled={!isMyTurn || isServerConfirming}
-                    onClick={() => dispatch({ type: "submitSkill" })}
+                    onClick={handleSubmitAction}
                     variant="primary"
                   >
                     {isServerConfirming ? copy.serverConfirmPending : copy.submitAction}
                   </Button>
-                  {!isMyTurn && !isServerConfirming ? (
-                    <Button onClick={() => dispatch({ type: "resolveOpponentTurn" })}>
-                      {copy.resolveOpponentTurn}
-                    </Button>
-                  ) : null}
-                  <Button onClick={() => dispatch({ type: "surrender" })}>{copy.surrender}</Button>
+                  <Button
+                    disabled={surrenderMutation.isPending || !session}
+                    onClick={handleSurrender}
+                  >
+                    {copy.surrender}
+                  </Button>
                 </div>
               </Panel>
               <Panel title={copy.battleLog}>
@@ -683,7 +814,7 @@ export function BattleGameWorkspace() {
               <Metric label={copy.ratingChange} value={state.history[0]?.ratingChange ?? 0} />
               <Metric label={copy.playerRating} value={state.player.rating} />
               <div className="action-row">
-                <Button onClick={() => dispatch({ type: "startQueue" })} variant="primary">
+                <Button onClick={handleStartQueue} variant="primary">
                   {copy.rematch}
                 </Button>
                 <Button onClick={() => dispatch({ type: "resetBattle" })}>{copy.home}</Button>
@@ -708,6 +839,14 @@ export function BattleGameWorkspace() {
       </div>
     </section>
   );
+}
+
+function createClientActionId(): string {
+  return `act_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function createClientRequestId(): string {
+  return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
 type PanelProps = {
