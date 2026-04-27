@@ -625,6 +625,175 @@ describe("BattleGameWorkspace", () => {
     expect(screen.getByText("턴 타임아웃")).toBeInTheDocument();
   });
 
+  it("ignores delayed queue and stale battle snapshot events once newer battle state is visible", async () => {
+    const user = userEvent.setup();
+    installGameApiMock({
+      playerId: "pl_saved",
+      nickname: "saved_player",
+      rating: 1000,
+      wins: 0,
+      losses: 0,
+      equippedSkillsetId: DEFAULT_SKILLSET.skillsetId,
+      equippedAnimsetId: DEFAULT_ANIMSETS[0].animsetId,
+      loadoutConfigured: true
+    });
+    storedSession = {
+      playerId: "pl_saved",
+      guestToken: "gt_saved"
+    };
+
+    renderWorkspace();
+
+    expect(await screen.findByText("saved_player")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "랭크 1대1 매칭" }));
+
+    emitSocketEvent({
+      type: "battle.match_ready",
+      payload: {
+        queueStatus: "SEARCHING",
+        queuedAt: "2026-04-27T00:00:00Z"
+      }
+    });
+    emitSocketEvent({
+      type: "battle.match_found",
+      payload: {
+        matchId: "match_test",
+        battleSessionId: "battle_test",
+        playerSeat: "PLAYER_ONE"
+      }
+    });
+    emitSocketEvent({
+      type: "battle.started",
+      payload: {
+        battleSessionId: "battle_test",
+        playerSeat: "PLAYER_ONE",
+        battle: {
+          battleSessionId: "battle_test",
+          matchId: "match_test",
+          status: "ACTIVE",
+          turnNumber: 1,
+          turnOwnerPlayerId: "pl_saved",
+          actionDeadlineAt: "2026-04-27T00:00:30Z",
+          self: {
+            playerId: "pl_saved",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          opponent: {
+            playerId: "pl_practice",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          battleLog: [],
+          winnerPlayerId: null,
+          loserPlayerId: null,
+          endedReason: null
+        }
+      }
+    });
+    emitSocketEvent({
+      type: "battle.state_updated",
+      payload: {
+        battleSessionId: "battle_test",
+        sourceActionId: "act_newer",
+        battle: {
+          battleSessionId: "battle_test",
+          matchId: "match_test",
+          status: "ACTIVE",
+          turnNumber: 3,
+          turnOwnerPlayerId: "pl_saved",
+          actionDeadlineAt: "2026-04-27T00:01:30Z",
+          self: {
+            playerId: "pl_saved",
+            hp: 75,
+            mana: 90,
+            cooldowns: {
+              pulse_strike: 0
+            }
+          },
+          opponent: {
+            playerId: "pl_practice",
+            hp: 75,
+            mana: 80,
+            cooldowns: {
+              pulse_strike: 1
+            }
+          },
+          battleLog: [
+            {
+              turnNumber: 1,
+              message: "pulse_strike dealt 25"
+            },
+            {
+              turnNumber: 2,
+              message: "pulse_strike dealt 25"
+            }
+          ],
+          winnerPlayerId: null,
+          loserPlayerId: null,
+          endedReason: null
+        }
+      }
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText("75")).toHaveLength(2);
+    });
+
+    emitSocketEvent({
+      type: "battle.match_ready",
+      payload: {
+        queueStatus: "SEARCHING",
+        queuedAt: "2026-04-27T00:00:00Z"
+      }
+    });
+    emitSocketEvent({
+      type: "battle.match_found",
+      payload: {
+        matchId: "match_test",
+        battleSessionId: "battle_test",
+        playerSeat: "PLAYER_ONE"
+      }
+    });
+    emitSocketEvent({
+      type: "battle.started",
+      payload: {
+        battleSessionId: "battle_test",
+        playerSeat: "PLAYER_ONE",
+        battle: {
+          battleSessionId: "battle_test",
+          matchId: "match_test",
+          status: "ACTIVE",
+          turnNumber: 1,
+          turnOwnerPlayerId: "pl_saved",
+          actionDeadlineAt: "2026-04-27T00:00:30Z",
+          self: {
+            playerId: "pl_saved",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          opponent: {
+            playerId: "pl_practice",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          battleLog: [],
+          winnerPlayerId: null,
+          loserPlayerId: null,
+          endedReason: null
+        }
+      }
+    });
+
+    expect(screen.getAllByText("75")).toHaveLength(2);
+    expect(screen.getByText("T1 pulse_strike dealt 25")).toBeInTheDocument();
+    expect(screen.queryByText("SEARCHING")).not.toBeInTheDocument();
+  });
+
   it("reconnects and restores the latest active battle snapshot after socket disconnect", async () => {
     const user = userEvent.setup();
     installGameApiMock({

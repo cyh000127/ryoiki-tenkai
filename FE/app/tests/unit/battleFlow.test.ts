@@ -32,7 +32,10 @@ describe("battleFlowReducer", () => {
   function createMatchedBattle() {
     const queued = battleFlowReducer(initialBattleFlowState, { type: "startQueue" });
     const ready = battleFlowReducer(queued, { type: "queueReady" });
-    const found = battleFlowReducer(ready, { type: "matchFound" });
+    const found = battleFlowReducer(ready, {
+      type: "matchFound",
+      battleSessionId: "battle_test"
+    });
     return battleFlowReducer(found, {
       type: "battleStarted",
       battle: createStartedBattle()
@@ -57,7 +60,10 @@ describe("battleFlowReducer", () => {
   it("creates a matched battle from queue", () => {
     const queued = battleFlowReducer(initialBattleFlowState, { type: "startQueue" });
     const ready = battleFlowReducer(queued, { type: "queueReady" });
-    const found = battleFlowReducer(ready, { type: "matchFound" });
+    const found = battleFlowReducer(ready, {
+      type: "matchFound",
+      battleSessionId: "battle_test"
+    });
     const matched = battleFlowReducer(found, {
       type: "battleStarted",
       battle: createStartedBattle()
@@ -173,5 +179,84 @@ describe("battleFlowReducer", () => {
       ratingChange: 18,
       turnCount: 4
     });
+  });
+
+  it("ignores delayed queue and stale battle snapshots after the battle has advanced", () => {
+    const matched = createMatchedBattle();
+    const advanced = battleFlowReducer(matched, {
+      type: "battleStateUpdated",
+      latencyMs: 24,
+      battle: {
+        ...matched.battle!,
+        turnNumber: 3,
+        turnOwnerPlayerId: matched.player.playerId,
+        actionDeadlineAt: "2026-04-27T00:01:30Z",
+        self: {
+          ...matched.battle!.self,
+          hp: 75,
+          mana: 90
+        },
+        opponent: {
+          ...matched.battle!.opponent,
+          hp: 75,
+          mana: 80
+        },
+        battleLog: [
+          {
+            turnNumber: 1,
+            message: "pulse_strike dealt 25"
+          },
+          {
+            turnNumber: 2,
+            message: "pulse_strike dealt 25"
+          }
+        ]
+      }
+    });
+
+    const delayedQueueReady = battleFlowReducer(advanced, { type: "queueReady" });
+    const delayedMatchFound = battleFlowReducer(delayedQueueReady, {
+      type: "matchFound",
+      battleSessionId: "battle_test"
+    });
+    const staleStarted = battleFlowReducer(delayedMatchFound, {
+      type: "battleStarted",
+      battle: createStartedBattle()
+    });
+
+    expect(staleStarted.screen).toBe("battle");
+    expect(staleStarted.queueStatus).toBe("MATCHED");
+    expect(staleStarted.battle?.turnNumber).toBe(3);
+    expect(staleStarted.battle?.self.hp).toBe(75);
+  });
+
+  it("keeps rematch queue-ready handling while avoiding duplicate battle-ended application", () => {
+    const matched = createMatchedBattle();
+    const endedBattle = {
+      ...matched.battle!,
+      status: "ENDED" as const,
+      turnNumber: 4,
+      winnerPlayerId: matched.player.playerId
+    };
+
+    const ended = battleFlowReducer(matched, {
+      type: "battleEnded",
+      ratingChange: 18,
+      battle: endedBattle
+    });
+    const duplicateEnded = battleFlowReducer(ended, {
+      type: "battleEnded",
+      ratingChange: 18,
+      battle: endedBattle
+    });
+    const requeued = battleFlowReducer(duplicateEnded, { type: "startQueue" });
+    const ready = battleFlowReducer(requeued, { type: "queueReady" });
+
+    expect(duplicateEnded.player.rating).toBe(initialBattleFlowState.player.rating + 18);
+    expect(duplicateEnded.player.wins).toBe(initialBattleFlowState.player.wins + 1);
+    expect(duplicateEnded.history).toHaveLength(1);
+    expect(ready.screen).toBe("matchmaking");
+    expect(ready.queueStatus).toBe("SEARCHING");
+    expect(ready.socketStatus).toBe("CONNECTED");
   });
 });

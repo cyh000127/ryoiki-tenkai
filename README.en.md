@@ -96,10 +96,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - frontend battle workspace connected to real REST and WebSocket flow
   pending, rejected, confirmed, timeout, surrender, and result handling
 - reconnect restore for the latest active battle snapshot and ended battle result state
+- delayed and duplicate socket events are reconciled so stale snapshots do not rewind the UI or reapply results
 
 ## Remaining Work
 
-- delayed event reconciliation against the latest server snapshot
 - live camera recognition adapter hardening and clearer separation from deterministic fallback input
 - deadline/timer visibility, cooldown detail, and compact/mobile UX polish
 - durable persistence for results, compact action audit, rating history, and leaderboard data

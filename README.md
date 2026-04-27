@@ -64,11 +64,11 @@ git diff --check
 - Server-authoritative battle rules are connected end to end: action validation, exact-once apply, duplicate and invalid rejection paths, practice rival auto-turn, HP zero resolution, timeout, surrender, and end events.
 - Frontend battle workspace now uses real REST and WebSocket flow for pending, rejected, confirmed, timeout, surrender, and result handling.
 - Reconnect now restores the latest active battle snapshot and replays ended battles back into the result state.
+- Delayed and duplicate socket events are reconciled so stale queue/battle snapshots do not rewind the UI or double-apply battle results.
 
 ## Remaining Work
 
 - Live camera recognition adapter hardening and better separation from deterministic fallback input.
-- Delayed event reconciliation and additional reconnect hardening against stale client state.
 - Battle workspace polish for timer/deadline visibility, cooldown detail, compact/mobile UX, and richer battle feedback.
 - Durable persistence for battle results, compact action audit, rating history, and leaderboard data.
 - Client history, rating, and leaderboard screens, plus final smoke coverage.

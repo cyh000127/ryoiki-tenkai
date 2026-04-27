@@ -7,6 +7,7 @@ import {
   findSkill,
   getSubmitFailureReason,
   initialBattleFlowState,
+  shouldIgnoreIncomingBattleSnapshot,
   type InputFailureReason,
   type ServerConfirmationStatus,
   type ScreenKey
@@ -425,16 +426,24 @@ export function BattleGameWorkspace() {
         dispatch({ type: "queueReady" });
         return;
       case "battle.match_found":
-        dispatch({ type: "matchFound" });
+        dispatch({
+          type: "matchFound",
+          battleSessionId: event.payload.battleSessionId
+        });
         return;
-      case "battle.started":
+      case "battle.started": {
+        const battle = toBattleState(event.payload.battle);
+        if (shouldIgnoreIncomingBattleSnapshot(stateRef.current.battle, battle)) {
+          return;
+        }
         pendingActionRef.current = null;
         dispatch({
           type: "battleStarted",
-          battle: toBattleState(event.payload.battle)
+          battle
         });
         setStatusMessage(null);
         return;
+      }
       case "battle.action_result": {
         if (event.payload.status === "ACCEPTED") {
           return;
@@ -451,12 +460,16 @@ export function BattleGameWorkspace() {
         return;
       }
       case "battle.state_updated": {
+        const battle = toBattleState(event.payload.battle);
+        if (shouldIgnoreIncomingBattleSnapshot(stateRef.current.battle, battle)) {
+          return;
+        }
         const latencyMs = consumePendingActionLatency({
           actionId: event.payload.sourceActionId
         });
         dispatch({
           type: "battleStateUpdated",
-          battle: toBattleState(event.payload.battle),
+          battle,
           latencyMs
         });
         setStatusMessage(null);

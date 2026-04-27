@@ -53,7 +53,7 @@ export type BattleFlowAction =
   | { type: "equip"; skillsetId: string; animsetId: string; skillId: string }
   | { type: "startQueue" }
   | { type: "queueReady" }
-  | { type: "matchFound" }
+  | { type: "matchFound"; battleSessionId: string }
   | { type: "battleStarted"; battle: BattleState }
   | { type: "actionRejected"; reason: string | null; latencyMs: number }
   | { type: "battleStateUpdated"; battle: BattleState; latencyMs: number }
@@ -156,41 +156,11 @@ export function battleFlowReducer(
         recentEvents: prependEvent(state, "matchmaking.queue.entered")
       };
     case "queueReady":
-      return {
-        ...state,
-        screen: "matchmaking",
-        queueStatus: "SEARCHING",
-        socketStatus: "CONNECTED",
-        recentEvents: prependEvent(state, "battle.match_ready")
-      };
+      return applyQueueReady(state);
     case "matchFound":
-      return {
-        ...state,
-        queueStatus: "MATCHED",
-        socketStatus: "CONNECTED",
-        screen: "matchmaking",
-        battle: state.battle,
-        recentEvents: prependEvent(state, "battle.match_found")
-      };
+      return applyMatchFound(state, action.battleSessionId);
     case "battleStarted":
-      return {
-        ...state,
-        screen: "battle",
-        queueStatus: "MATCHED",
-        socketStatus: "CONNECTED",
-        battle: action.battle,
-        input: {
-          ...state.input,
-          cameraReady: true,
-          handDetected: true,
-          currentGesture: null,
-          currentStep: 0,
-          failureReason: null,
-          networkLatencyMs: state.input.networkLatencyMs,
-          serverConfirmationStatus: "IDLE"
-        },
-        recentEvents: prependEvent(state, "battle.started")
-      };
+      return applyBattleStarted(state, action.battle);
     case "actionRejected":
       return {
         ...state,
@@ -203,20 +173,7 @@ export function battleFlowReducer(
         recentEvents: prependEvent(state, "battle.action_rejected")
       };
     case "battleStateUpdated":
-      return {
-        ...state,
-        battle: action.battle,
-        input: {
-          ...state.input,
-          targetSequence: findSkill(state.selectedSkillId).gestureSequence,
-          currentStep: 0,
-          currentGesture: null,
-          failureReason: null,
-          networkLatencyMs: action.latencyMs,
-          serverConfirmationStatus: "CONFIRMED"
-        },
-        recentEvents: prependEvent(state, "battle.state_updated")
-      };
+      return applyBattleStateUpdated(state, action.battle, action.latencyMs);
     case "battleEnded":
       return finishBattleFromServer(state, action.battle, action.ratingChange);
     case "leaveQueue":
@@ -390,12 +347,110 @@ function submitSelectedSkill(state: BattleFlowState): BattleFlowState {
   };
 }
 
+function applyQueueReady(state: BattleFlowState): BattleFlowState {
+  if (state.queueStatus === "MATCHED" || state.screen === "battle" || state.screen === "result") {
+    return state;
+  }
+
+  return {
+    ...state,
+    screen: "matchmaking",
+    queueStatus: "SEARCHING",
+    socketStatus: "CONNECTED",
+    recentEvents: prependEvent(state, "battle.match_ready")
+  };
+}
+
+function applyMatchFound(state: BattleFlowState, battleSessionId: string): BattleFlowState {
+  const preserveScreen =
+    state.battle?.battleSessionId === battleSessionId &&
+    (state.screen === "battle" || state.screen === "result");
+
+  return {
+    ...state,
+    queueStatus: "MATCHED",
+    socketStatus: "CONNECTED",
+    screen: preserveScreen ? state.screen : "matchmaking",
+    recentEvents: prependEvent(state, "battle.match_found")
+  };
+}
+
+function applyBattleStarted(state: BattleFlowState, battle: BattleState): BattleFlowState {
+  if (shouldIgnoreIncomingBattleSnapshot(state.battle, battle)) {
+    return state;
+  }
+
+  return {
+    ...state,
+    screen: "battle",
+    queueStatus: "MATCHED",
+    socketStatus: "CONNECTED",
+    battle,
+    input: {
+      ...state.input,
+      cameraReady: true,
+      handDetected: true,
+      currentGesture: null,
+      currentStep: 0,
+      failureReason: null,
+      networkLatencyMs: state.input.networkLatencyMs,
+      serverConfirmationStatus: "IDLE"
+    },
+    recentEvents: prependEvent(state, "battle.started")
+  };
+}
+
+function applyBattleStateUpdated(
+  state: BattleFlowState,
+  battle: BattleState,
+  latencyMs: number
+): BattleFlowState {
+  if (shouldIgnoreIncomingBattleSnapshot(state.battle, battle)) {
+    return state;
+  }
+
+  return {
+    ...state,
+    screen: "battle",
+    queueStatus: "MATCHED",
+    socketStatus: "CONNECTED",
+    battle,
+    input: {
+      ...state.input,
+      targetSequence: findSkill(state.selectedSkillId).gestureSequence,
+      currentStep: 0,
+      currentGesture: null,
+      failureReason: null,
+      networkLatencyMs: latencyMs,
+      serverConfirmationStatus: "CONFIRMED"
+    },
+    recentEvents: prependEvent(state, "battle.state_updated")
+  };
+}
+
 function finishBattleFromServer(
   state: BattleFlowState,
   battle: BattleState,
   ratingChange: number
 ): BattleFlowState {
+  const isCurrentBattle = state.battle?.battleSessionId === battle.battleSessionId;
+  const alreadyRecordedMatch = state.history.some((record) => record.matchId === battle.matchId);
+  if (alreadyRecordedMatch && !isCurrentBattle) {
+    return state;
+  }
+
   const didWin = battle.winnerPlayerId === state.player.playerId;
+  const shouldApplyPlayerDelta = !alreadyRecordedMatch;
+  const nextRecord: MatchRecord = {
+    matchId: battle.matchId,
+    result: didWin ? "WIN" : "LOSE",
+    ratingChange,
+    turnCount: battle.turnNumber
+  };
+  const nextHistory: MatchRecord[] = alreadyRecordedMatch
+    ? state.history
+    : [nextRecord, ...state.history];
+
   return {
     ...state,
     screen: "result",
@@ -404,9 +459,9 @@ function finishBattleFromServer(
     socketStatus: "CONNECTED",
     player: {
       ...state.player,
-      rating: state.player.rating + ratingChange,
-      wins: state.player.wins + (didWin ? 1 : 0),
-      losses: state.player.losses + (didWin ? 0 : 1)
+      rating: state.player.rating + (shouldApplyPlayerDelta ? ratingChange : 0),
+      wins: state.player.wins + (shouldApplyPlayerDelta && didWin ? 1 : 0),
+      losses: state.player.losses + (shouldApplyPlayerDelta && !didWin ? 1 : 0)
     },
     input: {
       ...state.input,
@@ -415,17 +470,49 @@ function finishBattleFromServer(
       failureReason: null,
       serverConfirmationStatus: "CONFIRMED"
     },
-    history: [
-      {
-        matchId: battle.matchId,
-        result: didWin ? "WIN" : "LOSE",
-        ratingChange,
-        turnCount: battle.turnNumber
-      },
-      ...state.history
-    ],
+    history: nextHistory,
     recentEvents: prependEvent(state, "battle.ended")
   };
+}
+
+export function shouldIgnoreIncomingBattleSnapshot(
+  currentBattle: BattleState | null,
+  incomingBattle: BattleState
+): boolean {
+  if (!currentBattle) {
+    return false;
+  }
+
+  if (currentBattle.battleSessionId !== incomingBattle.battleSessionId) {
+    return currentBattle.status === "ACTIVE";
+  }
+
+  if (currentBattle.status === "ENDED" && incomingBattle.status !== "ENDED") {
+    return true;
+  }
+
+  if (incomingBattle.turnNumber < currentBattle.turnNumber) {
+    return true;
+  }
+
+  if (incomingBattle.turnNumber > currentBattle.turnNumber) {
+    return false;
+  }
+
+  if (currentBattle.status === "ENDED" && incomingBattle.status === "ACTIVE") {
+    return true;
+  }
+
+  if (incomingBattle.battleLog.length < currentBattle.battleLog.length) {
+    return true;
+  }
+
+  const currentDeadline = parseBattleTimestamp(currentBattle.actionDeadlineAt);
+  const incomingDeadline = parseBattleTimestamp(incomingBattle.actionDeadlineAt);
+  if (currentDeadline === null || incomingDeadline === null) {
+    return false;
+  }
+  return incomingDeadline < currentDeadline;
 }
 
 export function getSubmitFailureReason(state: BattleFlowState): InputFailureReason | null {
@@ -466,4 +553,12 @@ function mapBattleRejectionReason(reason: string | null): InputFailureReason | n
 
 function prependEvent(state: BattleFlowState, eventName: string): string[] {
   return [eventName, ...state.recentEvents].slice(0, 8);
+}
+
+function parseBattleTimestamp(value: string | undefined): number | null {
+  if (!value) {
+    return null;
+  }
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? null : parsed;
 }
