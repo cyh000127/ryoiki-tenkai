@@ -24,6 +24,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 
 Use `-InstallDependencies` with `scripts\bootstrap.ps1` only when the local package tools are already installed.
 
+## MVP Planning and QA
+
+- `docs/implementation-artifacts/mvp-v1-implementation-plan.md`: MVP implementation baseline for WebSocket flow, server authoritative rules, client hand recognition, and excluded scope.
+- `docs/implementation-artifacts/smoke-test-checklist.md`: smoke checklist for repository, runtime, REST, WebSocket, battle, client recognition, and end-to-end verification.
+
 ## Scaffold Policy
 
 - Keep external provider details out of documentation and product copy.
