@@ -4,6 +4,13 @@ This repository is a frontend/backend workspace for a browser-based gesture batt
 
 Korean documentation is available in `README.md`. `README.ko.md` keeps the same Korean content as a mirrored file.
 
+## Temporary Implementation Note
+
+- Skill names, skill images, and hand-motion assets will be replaced later from a separate source.
+- Until then, prioritize functional implementation, contracts, and flow completion over visual assets.
+- Any current skill names, skill images, or hand-motion representations in code and docs should be treated as placeholders.
+- Remove this note when the implementation is fully complete.
+
 ## Current Status
 
 - Spec review date: `2026-04-28`
