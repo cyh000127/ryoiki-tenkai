@@ -189,7 +189,7 @@
 
 ### E5-ST04: battle result와 next action 렌더링
 
-- Status: partial
+- Status: done
 - User story: player는 battle 종료 후 match outcome과 다음 행동을 볼 수 있다.
 - Scope: winner/loser, end reason, rating delta, rematch 또는 return action.
 - Acceptance criteria: final battle event 후 result screen이 보인다. rating delta가 backend result와 일치한다. player는 queue 또는 history로 돌아갈 수 있다.

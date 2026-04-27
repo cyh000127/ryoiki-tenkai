@@ -1,7 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ReactNode, useEffect, useReducer, useRef, useState } from "react";
 
-import { DEFAULT_ANIMSETS, DEFAULT_SKILLSET, type Skillset } from "../../entities/game/model";
+import {
+  DEFAULT_ANIMSETS,
+  DEFAULT_SKILLSET,
+  type BattleState,
+  type Skillset
+} from "../../entities/game/model";
 import {
   battleFlowReducer,
   findSkill,
@@ -423,6 +428,11 @@ export function BattleGameWorkspace() {
 
     setStatusMessage(null);
     cancelQueueMutation.mutate(session.playerId);
+  }
+
+  function handleOpenHistory() {
+    setStatusMessage(null);
+    dispatch({ type: "go", screen: "history" });
   }
 
   function handleSubmitAction() {
@@ -997,27 +1007,73 @@ export function BattleGameWorkspace() {
         {state.screen === "result" ? (
           <div className="surface-grid surface-grid--two">
             <Panel title={copy.battleResult}>
-              <Metric
-                label={copy.battleResult}
-                value={state.battle?.winnerPlayerId === state.player.playerId ? copy.win : copy.lose}
-              />
-              <Metric
-                label={copy.endedReason}
-                value={getEndedReasonText(state.battle?.endedReason ?? null)}
-              />
-              <Metric
-                label={copy.ratingChange}
-                value={formatSignedNumber(state.history[0]?.ratingChange ?? 0)}
-              />
-              <Metric label={copy.playerRating} value={state.player.rating} />
+              <div
+                className="result-hero"
+                data-outcome={getBattleOutcome(state.battle, state.player.playerId)}
+              >
+                <StatusBadge
+                  tone={
+                    getBattleOutcome(state.battle, state.player.playerId) === "win" ? "success" : "warning"
+                  }
+                >
+                  {getResultHeadline(state.battle, state.player.playerId)}
+                </StatusBadge>
+                <strong className="result-hero__headline">
+                  {getResultHeadline(state.battle, state.player.playerId)}
+                </strong>
+                <p className="result-hero__text">
+                  {getResultSummary(state.battle, state.player.playerId)}
+                </p>
+              </div>
+              <div className="metric-list">
+                <Metric
+                  label={copy.winner}
+                  value={getParticipantResultLabel(
+                    state.battle?.winnerPlayerId ?? null,
+                    state.player.playerId
+                  )}
+                />
+                <Metric
+                  label={copy.loser}
+                  value={getParticipantResultLabel(
+                    state.battle?.loserPlayerId ?? null,
+                    state.player.playerId
+                  )}
+                />
+                <Metric
+                  label={copy.endedReason}
+                  value={getEndedReasonText(state.battle?.endedReason ?? null)}
+                />
+                <Metric
+                  label={copy.battleTurns}
+                  value={state.battle?.turnNumber ?? "-"}
+                />
+                <Metric
+                  label={copy.ratingChange}
+                  value={formatSignedNumber(state.history[0]?.ratingChange ?? 0)}
+                />
+                <Metric label={copy.playerRating} value={state.player.rating} />
+              </div>
+            </Panel>
+            <Panel title={copy.nextAction}>
+              <p className="helper-text">{copy.resultNextActionHelp}</p>
               <div className="action-row">
                 <Button onClick={handleStartQueue} variant="primary">
                   {copy.rematch}
                 </Button>
+                <Button onClick={handleOpenHistory}>{copy.viewHistory}</Button>
                 <Button onClick={() => dispatch({ type: "resetBattle" })}>{copy.home}</Button>
               </div>
+              {state.history[0] ? (
+                <div className="result-summary">
+                  <strong>{copy.history}</strong>
+                  <span>{formatHistorySummary({
+                    ...state.history[0],
+                    endedReason: state.battle?.endedReason ?? "DISCONNECT"
+                  })}</span>
+                </div>
+              ) : null}
             </Panel>
-            <DebugPanel events={state.recentEvents} latency={state.input.networkLatencyMs} />
           </div>
         ) : null}
 
@@ -1467,6 +1523,32 @@ function getDeadlinePresentation(
 
 function formatCooldownTurns(turns: number): string {
   return turns > 0 ? `${turns}T` : copy.ready;
+}
+
+function getBattleOutcome(
+  battle: BattleState | null,
+  playerId: string
+): "win" | "lose" {
+  return battle?.winnerPlayerId === playerId ? "win" : "lose";
+}
+
+function getResultHeadline(battle: BattleState | null, playerId: string): string {
+  return getBattleOutcome(battle, playerId) === "win" ? copy.resultWinHeadline : copy.resultLoseHeadline;
+}
+
+function getResultSummary(battle: BattleState | null, playerId: string): string {
+  return getBattleOutcome(battle, playerId) === "win" ? copy.resultWinSummary : copy.resultLoseSummary;
+}
+
+function getParticipantResultLabel(
+  participantPlayerId: string | null,
+  playerId: string
+): string {
+  if (participantPlayerId === null) {
+    return "-";
+  }
+
+  return participantPlayerId === playerId ? copy.self : copy.opponent;
 }
 
 function getTurnState(isMyTurn: boolean, isServerConfirming: boolean): "mine" | "opponent" | "pending" {

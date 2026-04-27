@@ -222,6 +222,46 @@ textarea {
   font-size: 14px;
 }
 
+.result-hero {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 14px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f5f8fc 0%, #edf2f8 100%);
+}
+
+.result-hero[data-outcome="win"] {
+  background: linear-gradient(180deg, #eefaf2 0%, #e3f5e9 100%);
+}
+
+.result-hero[data-outcome="lose"] {
+  background: linear-gradient(180deg, #fff6f4 0%, #fdeae6 100%);
+}
+
+.result-hero__headline {
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.result-hero__text {
+  margin: 0;
+  color: #445366;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.result-summary {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e7ebf0;
+  color: #445366;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
 .field-stack {
   display: grid;
   gap: 10px;

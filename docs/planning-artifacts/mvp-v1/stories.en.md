@@ -369,7 +369,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E5-ST04: Render Battle Result and Next Actions
 
-- Status: partial
+- Status: done
 - User story: As a player, I can see match outcome and choose the next action after battle ends.
 - Scope:
   - Winner and loser.

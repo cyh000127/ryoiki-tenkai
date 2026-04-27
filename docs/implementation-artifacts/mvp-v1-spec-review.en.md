@@ -15,11 +15,11 @@ This document is a quick snapshot of how far the current implementation satisfie
 - The core playable loop is implemented end to end.
   player entry -> loadout -> queue -> WebSocket handoff -> battle -> result -> history/rating -> runtime persistence
 - Story status summary
-  `done 26`
-  `partial 2`
+  `done 27`
+  `partial 1`
   `planned 0`
 - The repository now covers the core items from Phase 0 through Phase 8.
-- Remaining work is mostly focused on `input runtime hardening`, `battle UX polish`, and `smoke coverage`, rather than missing product pillars.
+- Remaining work is mostly focused on `formalizing the gesture token contract` and `smoke coverage`, rather than missing product pillars.
 
 ## Specification Areas Marked Done
 
@@ -33,6 +33,8 @@ This document is a quick snapshot of how far the current implementation satisfie
   HP, mana, cooldown, turn owner, deadline, selected skill status, and battle log are rendered from the latest server snapshot.
 - `E5-ST02` Sequence Progress and Submission Readiness
   current step, remaining step, progress indicator, submission readiness, local progress state, and server rejection feedback are rendered separately.
+- `E5-ST04` Battle Result and Next Action
+  winner/loser, end reason, rating delta, result summary, and rematch/history/home actions are rendered on the result screen.
 - `E6` Rating, History, and Leaderboard
   result persistence, compact action audit, rating update, history/leaderboard endpoints, and client history/rating screens are implemented.
 - `E7` Local Verification and Handoff
@@ -46,13 +48,6 @@ This document is a quick snapshot of how far the current implementation satisfie
   The default `skillset` already includes three skill sequences shared by the UI and backend.
 - Why it remains partial
   The gesture token set itself is not yet fully formalized as a dedicated contract or shared fixture.
-
-### E5-ST04: Render Battle Result and Next Action
-
-- Current state
-  Result screen, end reason, rating change, rematch, and history entry are implemented.
-- Why it remains partial
-  Next-action UX and result presentation polish are still not fully complete.
 
 ## Implemented User Scenarios
 
@@ -77,7 +72,7 @@ This document is a quick snapshot of how far the current implementation satisfie
 
 ## Recommended Next Priorities
 
-- `E4-ST01`, `E5-ST04`
-  Formalize the gesture token contract/shared fixture and improve result presentation polish.
+- `E4-ST01`
+  Formalize the gesture token contract/shared fixture.
 - `E7-ST02`
   Expand practical local smoke coverage.

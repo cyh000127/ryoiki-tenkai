@@ -824,6 +824,33 @@ describe("BattleGameWorkspace", () => {
 
   it("renders timeout reason on the result screen when the server ends the battle", async () => {
     const user = createUser();
+    mockMatchHistory = [
+      {
+        matchId: "match_test",
+        battleSessionId: "battle_test",
+        result: "LOSE",
+        skillsetId: DEFAULT_SKILLSET.skillsetId,
+        ratingChange: -18,
+        ratingAfter: 982,
+        endedReason: "TIMEOUT",
+        turnCount: 1,
+        playedAt: "2026-04-27T00:01:00Z"
+      }
+    ];
+    mockLeaderboard = [
+      {
+        rank: 1,
+        playerId: "pl_practice",
+        nickname: "Practice Rival",
+        rating: 1018
+      },
+      {
+        rank: 2,
+        playerId: "pl_guest",
+        nickname: "rookie",
+        rating: 982
+      }
+    ];
     installGameApiMock();
 
     renderWorkspace();
@@ -959,7 +986,15 @@ describe("BattleGameWorkspace", () => {
     });
 
     expect(await screen.findByRole("heading", { name: "전투 결과" })).toBeInTheDocument();
+    expect(screen.getAllByText("패배").length).toBeGreaterThan(0);
     expect(screen.getByText("턴 타임아웃")).toBeInTheDocument();
+    expect(screen.getByText("-18")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "전적 보기" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "전적 보기" }));
+
+    expect(await screen.findByText("LOSE / -18 / T1 / 턴 타임아웃")).toBeInTheDocument();
+    expect(screen.getByText("2. rookie / 982")).toBeInTheDocument();
   });
 
   it("ignores delayed queue and stale battle snapshot events once newer battle state is visible", async () => {
