@@ -97,14 +97,14 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
   pending, rejected, confirmed, timeout, surrender, and result handling
 - reconnect restore for the latest active battle snapshot and ended battle result state
 - delayed and duplicate socket events are reconciled so stale snapshots do not rewind the UI or reapply results
+- server-backed history, rating, and leaderboard screens with loading, empty, and error states
 
 ## Remaining Work
 
 - live camera recognition adapter hardening and clearer separation from deterministic fallback input
 - deadline/timer visibility, cooldown detail, and compact/mobile UX polish
 - durable persistence for results, compact action audit, rating history, and leaderboard data
-- client history, rating, and leaderboard screens
-- final end-to-end smoke and reconnect stale-state hardening
+- final end-to-end smoke coverage
 
 ## MVP Planning and QA
 

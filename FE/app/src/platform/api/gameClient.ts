@@ -1,4 +1,10 @@
-import type { Animset, PlayerSummary, Skillset } from "../../entities/game/model";
+import type {
+  Animset,
+  LeaderboardEntry,
+  MatchHistorySummary,
+  PlayerSummary,
+  Skillset
+} from "../../entities/game/model";
 import { getApiBaseUrl } from "./client";
 
 type ApiError = {
@@ -173,6 +179,14 @@ export async function surrenderBattle(
     },
     playerId
   );
+}
+
+export async function listMatchHistory(playerId: string): Promise<MatchHistorySummary[]> {
+  return request<MatchHistorySummary[]>("/api/v1/matches/history", {}, playerId);
+}
+
+export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
+  return request<LeaderboardEntry[]>("/api/v1/ratings/leaderboard");
 }
 
 export function toPlayerSummary(profile: PlayerProfileResponse): PlayerSummary {

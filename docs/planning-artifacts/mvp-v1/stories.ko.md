@@ -209,7 +209,7 @@
 
 ### E6-ST02: battle end 후 rating update 적용
 
-- Status: planned
+- Status: done
 - User story: player는 completed ranked battle 후 rating 변화를 받는다.
 - Scope: rating calculation, rating delta storage, profile/result exposure.
 - Acceptance criteria: winner/loser가 deterministic delta를 받는다. result re-read가 rating을 다시 적용하지 않는다. profile rating이 latest completed battle을 반영한다.
@@ -218,7 +218,7 @@
 
 ### E6-ST03: match history와 rating view 제공
 
-- Status: planned
+- Status: done
 - User story: player는 recent match와 rating position을 검토할 수 있다.
 - Scope: history endpoint, rating/leaderboard endpoint, MVP용 pagination 또는 small fixed list.
 - Acceptance criteria: history가 recent match summary를 반환한다. rating view가 rankable entry 또는 current player rating context를 반환한다. empty state가 명확하다.
@@ -227,7 +227,7 @@
 
 ### E6-ST04: client에서 history와 rating 렌더링
 
-- Status: planned
+- Status: done
 - User story: player는 client에서 recent match result와 rating change를 볼 수 있다.
 - Scope: result list, rating summary, empty state.
 - Acceptance criteria: completed match가 battle end 후 표시된다. rating delta가 result view와 일관된다. loading, empty, error state가 보인다.

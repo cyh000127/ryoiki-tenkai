@@ -30,6 +30,10 @@ let socketEventHandler: ((event: BattleSocketEvent) => void) | null = null;
 let socketCloseHandler: (() => void) | null = null;
 let submittedSocketActions: SubmitBattleActionPayload[] = [];
 let socketConnectCount = 0;
+let mockMatchHistory: Array<Record<string, unknown>> = [];
+let mockLeaderboard: Array<Record<string, unknown>> = [];
+let mockHistoryError = false;
+let mockLeaderboardError = false;
 
 vi.mock("../../src/platform/api/playerSession", () => ({
   loadStoredPlayerSession: () => storedSession,
@@ -222,6 +226,50 @@ function installGameApiMock(profile: MockProfile | null = null) {
       });
     }
 
+    if (pathname === "/api/v1/matches/history") {
+      if (mockHistoryError) {
+        return jsonResponse(
+          {
+            success: false,
+            data: null,
+            error: {
+              code: "HISTORY_UNAVAILABLE",
+              message: "History unavailable."
+            }
+          },
+          500
+        );
+      }
+
+      return jsonResponse({
+        success: true,
+        data: mockMatchHistory,
+        error: null
+      });
+    }
+
+    if (pathname === "/api/v1/ratings/leaderboard") {
+      if (mockLeaderboardError) {
+        return jsonResponse(
+          {
+            success: false,
+            data: null,
+            error: {
+              code: "LEADERBOARD_UNAVAILABLE",
+              message: "Leaderboard unavailable."
+            }
+          },
+          500
+        );
+      }
+
+      return jsonResponse({
+        success: true,
+        data: mockLeaderboard,
+        error: null
+      });
+    }
+
     throw new Error(`Unhandled fetch request: ${pathname}`);
   });
 }
@@ -243,6 +291,10 @@ describe("BattleGameWorkspace", () => {
     socketCloseHandler = null;
     submittedSocketActions = [];
     socketConnectCount = 0;
+    mockMatchHistory = [];
+    mockLeaderboard = [];
+    mockHistoryError = false;
+    mockLeaderboardError = false;
   });
 
   afterEach(() => {
@@ -274,6 +326,88 @@ describe("BattleGameWorkspace", () => {
     await user.click(screen.getByRole("button", { name: "랭크 1대1 매칭" }));
 
     expect(screen.getByText("저장된 로드아웃이 있어야 매칭을 시작할 수 있습니다.")).toBeInTheDocument();
+  });
+
+  it("renders server-backed history and leaderboard on the history screen", async () => {
+    const user = userEvent.setup();
+    storedSession = {
+      playerId: "pl_saved",
+      guestToken: "gt_saved"
+    };
+    mockMatchHistory = [
+      {
+        matchId: "match_latest",
+        battleSessionId: "battle_latest",
+        result: "WIN",
+        skillsetId: DEFAULT_SKILLSET.skillsetId,
+        ratingChange: 18,
+        ratingAfter: 1018,
+        endedReason: "HP_ZERO",
+        turnCount: 4,
+        playedAt: "2026-04-27T00:05:00Z"
+      }
+    ];
+    mockLeaderboard = [
+      {
+        rank: 1,
+        playerId: "pl_practice",
+        nickname: "Practice Rival",
+        rating: 1032
+      },
+      {
+        rank: 2,
+        playerId: "pl_saved",
+        nickname: "saved_player",
+        rating: 1018
+      }
+    ];
+    installGameApiMock({
+      playerId: "pl_saved",
+      nickname: "saved_player",
+      rating: 1018,
+      wins: 5,
+      losses: 2,
+      equippedSkillsetId: DEFAULT_SKILLSET.skillsetId,
+      equippedAnimsetId: DEFAULT_ANIMSETS[0].animsetId,
+      loadoutConfigured: true
+    });
+
+    renderWorkspace();
+
+    expect(await screen.findByText("saved_player")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "전적" }));
+
+    expect(await screen.findByText("WIN / +18 / T4 / 체력 소진")).toBeInTheDocument();
+    expect(screen.getByText("1. Practice Rival / 1032")).toBeInTheDocument();
+    expect(screen.getByText("2. saved_player / 1018")).toBeInTheDocument();
+  });
+
+  it("shows history and leaderboard error states when their lookups fail", async () => {
+    const user = userEvent.setup();
+    storedSession = {
+      playerId: "pl_saved",
+      guestToken: "gt_saved"
+    };
+    mockHistoryError = true;
+    mockLeaderboardError = true;
+    installGameApiMock({
+      playerId: "pl_saved",
+      nickname: "saved_player",
+      rating: 1000,
+      wins: 0,
+      losses: 0,
+      equippedSkillsetId: DEFAULT_SKILLSET.skillsetId,
+      equippedAnimsetId: DEFAULT_ANIMSETS[0].animsetId,
+      loadoutConfigured: true
+    });
+
+    renderWorkspace();
+
+    expect(await screen.findByText("saved_player")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "전적" }));
+
+    expect(await screen.findByText("전적을 불러오지 못했습니다.")).toBeInTheDocument();
+    expect(await screen.findByText("리더보드를 불러오지 못했습니다.")).toBeInTheDocument();
   });
 
   it("creates a guest, saves the loadout, and then enters battle from socket events", async () => {

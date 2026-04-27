@@ -22,10 +22,12 @@ import {
   ApiClientError,
   createGuestPlayer,
   enterMatchmakingQueue,
+  getLeaderboard,
   getMyProfile,
   getWsToken,
   leaveMatchmakingQueue,
   listAnimsets,
+  listMatchHistory,
   listSkillsets,
   surrenderBattle,
   toPlayerSummary,
@@ -77,6 +79,18 @@ export function BattleGameWorkspace() {
     queryKey: ["playerProfile", session?.playerId],
     enabled: session !== null,
     queryFn: () => getMyProfile(session!.playerId),
+    retry: false
+  });
+  const historyQuery = useQuery({
+    queryKey: ["matchHistory", session?.playerId],
+    enabled: session !== null && state.screen === "history",
+    queryFn: () => listMatchHistory(session!.playerId),
+    retry: false
+  });
+  const leaderboardQuery = useQuery({
+    queryKey: ["leaderboard"],
+    enabled: session !== null && state.screen === "history",
+    queryFn: getLeaderboard,
     retry: false
   });
 
@@ -293,6 +307,10 @@ export function BattleGameWorkspace() {
   const hasConfiguredLoadout = profileQuery.data?.loadoutConfigured ?? false;
   const isCatalogLoading = skillsetsQuery.isLoading || animsetsQuery.isLoading;
   const catalogFailed = skillsetsQuery.isError || animsetsQuery.isError;
+  const historyItems = historyQuery.data ?? [];
+  const leaderboardEntries = leaderboardQuery.data ?? [];
+  const playerLeaderboardEntry =
+    leaderboardEntries.find((entry) => entry.playerId === state.player.playerId) ?? null;
 
   function handleOpenLoadout() {
     if (!session) {
@@ -484,6 +502,17 @@ export function BattleGameWorkspace() {
           type: "battleEnded",
           battle: toBattleState(event.payload.battle),
           ratingChange: event.payload.ratingChange ?? 0
+        });
+        if (session) {
+          void queryClient.invalidateQueries({
+            queryKey: ["matchHistory", session.playerId]
+          });
+          void queryClient.invalidateQueries({
+            queryKey: ["playerProfile", session.playerId]
+          });
+        }
+        void queryClient.invalidateQueries({
+          queryKey: ["leaderboard"]
         });
         setStatusMessage(null);
         return;
@@ -862,7 +891,10 @@ export function BattleGameWorkspace() {
                 label={copy.endedReason}
                 value={getEndedReasonText(state.battle?.endedReason ?? null)}
               />
-              <Metric label={copy.ratingChange} value={state.history[0]?.ratingChange ?? 0} />
+              <Metric
+                label={copy.ratingChange}
+                value={formatSignedNumber(state.history[0]?.ratingChange ?? 0)}
+              />
               <Metric label={copy.playerRating} value={state.player.rating} />
               <div className="action-row">
                 <Button onClick={handleStartQueue} variant="primary">
@@ -876,16 +908,49 @@ export function BattleGameWorkspace() {
         ) : null}
 
         {state.screen === "history" ? (
-          <Panel title={copy.history}>
-            <ol className="log-list">
-              {state.history.length === 0 ? <li>{copy.noHistory}</li> : null}
-              {state.history.map((record) => (
-                <li key={record.matchId}>
-                  {record.result} / {record.ratingChange} / {record.turnCount}
-                </li>
-              ))}
-            </ol>
-          </Panel>
+          session ? (
+            <div className="surface-grid surface-grid--two">
+              <Panel title={copy.ratingSummary}>
+                <Metric label={copy.playerRating} value={state.player.rating} />
+                <Metric label={copy.currentRank} value={playerLeaderboardEntry?.rank ?? "-"} />
+                <Metric label={copy.record} value={`${state.player.wins}W / ${state.player.losses}L`} />
+                {leaderboardQuery.isLoading ? (
+                  <p className="helper-text">{copy.leaderboardLoading}</p>
+                ) : null}
+                {leaderboardQuery.isError ? (
+                  <p className="status-text">{copy.leaderboardLoadFailed}</p>
+                ) : null}
+                {!leaderboardQuery.isLoading && !leaderboardQuery.isError ? (
+                  <ol className="log-list">
+                    {leaderboardEntries.length === 0 ? <li>{copy.noLeaderboard}</li> : null}
+                    {leaderboardEntries.slice(0, 5).map((entry) => (
+                      <li key={entry.playerId}>
+                        {entry.rank}. {entry.nickname} / {entry.rating}
+                      </li>
+                    ))}
+                  </ol>
+                ) : null}
+              </Panel>
+              <Panel title={copy.history}>
+                {historyQuery.isLoading ? <p className="helper-text">{copy.historyLoading}</p> : null}
+                {historyQuery.isError ? <p className="status-text">{copy.historyLoadFailed}</p> : null}
+                {!historyQuery.isLoading && !historyQuery.isError ? (
+                  <ol className="log-list">
+                    {historyItems.length === 0 ? <li>{copy.noHistory}</li> : null}
+                    {historyItems.map((record) => (
+                      <li key={`${record.matchId}-${record.playedAt}`}>
+                        {formatHistorySummary(record)}
+                      </li>
+                    ))}
+                  </ol>
+                ) : null}
+              </Panel>
+            </div>
+          ) : (
+            <Panel title={copy.history}>
+              <p className="status-text">{copy.historySessionRequired}</p>
+            </Panel>
+          )
         ) : null}
       </div>
     </section>
@@ -898,6 +963,19 @@ function createClientActionId(): string {
 
 function createClientRequestId(): string {
   return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function formatHistorySummary(record: {
+  result: "WIN" | "LOSE";
+  ratingChange: number;
+  turnCount: number;
+  endedReason: "HP_ZERO" | "SURRENDER" | "TIMEOUT" | "DISCONNECT";
+}): string {
+  return `${record.result} / ${formatSignedNumber(record.ratingChange)} / T${record.turnCount} / ${getEndedReasonText(record.endedReason)}`;
+}
+
+function formatSignedNumber(value: number): string {
+  return value > 0 ? `+${value}` : String(value);
 }
 
 type PanelProps = {

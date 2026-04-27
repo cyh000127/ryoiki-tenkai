@@ -53,11 +53,32 @@ export type BattleState = {
   endedReason?: "HP_ZERO" | "SURRENDER" | "TIMEOUT" | "DISCONNECT" | null;
 };
 
+export type MatchResult = "WIN" | "LOSE";
+
 export type MatchRecord = {
   matchId: string;
-  result: "WIN" | "LOSE";
+  result: MatchResult;
   ratingChange: number;
   turnCount: number;
+};
+
+export type MatchHistorySummary = {
+  matchId: string;
+  battleSessionId: string;
+  result: MatchResult;
+  skillsetId: string;
+  ratingChange: number;
+  ratingAfter: number;
+  endedReason: "HP_ZERO" | "SURRENDER" | "TIMEOUT" | "DISCONNECT";
+  turnCount: number;
+  playedAt: string;
+};
+
+export type LeaderboardEntry = {
+  rank: number;
+  playerId: string;
+  nickname: string;
+  rating: number;
 };
 
 export const DEFAULT_SKILLSET: Skillset = {

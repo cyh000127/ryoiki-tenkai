@@ -408,7 +408,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E6-ST02: Apply Rating Update After Battle End
 
-- Status: planned
+- Status: done
 - User story: As a player, my rating changes after a completed ranked battle.
 - Scope:
   - Rating calculation.
@@ -425,7 +425,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E6-ST03: Expose Match History and Rating Views
 
-- Status: planned
+- Status: done
 - User story: As a player, I can review recent matches and rating position.
 - Scope:
   - History endpoint.
@@ -442,7 +442,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E6-ST04: Render History and Rating in the Client
 
-- Status: planned
+- Status: done
 - User story: As a player, I can see recent match results and rating changes in the client.
 - Scope:
   - Result list.

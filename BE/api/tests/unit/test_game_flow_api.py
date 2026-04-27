@@ -269,3 +269,40 @@ def test_surrender_ends_battle_and_emits_ended_event() -> None:
     assert ended_event["payload"]["loserPlayerId"] == player_id
     assert ended_event["payload"]["endedReason"] == "SURRENDER"
     assert ended_event["payload"]["battle"]["status"] == "ENDED"
+
+
+def test_history_and_leaderboard_reflect_completed_battle_rating_updates() -> None:
+    client = TestClient(create_app())
+    player_id = create_configured_guest(client, "player-history")
+    battle_session_id = create_started_battle(client, player_id)
+
+    surrender_response = client.post(
+        f"/api/v1/battles/{battle_session_id}/surrender",
+        headers={"X-Player-Id": player_id},
+    )
+    assert surrender_response.status_code == 200
+
+    profile_response = client.get("/api/v1/players/me", headers={"X-Player-Id": player_id})
+    assert profile_response.status_code == 200
+    profile = profile_response.json()["data"]
+    assert profile["losses"] >= 1
+    assert profile["rating"] < 1000
+
+    history_response = client.get("/api/v1/matches/history", headers={"X-Player-Id": player_id})
+    assert history_response.status_code == 200
+    history_rows = history_response.json()["data"]
+    assert history_rows
+    latest_row = history_rows[0]
+    assert latest_row["battleSessionId"] == battle_session_id
+    assert latest_row["result"] == "LOSE"
+    assert latest_row["endedReason"] == "SURRENDER"
+    assert latest_row["ratingAfter"] == profile["rating"]
+    assert latest_row["ratingChange"] < 0
+
+    leaderboard_response = client.get("/api/v1/ratings/leaderboard")
+    assert leaderboard_response.status_code == 200
+    leaderboard_rows = leaderboard_response.json()["data"]
+    ratings = [row["rating"] for row in leaderboard_rows]
+    assert ratings == sorted(ratings, reverse=True)
+    player_row = next(row for row in leaderboard_rows if row["playerId"] == player_id)
+    assert player_row["rating"] == profile["rating"]
