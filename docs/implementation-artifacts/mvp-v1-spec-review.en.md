@@ -15,8 +15,8 @@ This document is a quick snapshot of how far the current implementation satisfie
 - The core playable loop is implemented end to end.
   player entry -> loadout -> queue -> WebSocket handoff -> battle -> result -> history/rating -> runtime persistence
 - Story status summary
-  `done 23`
-  `partial 5`
+  `done 24`
+  `partial 4`
   `planned 0`
 - The repository now covers the core items from Phase 0 through Phase 8.
 - Remaining work is mostly focused on `input runtime hardening`, `battle UX polish`, and `smoke coverage`, rather than missing product pillars.
@@ -42,13 +42,6 @@ This document is a quick snapshot of how far the current implementation satisfie
   The default `skillset` already includes three skill sequences shared by the UI and backend.
 - Why it remains partial
   The gesture token set itself is not yet fully formalized as a dedicated contract or shared fixture.
-
-### E4-ST03: Add Deterministic Test or Fallback Input
-
-- Current state
-  Deterministic sequence input and testing fallback flows already exist in the frontend.
-- Why it remains partial
-  The boundary between the live camera adapter and debug-only fallback input still needs clearer separation.
 
 ### E5-ST01: Render Battle State and Action Log
 
@@ -94,8 +87,6 @@ This document is a quick snapshot of how far the current implementation satisfie
 
 ## Recommended Next Priorities
 
-- `E4-ST03`
-  Separate the live camera recognition adapter more cleanly from fallback and debug input.
 - `E5-ST01`, `E5-ST02`, `E5-ST04`
   Improve battle timer/deadline visibility, cooldown detail, compact/mobile UX, and result polish.
 - `E7-ST02`

@@ -15,8 +15,8 @@
 - 핵심 플레이 루프는 명세 기준으로 실제 동작합니다.
   player entry -> loadout -> queue -> WebSocket handoff -> battle -> result -> history/rating -> runtime persistence
 - 스토리 상태 집계
-  `done 23`
-  `partial 5`
+  `done 24`
+  `partial 4`
   `planned 0`
 - 현재 구현은 Phase 0 ~ Phase 8의 핵심 항목을 대부분 충족했습니다.
 - 남은 작업은 신규 시스템 추가보다 `입력 런타임 보강`, `battle UX polish`, `smoke coverage`에 가깝습니다.
@@ -42,13 +42,6 @@
   기본 `skillset`에 3개 skill sequence가 들어 있고 UI/서버가 같은 sequence를 사용합니다.
 - 남은 이유
   gesture token set 자체를 독립 계약이나 shared fixture로 명확히 고정한 문서/테스트가 부족합니다.
-
-### E4-ST03: deterministic test 또는 fallback input 추가
-
-- 현재 상태
-  프론트에서 deterministic sequence 입력과 테스트용 fallback 흐름은 사용할 수 있습니다.
-- 남은 이유
-  live camera adapter와 debug-only fallback input의 경계가 아직 충분히 분리되어 있지 않습니다.
 
 ### E5-ST01: battle state와 action log 렌더링
 
@@ -94,8 +87,6 @@
 
 ## 다음 우선순위
 
-- `E4-ST03`
-  live camera recognition adapter와 fallback/debug 입력 경계를 더 분리합니다.
 - `E5-ST01`, `E5-ST02`, `E5-ST04`
   battle timer/deadline, cooldown 상세, compact/mobile UX, result polish를 보강합니다.
 - `E7-ST02`

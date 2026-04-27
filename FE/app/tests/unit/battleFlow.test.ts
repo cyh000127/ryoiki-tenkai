@@ -45,15 +45,17 @@ describe("battleFlowReducer", () => {
   function completeDefaultSequence() {
     const matched = createMatchedBattle();
     const firstStep = battleFlowReducer(matched, {
-      type: "simulateGestureStep",
+      type: "receiveGestureInput",
       gesture: "seal_1",
-      confidence: 0.91
+      confidence: 0.91,
+      source: "debug_fallback"
     });
 
     return battleFlowReducer(firstStep, {
-      type: "simulateGestureStep",
+      type: "receiveGestureInput",
       gesture: "seal_3",
-      confidence: 0.91
+      confidence: 0.91,
+      source: "debug_fallback"
     });
   }
 
@@ -128,18 +130,41 @@ describe("battleFlowReducer", () => {
   it("records specific gesture failure reasons", () => {
     const matched = createMatchedBattle();
     const lowConfidence = battleFlowReducer(matched, {
-      type: "simulateGestureStep",
+      type: "receiveGestureInput",
       gesture: "seal_1",
-      confidence: 0.4
+      confidence: 0.4,
+      source: "debug_fallback"
     });
     const mismatch = battleFlowReducer(matched, {
-      type: "simulateGestureStep",
+      type: "receiveGestureInput",
       gesture: "seal_3",
-      confidence: 0.91
+      confidence: 0.91,
+      source: "debug_fallback"
     });
 
     expect(lowConfidence.input.failureReason).toBe("confidence_low");
     expect(mismatch.input.failureReason).toBe("sequence_mismatch");
+  });
+
+  it("keeps debug fallback input separate from live hand-detection state", () => {
+    const matched = createMatchedBattle();
+    const debugInput = battleFlowReducer(matched, {
+      type: "receiveGestureInput",
+      gesture: "seal_1",
+      confidence: 0.91,
+      source: "debug_fallback"
+    });
+    const liveInput = battleFlowReducer(debugInput, {
+      type: "receiveGestureInput",
+      gesture: "seal_3",
+      confidence: 0.91,
+      source: "live_camera"
+    });
+
+    expect(debugInput.input.lastInputSource).toBe("debug_fallback");
+    expect(debugInput.input.handDetected).toBe(false);
+    expect(liveInput.input.lastInputSource).toBe("live_camera");
+    expect(liveInput.input.handDetected).toBe(true);
   });
 
   it("maps server rejection reasons into UI failure states", () => {

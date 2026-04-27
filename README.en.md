@@ -95,6 +95,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - automatic practice rival turns
 - frontend battle workspace connected to real REST and WebSocket flow
   pending, rejected, confirmed, timeout, surrender, and result handling
+- live camera input surface and debug fallback controls are now separated
+  deterministic sequence replay and manual token input stay in a debug-only panel
 - reconnect restore for the latest active battle snapshot and ended battle result state
 - delayed and duplicate socket events are reconciled so stale snapshots do not rewind the UI or reapply results
 - server-backed history, rating, and leaderboard screens with loading, empty, and error states
@@ -102,7 +104,6 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 
 ## Remaining Work
 
-- live camera recognition adapter hardening and clearer separation from deterministic fallback input
 - deadline/timer visibility, cooldown detail, and compact/mobile UX polish
 - final end-to-end smoke coverage
 

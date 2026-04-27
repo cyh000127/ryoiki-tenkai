@@ -142,7 +142,7 @@
 
 ### E4-ST03: deterministic test 또는 fallback input 추가
 
-- Status: partial
+- Status: done
 - User story: developer는 live camera 조건 없이 battle submission을 테스트할 수 있다.
 - Scope: manual gesture token input, test mode sequence submission, normal play와 분리된 debug state.
 - Acceptance criteria: known valid sequence가 local smoke test에서 제출 가능하다. fallback input은 backend validation을 우회하지 않는다. debug control이 normal game control과 혼동되지 않는다.

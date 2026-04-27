@@ -1,18 +1,16 @@
 import { type ReactNode } from "react";
 
-import { copy } from "../i18n/catalog";
-import { StatusBadge } from "./StatusBadge";
-
 type AppShellProps = {
   children: ReactNode;
+  headerNotice?: ReactNode;
 };
 
-export function AppShell({ children }: AppShellProps) {
+export function AppShell({ children, headerNotice }: AppShellProps) {
   return (
     <main className="app-shell">
       <header className="app-shell__header">
-        <h1 className="app-shell__title">{copy.appTitle}</h1>
-        <StatusBadge tone="warning">{copy.fallbackNotice}</StatusBadge>
+        <h1 className="app-shell__title">Seal Battle</h1>
+        {headerNotice}
       </header>
       {children}
     </main>

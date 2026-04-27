@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { AppProviders } from "../../src/app/AppProviders";
@@ -541,8 +541,12 @@ describe("BattleGameWorkspace", () => {
       }
     });
 
-    await user.click(screen.getByRole("button", { name: "seal_1" }));
-    await user.click(screen.getByRole("button", { name: "seal_3" }));
+    const debugFallbackPanel = screen
+      .getByRole("heading", { name: "디버그 fallback 입력" })
+      .closest("section");
+    expect(debugFallbackPanel).not.toBeNull();
+
+    await user.click(within(debugFallbackPanel!).getByRole("button", { name: "목표 순서 입력" }));
     await user.click(screen.getByRole("button", { name: "서버 판정 요청" }));
 
     expect(submittedSocketActions).toHaveLength(1);
@@ -617,6 +621,81 @@ describe("BattleGameWorkspace", () => {
     expect(screen.getAllByText("75")).toHaveLength(2);
     expect(screen.getByText("T1 pulse_strike dealt 25")).toBeInTheDocument();
     expect(screen.getByText("T2 pulse_strike dealt 25")).toBeInTheDocument();
+  });
+
+  it("keeps debug fallback controls out of the main battle input surface", async () => {
+    const user = userEvent.setup();
+    installGameApiMock();
+
+    renderWorkspace();
+
+    await user.clear(screen.getByRole("textbox", { name: "닉네임" }));
+    await user.type(screen.getByRole("textbox", { name: "닉네임" }), "rookie");
+    await user.click(screen.getByRole("button", { name: "게스트 시작" }));
+    await user.click(await screen.findByRole("button", { name: "로드아웃 저장" }));
+    await user.click(await screen.findByRole("button", { name: "랭크 1대1 매칭" }));
+
+    emitSocketEvent({
+      type: "battle.match_ready",
+      payload: {
+        queueStatus: "SEARCHING",
+        queuedAt: "2026-04-27T00:00:00Z"
+      }
+    });
+    emitSocketEvent({
+      type: "battle.match_found",
+      payload: {
+        matchId: "match_test",
+        battleSessionId: "battle_test",
+        playerSeat: "PLAYER_ONE"
+      }
+    });
+    emitSocketEvent({
+      type: "battle.started",
+      payload: {
+        battleSessionId: "battle_test",
+        playerSeat: "PLAYER_ONE",
+        battle: {
+          battleSessionId: "battle_test",
+          matchId: "match_test",
+          status: "ACTIVE",
+          turnNumber: 1,
+          turnOwnerPlayerId: "pl_guest",
+          actionDeadlineAt: "2026-04-27T00:00:30Z",
+          self: {
+            playerId: "pl_guest",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          opponent: {
+            playerId: "pl_practice",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          battleLog: [],
+          winnerPlayerId: null,
+          loserPlayerId: null,
+          endedReason: null
+        }
+      }
+    });
+
+    const inputPanel = screen.getByRole("heading", { name: "입력 콘솔" }).closest("section");
+    const debugFallbackPanel = screen
+      .getByRole("heading", { name: "디버그 fallback 입력" })
+      .closest("section");
+
+    expect(inputPanel).not.toBeNull();
+    expect(debugFallbackPanel).not.toBeNull();
+    expect(within(inputPanel!).queryByRole("button", { name: "seal_1" })).toBeNull();
+    expect(within(debugFallbackPanel!).getByRole("button", { name: "seal_1" })).toBeInTheDocument();
+    expect(
+      within(debugFallbackPanel!).getByText(
+        "개발 및 스모크 테스트 전용 입력입니다. 일반 전투 입력과 분리되어 서버 검증은 그대로 거칩니다."
+      )
+    ).toBeInTheDocument();
   });
 
   it("renders timeout reason on the result screen when the server ends the battle", async () => {

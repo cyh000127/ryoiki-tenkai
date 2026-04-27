@@ -6,6 +6,7 @@ import {
   type PlayerSummary,
   type Skill
 } from "../../../entities/game/model";
+import type { GestureInputSource } from "../../gesture-session/model/gestureInput";
 
 export type ScreenKey = "home" | "loadout" | "matchmaking" | "battle" | "result" | "history";
 
@@ -22,6 +23,7 @@ export type ServerConfirmationStatus = "IDLE" | "PENDING" | "CONFIRMED";
 export type InputFeedback = {
   cameraReady: boolean;
   handDetected: boolean;
+  lastInputSource: GestureInputSource | null;
   currentGesture: string | null;
   targetSequence: string[];
   currentStep: number;
@@ -62,8 +64,9 @@ export type BattleFlowAction =
   | { type: "socketReconnecting" }
   | { type: "socketDisconnected" }
   | { type: "selectSkill"; skillId: string }
-  | { type: "simulateGestureStep"; gesture: string; confidence: number }
+  | { type: "receiveGestureInput"; gesture: string; confidence: number; source: GestureInputSource }
   | { type: "submitSkill" }
+  | { type: "resetGestureProgress" }
   | { type: "resetBattle" };
 
 export const initialBattleFlowState: BattleFlowState = {
@@ -84,6 +87,7 @@ export const initialBattleFlowState: BattleFlowState = {
   input: {
     cameraReady: false,
     handDetected: false,
+    lastInputSource: null,
     currentGesture: null,
     targetSequence: DEFAULT_SKILLSET.skills[0].gestureSequence,
     currentStep: 0,
@@ -124,6 +128,7 @@ export function battleFlowReducer(
         input: {
           ...state.input,
           targetSequence: findSkill(action.skillId).gestureSequence,
+          lastInputSource: null,
           currentStep: 0,
           currentGesture: null,
           failureReason: null,
@@ -140,6 +145,7 @@ export function battleFlowReducer(
         input: {
           ...state.input,
           targetSequence: findSkill(action.skillId).gestureSequence,
+          lastInputSource: null,
           currentStep: 0,
           currentGesture: null,
           failureReason: null,
@@ -187,6 +193,7 @@ export function battleFlowReducer(
           ...state.input,
           cameraReady: false,
           handDetected: false,
+          lastInputSource: null,
           currentGesture: null,
           currentStep: 0,
           failureReason: null,
@@ -222,16 +229,19 @@ export function battleFlowReducer(
         input: {
           ...state.input,
           targetSequence: findSkill(action.skillId).gestureSequence,
+          lastInputSource: null,
           currentStep: 0,
           currentGesture: null,
           failureReason: null,
           serverConfirmationStatus: "IDLE"
         }
       };
-    case "simulateGestureStep":
-      return applyGestureStep(state, action.gesture, action.confidence);
+    case "receiveGestureInput":
+      return applyGestureStep(state, action.gesture, action.confidence, action.source);
     case "submitSkill":
       return submitSelectedSkill(state);
+    case "resetGestureProgress":
+      return resetGestureProgress(state);
     case "resetBattle":
       return {
         ...state,
@@ -257,13 +267,19 @@ export function findSkill(skillId: string): Skill {
 function applyGestureStep(
   state: BattleFlowState,
   gesture: string,
-  confidence: number
+  confidence: number,
+  source: GestureInputSource
 ): BattleFlowState {
   if (state.input.serverConfirmationStatus === "PENDING") {
     return {
       ...state,
       input: {
         ...state.input,
+        cameraReady: true,
+        handDetected: source === "live_camera" ? true : state.input.handDetected,
+        lastInputSource: source,
+        currentGesture: gesture,
+        confidence,
         failureReason: "server_pending"
       },
       recentEvents: prependEvent(state, "gesture.rejected")
@@ -274,6 +290,11 @@ function applyGestureStep(
       ...state,
       input: {
         ...state.input,
+        cameraReady: true,
+        handDetected: source === "live_camera" ? true : state.input.handDetected,
+        lastInputSource: source,
+        currentGesture: gesture,
+        confidence,
         failureReason: "not_your_turn"
       },
       recentEvents: prependEvent(state, "gesture.rejected")
@@ -285,6 +306,9 @@ function applyGestureStep(
       ...state,
       input: {
         ...state.input,
+        cameraReady: true,
+        handDetected: source === "live_camera" ? true : state.input.handDetected,
+        lastInputSource: source,
         currentGesture: gesture,
         confidence,
         failureReason: "confidence_low",
@@ -298,6 +322,9 @@ function applyGestureStep(
       ...state,
       input: {
         ...state.input,
+        cameraReady: true,
+        handDetected: source === "live_camera" ? true : state.input.handDetected,
+        lastInputSource: source,
         currentGesture: gesture,
         confidence,
         currentStep: 0,
@@ -311,6 +338,9 @@ function applyGestureStep(
     ...state,
     input: {
       ...state.input,
+      cameraReady: true,
+      handDetected: source === "live_camera" ? true : state.input.handDetected,
+      lastInputSource: source,
       currentGesture: gesture,
       confidence,
       currentStep: state.input.currentStep + 1,
@@ -318,6 +348,20 @@ function applyGestureStep(
       serverConfirmationStatus: "IDLE"
     },
     recentEvents: prependEvent(state, "gesture.step.accepted")
+  };
+}
+
+function resetGestureProgress(state: BattleFlowState): BattleFlowState {
+  return {
+    ...state,
+    input: {
+      ...state.input,
+      currentGesture: null,
+      currentStep: 0,
+      failureReason: null,
+      serverConfirmationStatus: "IDLE"
+    },
+    recentEvents: prependEvent(state, "gesture.reset")
   };
 }
 
@@ -389,7 +433,8 @@ function applyBattleStarted(state: BattleFlowState, battle: BattleState): Battle
     input: {
       ...state.input,
       cameraReady: true,
-      handDetected: true,
+      handDetected: false,
+      lastInputSource: null,
       currentGesture: null,
       currentStep: 0,
       failureReason: null,

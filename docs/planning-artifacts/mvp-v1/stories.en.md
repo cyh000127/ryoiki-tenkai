@@ -274,7 +274,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E4-ST03: Add Deterministic Test or Fallback Input
 
-- Status: partial
+- Status: done
 - User story: As a developer, I can test battle submission without relying on live camera conditions.
 - Scope:
   - Manual gesture token input.

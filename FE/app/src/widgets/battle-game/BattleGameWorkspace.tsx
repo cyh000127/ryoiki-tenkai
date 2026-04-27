@@ -13,6 +13,12 @@ import {
   type ScreenKey
 } from "../../features/battle-flow/model/battleFlow";
 import {
+  DEBUG_FALLBACK_ENABLED,
+  createDebugFallbackInput,
+  createDeterministicFallbackSequence,
+  type GestureInputSource
+} from "../../features/gesture-session/model/gestureInput";
+import {
   connectBattleSocket,
   toBattleState,
   type BattleSocketConnection,
@@ -311,6 +317,7 @@ export function BattleGameWorkspace() {
   const leaderboardEntries = leaderboardQuery.data ?? [];
   const playerLeaderboardEntry =
     leaderboardEntries.find((entry) => entry.playerId === state.player.playerId) ?? null;
+  const debugFallbackEnabled = DEBUG_FALLBACK_ENABLED;
 
   function handleOpenLoadout() {
     if (!session) {
@@ -423,6 +430,33 @@ export function BattleGameWorkspace() {
       pendingActionRef.current = null;
       dispatch({ type: "actionRejected", reason: null, latencyMs: 0 });
       setStatusMessage(copy.actionSubmitFailed);
+    }
+  }
+
+  function handleGestureInput(gesture: string, source: GestureInputSource) {
+    const input = source === "debug_fallback" ? createDebugFallbackInput(gesture) : {
+      gesture,
+      confidence: 0.91,
+      source
+    };
+
+    dispatch({
+      type: "receiveGestureInput",
+      gesture: input.gesture,
+      confidence: input.confidence,
+      source: input.source
+    });
+  }
+
+  function handleRunDeterministicFallback() {
+    const sequence = createDeterministicFallbackSequence(state.input.targetSequence);
+    for (const input of sequence) {
+      dispatch({
+        type: "receiveGestureInput",
+        gesture: input.gesture,
+        confidence: input.confidence,
+        source: input.source
+      });
     }
   }
 
@@ -803,22 +837,13 @@ export function BattleGameWorkspace() {
                 />
                 <div className="sequence" aria-label={copy.targetSequence}>
                   {state.input.targetSequence.map((gesture, index) => (
-                    <button
-                      className="sequence__item"
+                    <span
+                      className="sequence__item sequence__item--display"
                       data-state={getGestureStepState(index, state.input.currentStep)}
-                      disabled={!canUseGestureInput}
                       key={`${gesture}-${index}`}
-                      onClick={() =>
-                        dispatch({
-                          type: "simulateGestureStep",
-                          gesture,
-                          confidence: 0.91
-                        })
-                      }
-                      type="button"
                     >
                       {gesture}
-                    </button>
+                    </span>
                   ))}
                 </div>
                 <Metric
@@ -826,6 +851,14 @@ export function BattleGameWorkspace() {
                   value={`${completedStepCount}/${state.input.targetSequence.length}`}
                 />
                 <Metric label={copy.targetProgress} value={`${progressPercent}%`} />
+                <Metric
+                  label={copy.inputSource}
+                  value={getInputSourceLabel(state.input.lastInputSource)}
+                />
+                <Metric
+                  label={copy.handStatus}
+                  value={state.input.handDetected ? copy.detected : copy.notDetected}
+                />
                 <Metric
                   label={copy.confidence}
                   value={`${Math.round(state.input.confidence * 100)}%`}
@@ -875,6 +908,16 @@ export function BattleGameWorkspace() {
                   ))}
                 </ol>
               </Panel>
+              {debugFallbackEnabled ? (
+                <DebugFallbackPanel
+                  canUseGestureInput={canUseGestureInput}
+                  currentSource={state.input.lastInputSource}
+                  onReplaySequence={handleRunDeterministicFallback}
+                  onResetProgress={() => dispatch({ type: "resetGestureProgress" })}
+                  onTriggerGesture={(gesture) => handleGestureInput(gesture, "debug_fallback")}
+                  targetSequence={state.input.targetSequence}
+                />
+              ) : null}
               <DebugPanel events={state.recentEvents} latency={state.input.networkLatencyMs} />
             </div>
           </>
@@ -1068,6 +1111,51 @@ function DebugPanel({ events, latency }: { events: string[]; latency: number }) 
   );
 }
 
+function DebugFallbackPanel({
+  canUseGestureInput,
+  currentSource,
+  onReplaySequence,
+  onResetProgress,
+  onTriggerGesture,
+  targetSequence
+}: {
+  canUseGestureInput: boolean;
+  currentSource: GestureInputSource | null;
+  onReplaySequence: () => void;
+  onResetProgress: () => void;
+  onTriggerGesture: (gesture: string) => void;
+  targetSequence: string[];
+}) {
+  return (
+    <Panel title={copy.debugFallbackPanel}>
+      <StatusBadge tone="warning">{copy.debugOnly}</StatusBadge>
+      <p className="helper-text">{copy.debugFallbackHelp}</p>
+      <Metric label={copy.inputSource} value={getInputSourceLabel(currentSource)} />
+      <div className="debug-fallback__actions">
+        <Button
+          disabled={!canUseGestureInput}
+          onClick={onReplaySequence}
+          variant="primary"
+        >
+          {copy.debugFallbackReplay}
+        </Button>
+        <Button onClick={onResetProgress}>{copy.debugFallbackReset}</Button>
+      </div>
+      <div className="sequence" aria-label={copy.debugFallbackSequence}>
+        {targetSequence.map((gesture, index) => (
+          <Button
+            disabled={!canUseGestureInput}
+            key={`${gesture}-${index}`}
+            onClick={() => onTriggerGesture(gesture)}
+          >
+            {gesture}
+          </Button>
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
 function getSequenceProgress(current: number, total: number): number {
   if (total <= 0) {
     return 0;
@@ -1086,6 +1174,18 @@ function getGestureStepState(index: number, currentStep: number): "complete" | "
 
 function getFailureMessage(reason: InputFailureReason | null): string {
   return reason ? copy.failureReasonText[reason] : copy.failureReasonNone;
+}
+
+function getInputSourceLabel(source: GestureInputSource | null): string {
+  if (source === "debug_fallback") {
+    return copy.inputSourceDebugFallback;
+  }
+
+  if (source === "live_camera") {
+    return copy.inputSourceLiveCamera;
+  }
+
+  return copy.inputSourceWaiting;
 }
 
 function getFeedbackState(
