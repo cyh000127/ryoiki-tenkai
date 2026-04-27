@@ -8,11 +8,10 @@ Korean documentation is available in `README.md`. `README.ko.md` keeps the same 
 
 - Spec review date: `2026-04-28`
 - Story summary
-  `done 27`
-  `partial 1`
+  `done 28`
+  `partial 0`
   `planned 0`
-- Partial stories
-  `E4-ST01` Define MVP Gesture Token Set and Skill Sequences
+- No partial stories are currently tracked.
 - Detailed review
   `docs/implementation-artifacts/mvp-v1-spec-review.en.md`
 
@@ -110,6 +109,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - battle deadline countdown, fighter cooldown detail, and selected skill state are rendered from server snapshots
 - sequence progress, submission readiness, local input status, and server rejection feedback are rendered as separate battle UI states
 - result screen renders winner/loser, end reason, rating delta, and rematch/history/home follow-up actions
+- a shared gesture token fixture and cross-stack contract tests now lock the default skill-to-sequence mapping
 - reconnect restore for the latest active battle snapshot and ended battle result state
 - delayed and duplicate socket events are reconciled so stale snapshots do not rewind the UI or reapply results
 - server-backed history, rating, and leaderboard screens with loading, empty, and error states
@@ -117,7 +117,6 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 
 ## Remaining Work
 
-- formalize the gesture token set as a shared contract or fixture
 - final end-to-end smoke coverage
 
 ## MVP Planning and QA

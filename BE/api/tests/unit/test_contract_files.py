@@ -1,5 +1,8 @@
 import json
+import re
 from pathlib import Path
+
+from gesture_api.domain.catalog import SKILLSETS
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -78,3 +81,49 @@ def test_battle_websocket_contract_contains_core_events() -> None:
     assert {"battleSessionId", "playerSeat", "battle"} == set(
         started_event["properties"]["payload"]["required"]
     )
+
+
+def test_mvp_gesture_catalog_fixture_defines_normalized_token_set() -> None:
+    contract = json.loads(
+        (ROOT / "contracts/catalog/mvp-gesture-catalog.json").read_text(encoding="utf-8")
+    )
+
+    assert contract["tokenSetId"] == "mvp_gesture_tokens_v1"
+    token_values = [token["token"] for token in contract["normalizedGestureTokens"]]
+
+    assert len(token_values) == len(set(token_values))
+    assert all(re.fullmatch(r"[a-z0-9_]+", token) for token in token_values)
+    assert len(contract["skillsets"]) >= 1
+    assert len(contract["skillsets"][0]["skills"]) >= 3
+
+    allowed_tokens = set(token_values)
+    for skillset in contract["skillsets"]:
+        for skill in skillset["skills"]:
+            assert set(skill["gestureSequence"]).issubset(allowed_tokens)
+
+
+def test_backend_skill_catalog_matches_shared_mvp_gesture_fixture() -> None:
+    contract = json.loads(
+        (ROOT / "contracts/catalog/mvp-gesture-catalog.json").read_text(encoding="utf-8")
+    )
+
+    serialized_skillsets = [
+        {
+            "skillsetId": skillset.skillset_id,
+            "name": skillset.name,
+            "skills": [
+                {
+                    "skillId": skill.skill_id,
+                    "name": skill.name,
+                    "gestureSequence": skill.gesture_sequence,
+                    "manaCost": skill.mana_cost,
+                    "damage": skill.damage,
+                    "cooldownTurn": skill.cooldown_turn,
+                }
+                for skill in skillset.skills
+            ],
+        }
+        for skillset in SKILLSETS
+    ]
+
+    assert serialized_skillsets == contract["skillsets"]

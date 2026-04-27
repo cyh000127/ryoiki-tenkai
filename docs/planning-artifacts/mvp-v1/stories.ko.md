@@ -124,7 +124,7 @@
 
 ### E4-ST01: MVP gesture token set과 skill sequence 정의
 
-- Status: partial
+- Status: done
 - User story: battle loop 설계자는 설명하고 테스트하기 쉬운 작은 gesture token set과 skill sequence를 정의할 수 있다.
 - Scope: token model, skill-to-sequence mapping, frontend/backend shared expectation.
 - Acceptance criteria: 최소 세 개의 MVP skill sequence가 존재한다. 각 sequence는 normalized token을 사용한다. sequence metadata가 UI guidance에 보인다.

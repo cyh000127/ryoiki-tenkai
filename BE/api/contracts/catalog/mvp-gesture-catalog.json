@@ -1,0 +1,82 @@
+{
+  "tokenSetId": "mvp_gesture_tokens_v1",
+  "normalizedGestureTokens": [
+    {
+      "token": "seal_1",
+      "label": "Seal 1",
+      "category": "pose"
+    },
+    {
+      "token": "seal_2",
+      "label": "Seal 2",
+      "category": "pose"
+    },
+    {
+      "token": "seal_3",
+      "label": "Seal 3",
+      "category": "pose"
+    },
+    {
+      "token": "seal_4",
+      "label": "Seal 4",
+      "category": "pose"
+    },
+    {
+      "token": "seal_5",
+      "label": "Seal 5",
+      "category": "pose"
+    },
+    {
+      "token": "open_palm",
+      "label": "Open Palm",
+      "category": "pose"
+    },
+    {
+      "token": "hold_300",
+      "label": "Hold 300ms",
+      "category": "timing"
+    }
+  ],
+  "skillsets": [
+    {
+      "skillsetId": "skillset_seal_basic",
+      "name": "기본 인장술",
+      "skills": [
+        {
+          "skillId": "pulse_strike",
+          "name": "파동격",
+          "gestureSequence": [
+            "seal_1",
+            "seal_3"
+          ],
+          "manaCost": 20,
+          "damage": 25,
+          "cooldownTurn": 1
+        },
+        {
+          "skillId": "burst_edge",
+          "name": "쇄도참",
+          "gestureSequence": [
+            "seal_2",
+            "hold_300",
+            "seal_4"
+          ],
+          "manaCost": 30,
+          "damage": 35,
+          "cooldownTurn": 2
+        },
+        {
+          "skillId": "focus_bolt",
+          "name": "집중탄",
+          "gestureSequence": [
+            "open_palm",
+            "seal_5"
+          ],
+          "manaCost": 15,
+          "damage": 18,
+          "cooldownTurn": 1
+        }
+      ]
+    }
+  ]
+}

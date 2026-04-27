@@ -15,11 +15,11 @@
 - 핵심 플레이 루프는 명세 기준으로 실제 동작합니다.
   player entry -> loadout -> queue -> WebSocket handoff -> battle -> result -> history/rating -> runtime persistence
 - 스토리 상태 집계
-  `done 27`
-  `partial 1`
+  `done 28`
+  `partial 0`
   `planned 0`
-- 현재 구현은 Phase 0 ~ Phase 8의 핵심 항목을 대부분 충족했습니다.
-- 남은 작업은 신규 시스템 추가보다 `gesture token contract 고정`과 `smoke coverage 보강`에 가깝습니다.
+- 현재 구현은 Phase 0 ~ Phase 8의 핵심 항목을 모두 충족했습니다.
+- 현재 추적 중인 MVP 스토리는 모두 `done` 상태입니다.
 
 ## 완료된 명세 범위
 
@@ -29,6 +29,8 @@
   queue enter/cancel/status, socket token 인증, `battle.match_ready`, `battle.match_found`, `battle.started`, reconnect snapshot 복구가 구현되었습니다.
 - `E3` Server-Authoritative Battle Engine
   action validation, exact-once apply, rejection path, timeout, surrender, battle end와 outcome 기록이 구현되었습니다.
+- `E4-ST01` Gesture Token Contract
+  normalized gesture token set과 default skill-to-sequence mapping이 shared fixture와 cross-stack test로 고정되었습니다.
 - `E5-ST01` Battle Workspace State View
   HP, mana, cooldown, turn owner, deadline, selected skill status, battle log가 최신 server snapshot 기준으로 렌더링됩니다.
 - `E5-ST02` Sequence Progress and Submission Readiness
@@ -42,12 +44,7 @@
 
 ## 부분 완료 명세
 
-### E4-ST01: MVP gesture token set과 skill sequence 정의
-
-- 현재 상태
-  기본 `skillset`에 3개 skill sequence가 들어 있고 UI/서버가 같은 sequence를 사용합니다.
-- 남은 이유
-  gesture token set 자체를 독립 계약이나 shared fixture로 명확히 고정한 문서/테스트가 부족합니다.
+- 현재 partial 상태의 MVP 스토리는 없습니다.
 
 ## 구현된 핵심 사용자 시나리오
 
@@ -72,7 +69,5 @@
 
 ## 다음 우선순위
 
-- `E4-ST01`
-  gesture token contract/shared fixture를 보강합니다.
-- `E7-ST02`
+- `E7-ST02` follow-up hardening
   local smoke coverage를 실제 실행 기준으로 더 채웁니다.

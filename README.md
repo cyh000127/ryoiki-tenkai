@@ -12,11 +12,10 @@
   `docs/planning-artifacts/mvp-v1/stories.ko.md`
   `docs/planning-artifacts/mvp-v1/implementation-order.ko.md`
 - 스토리 상태 집계
-  `done 27`
-  `partial 1`
+  `done 28`
+  `partial 0`
   `planned 0`
-- 현재 partial 항목
-  `E4-ST01` MVP gesture token set과 skill sequence 정의
+- 현재 partial 항목 없음
 - 상세 점검 문서
   `docs/implementation-artifacts/mvp-v1-spec-review.ko.md`
 
@@ -106,6 +105,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - battle deadline countdown, fighter cooldown detail, selected skill 상태 표시
 - sequence progress, submission readiness, local input 상태와 server rejection feedback 분리 표시
 - winner/loser, 종료 사유, rating delta, rematch/history/home을 포함한 결과 화면
+- shared gesture token fixture와 FE/BE cross-stack contract test
 - reconnect 시 latest active battle snapshot 복구와 ended battle 결과 상태 복원
 - delayed/duplicate socket event를 최신 battle state 기준으로 정리해 UI rollback과 중복 결과 반영 방지
 - server-backed 전적/레이팅/leaderboard 화면과 loading/empty/error 상태 렌더링
@@ -113,7 +113,6 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 
 ## 남은 작업
 
-- gesture token set contract/shared fixture 고정
 - end-to-end smoke coverage 추가
 
 ## 경계

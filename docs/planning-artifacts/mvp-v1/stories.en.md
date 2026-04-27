@@ -10,7 +10,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E1-ST01: Create or Restore Lightweight Player Identity
 
-- Status: partial
+- Status: done
 - User story: As a player, I can create or restore a lightweight local identity so I can enter the battle loop without a full account system.
 - Scope:
   - Create player identifier and display name.
@@ -29,7 +29,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E1-ST02: Expose Approved Skillset and Animset Catalogs
 
-- Status: partial
+- Status: done
 - User story: As a player, I can view approved skillset and animset presets so I know what can be selected for battle.
 - Scope:
   - Return skill identifiers, names, costs, cooldowns, and gesture sequences.
@@ -48,7 +48,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E1-ST03: Save and Validate Player Loadout
 
-- Status: partial
+- Status: done
 - User story: As a player, I can save a valid loadout so matchmaking starts with a battle-ready configuration.
 - Scope:
   - Validate skillset and animset selections.
@@ -68,7 +68,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E2-ST01: Enter, Cancel, and Query Matchmaking Queue
 
-- Status: partial
+- Status: done
 - User story: As a loaded player, I can enter and cancel ranked 1v1 queue so I control when a match starts.
 - Scope:
   - Queue entry command.
@@ -104,7 +104,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E2-ST03: Emit Match-Found and Battle-Started Events
 
-- Status: partial
+- Status: done
 - User story: As a player in queue, I receive server events that move me into a battle without relying on polling-only behavior.
 - Scope:
   - Emit match-found event.
@@ -237,7 +237,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E4-ST01: Define MVP Gesture Token Set and Skill Sequences
 
-- Status: partial
+- Status: done
 - User story: As a designer of the battle loop, I can define a small set of gesture tokens and skill sequences that are easy to explain and test.
 - Scope:
   - Token model.

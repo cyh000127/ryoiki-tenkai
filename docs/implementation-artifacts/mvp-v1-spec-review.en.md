@@ -15,11 +15,11 @@ This document is a quick snapshot of how far the current implementation satisfie
 - The core playable loop is implemented end to end.
   player entry -> loadout -> queue -> WebSocket handoff -> battle -> result -> history/rating -> runtime persistence
 - Story status summary
-  `done 27`
-  `partial 1`
+  `done 28`
+  `partial 0`
   `planned 0`
-- The repository now covers the core items from Phase 0 through Phase 8.
-- Remaining work is mostly focused on `formalizing the gesture token contract` and `smoke coverage`, rather than missing product pillars.
+- The repository now covers every currently tracked core item from Phase 0 through Phase 8.
+- All currently tracked MVP stories are marked `done`.
 
 ## Specification Areas Marked Done
 
@@ -29,6 +29,8 @@ This document is a quick snapshot of how far the current implementation satisfie
   queue enter/cancel/status, socket token auth, `battle.match_ready`, `battle.match_found`, `battle.started`, and reconnect snapshot restore are implemented.
 - `E3` Server-Authoritative Battle Engine
   action validation, exact-once apply, rejection paths, timeout, surrender, and battle end recording are implemented.
+- `E4-ST01` Gesture Token Contract
+  the normalized gesture token set and default skill-to-sequence mapping are fixed through a shared fixture and cross-stack tests.
 - `E5-ST01` Battle Workspace State View
   HP, mana, cooldown, turn owner, deadline, selected skill status, and battle log are rendered from the latest server snapshot.
 - `E5-ST02` Sequence Progress and Submission Readiness
@@ -42,12 +44,7 @@ This document is a quick snapshot of how far the current implementation satisfie
 
 ## Specification Areas Still Partial
 
-### E4-ST01: Define MVP Gesture Token Set and Skill Sequences
-
-- Current state
-  The default `skillset` already includes three skill sequences shared by the UI and backend.
-- Why it remains partial
-  The gesture token set itself is not yet fully formalized as a dedicated contract or shared fixture.
+- There are no MVP story items currently marked partial.
 
 ## Implemented User Scenarios
 
@@ -72,7 +69,5 @@ This document is a quick snapshot of how far the current implementation satisfie
 
 ## Recommended Next Priorities
 
-- `E4-ST01`
-  Formalize the gesture token contract/shared fixture.
-- `E7-ST02`
+- `E7-ST02` follow-up hardening
   Expand practical local smoke coverage.
