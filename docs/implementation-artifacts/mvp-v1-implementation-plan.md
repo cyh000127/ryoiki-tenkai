@@ -4,6 +4,7 @@ This document records the MVP implementation baseline derived from the v1 produc
 
 ## Detailed Planning Artifacts
 
+- `docs/planning-artifacts/mvp-v1/technology-stack.md`: selected MVP technology stack, boundaries, deferred choices, and dependency rules.
 - `docs/planning-artifacts/mvp-v1/epics.md`: epic-level outcomes, boundaries, stories, and acceptance signals.
 - `docs/planning-artifacts/mvp-v1/stories.md`: story-sized implementation units with status, scope, dependencies, and verification notes.
 - `docs/planning-artifacts/mvp-v1/implementation-order.md`: recommended build order and commit order.

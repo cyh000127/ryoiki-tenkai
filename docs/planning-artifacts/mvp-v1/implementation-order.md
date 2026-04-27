@@ -12,13 +12,15 @@ Keep the workspace runnable before feature work expands.
 
 1. Confirm bootstrap, backend checks, frontend checks, and boundary checks.
 2. Keep README entrypoints current.
-3. Keep provider-neutral naming in docs and user-facing copy.
+3. Keep the selected technology stack documented before adding implementation dependencies.
+4. Keep provider-neutral naming in docs and user-facing copy.
 
 ### Exit Criteria
 
 - Repository setup commands are documented.
 - Automated checks run from the repository root.
 - New work has a clear owning directory.
+- Technology stack changes are captured in `technology-stack.md`.
 
 ## Phase 1: Contracts and Domain Fixtures
 

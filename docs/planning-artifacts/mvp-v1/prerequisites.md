@@ -6,6 +6,7 @@ This document lists the conditions that should be true before starting or mergin
 
 - Repository bootstrap command runs from the repository root.
 - Backend and frontend check scripts are available and documented.
+- `technology-stack.md` is reviewed before adding a new runtime, framework, database, queue, recognition package, or test tool.
 - Ownership boundaries are clear:
   - `BE/api` owns API contracts, request handling, battle state writes, and persistence-facing services.
   - `BE/core` owns pure domain rules and value objects.
