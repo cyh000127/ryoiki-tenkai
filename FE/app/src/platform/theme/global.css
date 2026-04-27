@@ -118,6 +118,11 @@ textarea {
   background: #eef3f8;
 }
 
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.64;
+}
+
 .button--primary {
   border-color: #2e6fbb;
   background: #2e6fbb;
@@ -253,19 +258,73 @@ textarea {
   gap: 10px;
 }
 
+.fighter[data-active="true"] {
+  border-color: #2e6fbb;
+  box-shadow: inset 0 0 0 1px rgba(46, 111, 187, 0.22);
+}
+
 .battle-center {
   border: 1px solid #d7dde5;
   border-radius: 8px;
   display: grid;
-  place-items: center;
+  align-content: center;
+  justify-items: center;
+  gap: 8px;
   min-height: 180px;
+  padding: 16px;
   background: #f1f5f9;
+}
+
+.battle-center[data-state="mine"] {
+  background: #edf8f1;
+}
+
+.battle-center[data-state="pending"] {
+  background: #fff7df;
+}
+
+.turn-hint {
+  margin: 0;
+  color: #506070;
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.sequence-progress {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sequence-progress__label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.sequence-progress__bar {
+  position: relative;
+  overflow: hidden;
+  height: 10px;
+  border-radius: 999px;
+  background: #e7ebf0;
+}
+
+.sequence-progress__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: #2e6fbb;
+  transition: width 160ms ease;
 }
 
 .sequence {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  margin-bottom: 12px;
 }
 
 .sequence__item {
@@ -275,11 +334,54 @@ textarea {
   padding: 4px 8px;
   font-size: 13px;
   background: #ffffff;
+  cursor: pointer;
 }
 
-.sequence__item[data-active="true"] {
+.sequence__item[data-state="current"] {
   border-color: #2e6fbb;
   color: #174f8f;
+}
+
+.sequence__item[data-state="complete"] {
+  border-color: #1f7a45;
+  background: #e4f6ea;
+  color: #17683a;
+}
+
+.sequence__item:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+.input-feedback,
+.confirmation-strip {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  border: 1px solid #d7dde5;
+  border-radius: 8px;
+  padding: 10px;
+  color: #27364a;
+  font-size: 14px;
+  line-height: 1.4;
+  background: #f8fafc;
+}
+
+.input-feedback[data-state="error"] {
+  border-color: #f0b6b6;
+  background: #fff1f1;
+  color: #7a2323;
+}
+
+.input-feedback[data-state="pending"],
+.confirmation-strip[data-state="PENDING"] {
+  border-color: #f0d17a;
+  background: #fff8df;
+}
+
+.confirmation-strip[data-state="CONFIRMED"] {
+  border-color: #a7dfba;
+  background: #f0fbf4;
 }
 
 .action-row {

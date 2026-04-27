@@ -9,15 +9,26 @@ import {
 
 export type ScreenKey = "home" | "loadout" | "matchmaking" | "battle" | "result" | "history";
 
+export type InputFailureReason =
+  | "confidence_low"
+  | "sequence_mismatch"
+  | "sequence_incomplete"
+  | "not_your_turn"
+  | "insufficient_mana"
+  | "server_pending";
+
+export type ServerConfirmationStatus = "IDLE" | "PENDING" | "CONFIRMED";
+
 export type InputFeedback = {
   cameraReady: boolean;
   handDetected: boolean;
   currentGesture: string | null;
   targetSequence: string[];
   currentStep: number;
-  failureReason: string | null;
+  failureReason: InputFailureReason | null;
   confidence: number;
   networkLatencyMs: number;
+  serverConfirmationStatus: ServerConfirmationStatus;
 };
 
 export type BattleFlowState = {
@@ -43,6 +54,8 @@ export type BattleFlowAction =
   | { type: "selectSkill"; skillId: string }
   | { type: "simulateGestureStep"; gesture: string; confidence: number }
   | { type: "submitSkill" }
+  | { type: "confirmSkill" }
+  | { type: "resolveOpponentTurn" }
   | { type: "surrender" }
   | { type: "resetBattle" };
 
@@ -69,7 +82,8 @@ export const initialBattleFlowState: BattleFlowState = {
     currentStep: 0,
     failureReason: null,
     confidence: 0,
-    networkLatencyMs: 0
+    networkLatencyMs: 0,
+    serverConfirmationStatus: "IDLE"
   },
   history: [],
   recentEvents: []
@@ -98,7 +112,8 @@ export function battleFlowReducer(
           ...state.input,
           targetSequence: findSkill(action.skillId).gestureSequence,
           currentStep: 0,
-          failureReason: null
+          failureReason: null,
+          serverConfirmationStatus: "IDLE"
         },
         screen: "matchmaking",
         recentEvents: prependEvent(state, "loadout.updated")
@@ -124,7 +139,8 @@ export function battleFlowReducer(
           handDetected: true,
           currentStep: 0,
           failureReason: null,
-          networkLatencyMs: 42
+          networkLatencyMs: 42,
+          serverConfirmationStatus: "IDLE"
         },
         recentEvents: prependEvent(state, "match.found")
       };
@@ -137,13 +153,18 @@ export function battleFlowReducer(
           targetSequence: findSkill(action.skillId).gestureSequence,
           currentStep: 0,
           currentGesture: null,
-          failureReason: null
+          failureReason: null,
+          serverConfirmationStatus: "IDLE"
         }
       };
     case "simulateGestureStep":
       return applyGestureStep(state, action.gesture, action.confidence);
     case "submitSkill":
       return submitSelectedSkill(state);
+    case "confirmSkill":
+      return confirmSelectedSkill(state);
+    case "resolveOpponentTurn":
+      return resolveOpponentTurn(state);
     case "surrender":
       return finishBattle(state, false, "battle.ended.surrender");
     case "resetBattle":
@@ -170,6 +191,26 @@ function applyGestureStep(
   gesture: string,
   confidence: number
 ): BattleFlowState {
+  if (state.input.serverConfirmationStatus === "PENDING") {
+    return {
+      ...state,
+      input: {
+        ...state.input,
+        failureReason: "server_pending"
+      },
+      recentEvents: prependEvent(state, "gesture.rejected")
+    };
+  }
+  if (state.battle && state.battle.turnOwnerPlayerId !== state.player.playerId) {
+    return {
+      ...state,
+      input: {
+        ...state.input,
+        failureReason: "not_your_turn"
+      },
+      recentEvents: prependEvent(state, "gesture.rejected")
+    };
+  }
   const expected = state.input.targetSequence[state.input.currentStep];
   if (confidence < 0.65) {
     return {
@@ -178,7 +219,8 @@ function applyGestureStep(
         ...state.input,
         currentGesture: gesture,
         confidence,
-        failureReason: "confidence_low"
+        failureReason: "confidence_low",
+        serverConfirmationStatus: "IDLE"
       },
       recentEvents: prependEvent(state, "gesture.rejected")
     };
@@ -191,7 +233,8 @@ function applyGestureStep(
         currentGesture: gesture,
         confidence,
         currentStep: 0,
-        failureReason: "sequence_mismatch"
+        failureReason: "sequence_mismatch",
+        serverConfirmationStatus: "IDLE"
       },
       recentEvents: prependEvent(state, "gesture.sequence_reset")
     };
@@ -203,7 +246,8 @@ function applyGestureStep(
       currentGesture: gesture,
       confidence,
       currentStep: state.input.currentStep + 1,
-      failureReason: null
+      failureReason: null,
+      serverConfirmationStatus: "IDLE"
     },
     recentEvents: prependEvent(state, "gesture.step.accepted")
   };
@@ -213,18 +257,25 @@ function submitSelectedSkill(state: BattleFlowState): BattleFlowState {
   if (!state.battle || state.battle.status !== "ACTIVE") {
     return state;
   }
-  const skill = findSkill(state.selectedSkillId);
-  if (state.input.currentStep < skill.gestureSequence.length) {
+  if (state.input.serverConfirmationStatus === "PENDING") {
     return {
       ...state,
-      input: { ...state.input, failureReason: "sequence_incomplete" },
+      input: { ...state.input, failureReason: "server_pending" },
       recentEvents: prependEvent(state, "battle.action_rejected")
     };
   }
+  const skill = findSkill(state.selectedSkillId);
   if (state.battle.turnOwnerPlayerId !== state.player.playerId) {
     return {
       ...state,
       input: { ...state.input, failureReason: "not_your_turn" },
+      recentEvents: prependEvent(state, "battle.action_rejected")
+    };
+  }
+  if (state.input.currentStep < skill.gestureSequence.length) {
+    return {
+      ...state,
+      input: { ...state.input, failureReason: "sequence_incomplete" },
       recentEvents: prependEvent(state, "battle.action_rejected")
     };
   }
@@ -236,6 +287,28 @@ function submitSelectedSkill(state: BattleFlowState): BattleFlowState {
     };
   }
 
+  return {
+    ...state,
+    input: {
+      ...state.input,
+      failureReason: null,
+      networkLatencyMs: 64,
+      serverConfirmationStatus: "PENDING"
+    },
+    recentEvents: prependEvent(state, "battle.action_submitted")
+  };
+}
+
+function confirmSelectedSkill(state: BattleFlowState): BattleFlowState {
+  if (
+    !state.battle ||
+    state.battle.status !== "ACTIVE" ||
+    state.input.serverConfirmationStatus !== "PENDING"
+  ) {
+    return state;
+  }
+
+  const skill = findSkill(state.selectedSkillId);
   const nextOpponentHp = Math.max(0, state.battle.opponent.hp - skill.damage);
   const ended = nextOpponentHp <= 0;
   const battle: BattleState = {
@@ -277,9 +350,61 @@ function submitSelectedSkill(state: BattleFlowState): BattleFlowState {
       currentStep: 0,
       currentGesture: null,
       failureReason: null,
-      networkLatencyMs: 38
+      networkLatencyMs: 38,
+      serverConfirmationStatus: "CONFIRMED"
     },
     recentEvents: prependEvent(state, "battle.state_updated")
+  };
+}
+
+function resolveOpponentTurn(state: BattleFlowState): BattleFlowState {
+  if (
+    !state.battle ||
+    state.battle.status !== "ACTIVE" ||
+    state.battle.turnOwnerPlayerId === state.player.playerId ||
+    state.input.serverConfirmationStatus === "PENDING"
+  ) {
+    return state;
+  }
+
+  const opponentDamage = 12;
+  const nextSelfHp = Math.max(0, state.battle.self.hp - opponentDamage);
+  const ended = nextSelfHp <= 0;
+  const battle: BattleState = {
+    ...state.battle,
+    status: ended ? "ENDED" : "ACTIVE",
+    turnNumber: state.battle.turnNumber + 1,
+    turnOwnerPlayerId: ended ? state.battle.opponent.playerId : state.player.playerId,
+    self: {
+      ...state.battle.self,
+      hp: nextSelfHp
+    },
+    battleLog: [
+      {
+        turnNumber: state.battle.turnNumber,
+        message: `opponent_action / ${opponentDamage}`
+      },
+      ...state.battle.battleLog
+    ],
+    winnerPlayerId: ended ? state.battle.opponent.playerId : null
+  };
+
+  if (ended) {
+    return finishBattle({ ...state, battle }, false, "battle.ended.hp_zero");
+  }
+
+  return {
+    ...state,
+    battle,
+    input: {
+      ...state.input,
+      currentStep: 0,
+      currentGesture: null,
+      failureReason: null,
+      networkLatencyMs: 46,
+      serverConfirmationStatus: "IDLE"
+    },
+    recentEvents: prependEvent(state, "battle.turn_ready")
   };
 }
 
@@ -329,6 +454,16 @@ function finishBattle(
       rating: state.player.rating + ratingChange,
       wins: state.player.wins + (didWin ? 1 : 0),
       losses: state.player.losses + (didWin ? 0 : 1)
+    },
+    input: {
+      ...state.input,
+      currentStep: 0,
+      currentGesture: null,
+      failureReason: null,
+      serverConfirmationStatus:
+        state.input.serverConfirmationStatus === "PENDING"
+          ? "CONFIRMED"
+          : state.input.serverConfirmationStatus
     },
     history: [
       {

@@ -19,12 +19,26 @@ export const copy = {
   turnStatus: "턴",
   myTurn: "내 턴",
   opponentTurn: "상대 턴",
+  turnNumber: "턴 번호",
+  turnHintMy: "목표 제스처를 순서대로 입력하고 판정을 요청하세요.",
+  turnHintOpponent: "상대 턴입니다. 입력은 잠시 잠기며 다음 턴을 기다립니다.",
+  turnHintPending: "입력은 접수됐고 확정 응답을 기다리는 중입니다.",
   hp: "HP",
   mana: "마나",
   cooldown: "쿨다운",
   targetSequence: "목표 순서",
+  targetProgress: "목표 진행률",
   currentStep: "현재 단계",
+  inputConsole: "입력 콘솔",
+  inputFeedback: "입력 피드백",
   submitAction: "서버 판정 요청",
+  serverConfirmReady: "판정 준비",
+  serverConfirmPending: "서버 확정 대기 중",
+  serverConfirmConfirmed: "서버 확정 완료",
+  serverConfirmReadyHelp: "목표 제스처를 완성하면 판정을 요청할 수 있습니다.",
+  serverConfirmPendingHelp: "확정 전까지 추가 입력은 잠깁니다.",
+  serverConfirmConfirmedHelp: "확정된 결과가 전투 상태에 반영되었습니다.",
+  resolveOpponentTurn: "상대 턴 처리",
   surrender: "항복",
   battleLog: "전투 로그",
   recentEvents: "최근 이벤트",
@@ -65,7 +79,16 @@ export const copy = {
   fallbackNotice: "Keyboard controls are available.",
   noGesture: "None",
   acceptedSkill: "Selected skill",
-  rejectedReason: "사유"
+  rejectedReason: "사유",
+  failureReasonNone: "입력 오류가 없습니다.",
+  failureReasonText: {
+    confidence_low: "신뢰도가 낮아 다시 입력하세요.",
+    sequence_mismatch: "목표 순서와 달라 처음부터 다시 입력하세요.",
+    sequence_incomplete: "목표 제스처를 모두 입력해야 합니다.",
+    not_your_turn: "상대 턴에는 입력할 수 없습니다.",
+    insufficient_mana: "마나가 부족합니다.",
+    server_pending: "확정 대기 중에는 새 입력을 받을 수 없습니다."
+  }
 } as const;
 
 export type CopyKey = keyof typeof copy;

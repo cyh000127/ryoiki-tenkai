@@ -1,10 +1,12 @@
-import { type ReactNode, useReducer } from "react";
+import { type ReactNode, useEffect, useReducer } from "react";
 
 import { DEFAULT_ANIMSETS, DEFAULT_SKILLSET } from "../../entities/game/model";
 import {
   battleFlowReducer,
   findSkill,
   initialBattleFlowState,
+  type InputFailureReason,
+  type ServerConfirmationStatus,
   type ScreenKey
 } from "../../features/battle-flow/model/battleFlow";
 import { copy } from "../../platform/i18n/catalog";
@@ -13,10 +15,28 @@ import { StatusBadge } from "../../platform/ui/StatusBadge";
 import { formatLatency } from "../../shared/time/formatLatency";
 
 const screenOrder: ScreenKey[] = ["home", "loadout", "matchmaking", "battle", "result", "history"];
+const serverConfirmationDelayMs = 320;
 
 export function BattleGameWorkspace() {
   const [state, dispatch] = useReducer(battleFlowReducer, initialBattleFlowState);
   const selectedSkill = findSkill(state.selectedSkillId);
+  const isMyTurn = state.battle?.turnOwnerPlayerId === state.player.playerId;
+  const isServerConfirming = state.input.serverConfirmationStatus === "PENDING";
+  const canUseGestureInput = state.screen === "battle" && Boolean(state.battle) && isMyTurn && !isServerConfirming;
+  const completedStepCount = Math.min(state.input.currentStep, state.input.targetSequence.length);
+  const progressPercent = getSequenceProgress(completedStepCount, state.input.targetSequence.length);
+
+  useEffect(() => {
+    if (state.screen !== "battle" || !isServerConfirming) {
+      return undefined;
+    }
+
+    const timerId = window.setTimeout(() => {
+      dispatch({ type: "confirmSkill" });
+    }, serverConfirmationDelayMs);
+
+    return () => window.clearTimeout(timerId);
+  }, [isServerConfirming, state.screen]);
 
   return (
     <section className="play-workspace" aria-label={copy.appTitle}>
@@ -127,21 +147,30 @@ export function BattleGameWorkspace() {
         {state.screen === "battle" && state.battle ? (
           <>
             <div className="battle-board">
-              <FighterPanel title={copy.self} hp={state.battle.self.hp} mana={state.battle.self.mana} />
-              <div className="battle-center">
-                <StatusBadge tone={state.battle.turnOwnerPlayerId === state.player.playerId ? "success" : "warning"}>
-                  {state.battle.turnOwnerPlayerId === state.player.playerId ? copy.myTurn : copy.opponentTurn}
+              <FighterPanel title={copy.self} hp={state.battle.self.hp} mana={state.battle.self.mana} isActive={isMyTurn && !isServerConfirming} />
+              <div className="battle-center" data-state={getTurnState(isMyTurn, isServerConfirming)}>
+                <StatusBadge tone={getTurnTone(isMyTurn, isServerConfirming)}>
+                  {getTurnStatusLabel(isMyTurn, isServerConfirming)}
                 </StatusBadge>
+                <Metric label={copy.turnNumber} value={state.battle.turnNumber} />
+                <p className="turn-hint">{getTurnHint(isMyTurn, isServerConfirming)}</p>
               </div>
-              <FighterPanel title={copy.opponent} hp={state.battle.opponent.hp} mana={state.battle.opponent.mana} />
+              <FighterPanel title={copy.opponent} hp={state.battle.opponent.hp} mana={state.battle.opponent.mana} isActive={!isMyTurn && !isServerConfirming} />
             </div>
             <div className="surface-grid">
-              <Panel title={copy.currentGesture}>
-                <div className="sequence">
+              <Panel title={copy.inputConsole}>
+                <ProgressMeter
+                  current={completedStepCount}
+                  label={copy.targetProgress}
+                  percent={progressPercent}
+                  total={state.input.targetSequence.length}
+                />
+                <div className="sequence" aria-label={copy.targetSequence}>
                   {state.input.targetSequence.map((gesture, index) => (
                     <button
                       className="sequence__item"
-                      data-active={index === state.input.currentStep}
+                      data-state={getGestureStepState(index, state.input.currentStep)}
+                      disabled={!canUseGestureInput}
                       key={`${gesture}-${index}`}
                       onClick={() =>
                         dispatch({
@@ -156,13 +185,36 @@ export function BattleGameWorkspace() {
                     </button>
                   ))}
                 </div>
-                <Metric label={copy.currentStep} value={`${state.input.currentStep}/${state.input.targetSequence.length}`} />
+                <Metric label={copy.currentStep} value={`${completedStepCount}/${state.input.targetSequence.length}`} />
+                <Metric label={copy.targetProgress} value={`${progressPercent}%`} />
                 <Metric label={copy.confidence} value={`${Math.round(state.input.confidence * 100)}%`} />
-                <Metric label={copy.rejectedReason} value={state.input.failureReason ?? "-"} />
+                <div
+                  className="input-feedback"
+                  data-state={getFeedbackState(state.input.failureReason, isServerConfirming)}
+                  role="status"
+                >
+                  <strong>{copy.inputFeedback}</strong>
+                  <span>{isServerConfirming ? copy.serverConfirmPendingHelp : getFailureMessage(state.input.failureReason)}</span>
+                </div>
+                <div className="confirmation-strip" data-state={state.input.serverConfirmationStatus}>
+                  <StatusBadge tone={getConfirmationTone(state.input.serverConfirmationStatus)}>
+                    {getConfirmationLabel(state.input.serverConfirmationStatus)}
+                  </StatusBadge>
+                  <span>{getConfirmationHelp(state.input.serverConfirmationStatus)}</span>
+                </div>
                 <div className="action-row">
-                  <Button variant="primary" onClick={() => dispatch({ type: "submitSkill" })}>
-                    {copy.submitAction}
+                  <Button
+                    variant="primary"
+                    disabled={!isMyTurn || isServerConfirming}
+                    onClick={() => dispatch({ type: "submitSkill" })}
+                  >
+                    {isServerConfirming ? copy.serverConfirmPending : copy.submitAction}
                   </Button>
+                  {!isMyTurn && !isServerConfirming ? (
+                    <Button onClick={() => dispatch({ type: "resolveOpponentTurn" })}>
+                      {copy.resolveOpponentTurn}
+                    </Button>
+                  ) : null}
                   <Button onClick={() => dispatch({ type: "surrender" })}>{copy.surrender}</Button>
                 </div>
               </Panel>
@@ -241,13 +293,46 @@ function Metric({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function FighterPanel({ title, hp, mana }: { title: string; hp: number; mana: number }) {
+function FighterPanel({ title, hp, mana, isActive = false }: { title: string; hp: number; mana: number; isActive?: boolean }) {
   return (
-    <section className="fighter">
+    <section className="fighter" data-active={isActive}>
       <h2 className="panel__title">{title}</h2>
       <Metric label={copy.hp} value={hp} />
       <Metric label={copy.mana} value={mana} />
     </section>
+  );
+}
+
+function ProgressMeter({
+  current,
+  label,
+  percent,
+  total
+}: {
+  current: number;
+  label: string;
+  percent: number;
+  total: number;
+}) {
+  return (
+    <div className="sequence-progress">
+      <div className="sequence-progress__label">
+        <span>{label}</span>
+        <strong>
+          {current}/{total}
+        </strong>
+      </div>
+      <div
+        aria-label={label}
+        aria-valuemax={100}
+        aria-valuemin={0}
+        aria-valuenow={percent}
+        className="sequence-progress__bar"
+        role="progressbar"
+      >
+        <span className="sequence-progress__fill" style={{ width: `${percent}%` }} />
+      </div>
+    </div>
   );
 }
 
@@ -263,4 +348,91 @@ function DebugPanel({ events, latency }: { events: string[]; latency: number }) 
       </ol>
     </Panel>
   );
+}
+
+function getSequenceProgress(current: number, total: number): number {
+  if (total <= 0) {
+    return 0;
+  }
+
+  return Math.round((current / total) * 100);
+}
+
+function getGestureStepState(index: number, currentStep: number): "complete" | "current" | "pending" {
+  if (index < currentStep) {
+    return "complete";
+  }
+
+  return index === currentStep ? "current" : "pending";
+}
+
+function getFailureMessage(reason: InputFailureReason | null): string {
+  return reason ? copy.failureReasonText[reason] : copy.failureReasonNone;
+}
+
+function getFeedbackState(
+  reason: InputFailureReason | null,
+  isServerConfirming: boolean
+): "idle" | "error" | "pending" {
+  if (isServerConfirming) {
+    return "pending";
+  }
+
+  return reason ? "error" : "idle";
+}
+
+function getTurnState(isMyTurn: boolean, isServerConfirming: boolean): "mine" | "opponent" | "pending" {
+  if (isServerConfirming) {
+    return "pending";
+  }
+
+  return isMyTurn ? "mine" : "opponent";
+}
+
+function getTurnTone(isMyTurn: boolean, isServerConfirming: boolean): "neutral" | "success" | "warning" {
+  if (isServerConfirming) {
+    return "warning";
+  }
+
+  return isMyTurn ? "success" : "warning";
+}
+
+function getTurnStatusLabel(isMyTurn: boolean, isServerConfirming: boolean): string {
+  if (isServerConfirming) {
+    return copy.serverConfirmPending;
+  }
+
+  return isMyTurn ? copy.myTurn : copy.opponentTurn;
+}
+
+function getTurnHint(isMyTurn: boolean, isServerConfirming: boolean): string {
+  if (isServerConfirming) {
+    return copy.turnHintPending;
+  }
+
+  return isMyTurn ? copy.turnHintMy : copy.turnHintOpponent;
+}
+
+function getConfirmationTone(status: ServerConfirmationStatus): "neutral" | "success" | "warning" {
+  if (status === "PENDING") {
+    return "warning";
+  }
+
+  return status === "CONFIRMED" ? "success" : "neutral";
+}
+
+function getConfirmationLabel(status: ServerConfirmationStatus): string {
+  if (status === "PENDING") {
+    return copy.serverConfirmPending;
+  }
+
+  return status === "CONFIRMED" ? copy.serverConfirmConfirmed : copy.serverConfirmReady;
+}
+
+function getConfirmationHelp(status: ServerConfirmationStatus): string {
+  if (status === "PENDING") {
+    return copy.serverConfirmPendingHelp;
+  }
+
+  return status === "CONFIRMED" ? copy.serverConfirmConfirmedHelp : copy.serverConfirmReadyHelp;
 }
