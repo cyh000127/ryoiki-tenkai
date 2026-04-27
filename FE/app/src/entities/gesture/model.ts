@@ -6,6 +6,8 @@ export type GestureKey =
   | "swipe_left"
   | "swipe_right";
 
+export type GestureToken = string;
+
 export type GestureReading = {
   gestureKey: GestureKey | null;
   confidence: number;
