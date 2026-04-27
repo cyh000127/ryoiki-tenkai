@@ -422,6 +422,14 @@ async def replay_player_matchmaking_state(player_id: str) -> None:
     if battle is not None:
         await emit_battle_handoff(battle, player_ids=(player_id,))
         return
+    latest_battle = game_state_repository.get_latest_player_battle(player_id)
+    if latest_battle is not None and latest_battle.status == "ENDED":
+        if battle_connection_manager.is_connected(player_id):
+            await battle_connection_manager.send_event(
+                player_id,
+                build_ended_event(latest_battle, player_id),
+            )
+        return
     queued_at = game_state_repository.get_queue_entry(player_id)
     if queued_at is None:
         return

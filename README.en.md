@@ -95,16 +95,16 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - automatic practice rival turns
 - frontend battle workspace connected to real REST and WebSocket flow
   pending, rejected, confirmed, timeout, surrender, and result handling
+- reconnect restore for the latest active battle snapshot and ended battle result state
 
 ## Remaining Work
 
-- reconnect and latest battle snapshot restore
 - delayed event reconciliation against the latest server snapshot
 - live camera recognition adapter hardening and clearer separation from deterministic fallback input
 - deadline/timer visibility, cooldown detail, and compact/mobile UX polish
 - durable persistence for results, compact action audit, rating history, and leaderboard data
 - client history, rating, and leaderboard screens
-- final end-to-end smoke and reconnect hardening
+- final end-to-end smoke and reconnect stale-state hardening
 
 ## MVP Planning and QA
 

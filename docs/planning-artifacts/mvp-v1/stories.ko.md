@@ -66,7 +66,7 @@
 
 ### E2-ST04: reconnect 후 battle snapshot 복구
 
-- Status: planned
+- Status: done
 - User story: player는 reconnect 후 latest battle state를 볼 수 있다.
 - Scope: active battle snapshot lookup, socket session reattach, delayed/missed event를 latest snapshot 기준으로 resolve.
 - Acceptance criteria: reconnected client가 latest HP, mana, cooldown, turn number, turn owner를 렌더링한다. submitted action id는 reconnect 후에도 idempotent하다. ended battle은 result state로 복구된다.

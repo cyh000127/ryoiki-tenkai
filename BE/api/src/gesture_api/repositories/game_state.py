@@ -20,6 +20,7 @@ class InMemoryGameStateRepository:
         self.queue: dict[str, datetime] = {}
         self.battles: dict[str, BattleSession] = {}
         self.player_battle_ids: dict[str, str] = {}
+        self.latest_player_battle_ids: dict[str, str] = {}
         self.match_history: list[dict[str, object]] = []
         self._ensure_practice_opponent()
 
@@ -97,6 +98,12 @@ class InMemoryGameStateRepository:
 
     def get_battle(self, battle_session_id: str) -> BattleSession | None:
         return self.battles.get(battle_session_id)
+
+    def get_latest_player_battle(self, player_id: str) -> BattleSession | None:
+        battle_id = self.latest_player_battle_ids.get(player_id)
+        if battle_id is None:
+            return None
+        return self.battles.get(battle_id)
 
     def create_match_for_player(self, player_id: str) -> BattleSession | None:
         battle = self.get_player_battle(player_id)
@@ -243,6 +250,8 @@ class InMemoryGameStateRepository:
         self.battles[battle_session_id] = battle
         self.player_battle_ids[player_id] = battle_session_id
         self.player_battle_ids[opponent_id] = battle_session_id
+        self.latest_player_battle_ids[player_id] = battle_session_id
+        self.latest_player_battle_ids[opponent_id] = battle_session_id
         return battle
 
     def _advance_turn(self, battle: BattleSession, next_player_id: str) -> None:

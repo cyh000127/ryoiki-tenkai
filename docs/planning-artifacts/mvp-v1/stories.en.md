@@ -123,7 +123,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E2-ST04: Restore Battle Snapshot After Reconnect
 
-- Status: planned
+- Status: done
 - User story: As a player, I can reconnect and see the latest battle state.
 - Scope:
   - Lookup active battle snapshot.

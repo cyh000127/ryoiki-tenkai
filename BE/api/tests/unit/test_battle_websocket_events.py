@@ -156,6 +156,109 @@ def test_ws_endpoint_replays_queue_handoff_and_handles_submit_action() -> None:
     assert state_updated_event["payload"]["battle"]["opponent"]["hp"] == 75
 
 
+def test_ws_endpoint_replays_latest_active_battle_snapshot_on_reconnect() -> None:
+    client = TestClient(create_app())
+    guest_response = client.post("/api/v1/players/guest", json={"nickname": "ws-reconnect"})
+    player_id = guest_response.json()["data"]["playerId"]
+    skill = client.get("/api/v1/skillsets").json()["data"][0]["skills"][0]
+    loadout_response = client.post(
+        "/api/v1/players/me/loadout",
+        headers={"X-Player-Id": player_id},
+        json={
+            "skillsetId": "skillset_seal_basic",
+            "animsetId": "animset_basic_2d",
+        },
+    )
+    assert loadout_response.status_code == 200
+    ws_token = client.get("/api/v1/ws-token", headers={"X-Player-Id": player_id}).json()["data"][
+        "wsToken"
+    ]
+
+    with client.websocket_connect(f"/ws?token={ws_token}") as websocket:
+        queue_response = client.post(
+            "/api/v1/matchmaking/queue",
+            headers={"X-Player-Id": player_id},
+            json={"mode": "RANKED_1V1"},
+        )
+        assert queue_response.status_code == 200
+        websocket.receive_json()
+        websocket.receive_json()
+        started_event = websocket.receive_json()
+        battle_session_id = started_event["payload"]["battleSessionId"]
+
+        websocket.send_json(
+            {
+                "type": "battle.submit_action",
+                "requestId": "req-reconnect-action",
+                "payload": {
+                    "battleSessionId": battle_session_id,
+                    "playerId": player_id,
+                    "turnNumber": 1,
+                    "actionId": "act-reconnect",
+                    "gestureSequence": skill["gestureSequence"],
+                    "submittedAt": "2026-04-27T00:00:00Z",
+                },
+            }
+        )
+        websocket.receive_json()
+        websocket.receive_json()
+
+    with client.websocket_connect(f"/ws?token={ws_token}") as replay_socket:
+        replayed_found_event = replay_socket.receive_json()
+        replayed_started_event = replay_socket.receive_json()
+
+    assert replayed_found_event["type"] == "battle.match_found"
+    assert replayed_started_event["type"] == "battle.started"
+    assert replayed_started_event["payload"]["battle"]["turnNumber"] == 3
+    assert replayed_started_event["payload"]["battle"]["turnOwnerPlayerId"] == player_id
+    assert replayed_started_event["payload"]["battle"]["self"]["hp"] == 75
+    assert replayed_started_event["payload"]["battle"]["opponent"]["hp"] == 75
+
+
+def test_ws_endpoint_replays_latest_ended_battle_on_reconnect() -> None:
+    client = TestClient(create_app())
+    guest_response = client.post("/api/v1/players/guest", json={"nickname": "ws-ended-reconnect"})
+    player_id = guest_response.json()["data"]["playerId"]
+    loadout_response = client.post(
+        "/api/v1/players/me/loadout",
+        headers={"X-Player-Id": player_id},
+        json={
+            "skillsetId": "skillset_seal_basic",
+            "animsetId": "animset_basic_2d",
+        },
+    )
+    assert loadout_response.status_code == 200
+    ws_token = client.get("/api/v1/ws-token", headers={"X-Player-Id": player_id}).json()["data"][
+        "wsToken"
+    ]
+
+    with client.websocket_connect(f"/ws?token={ws_token}") as websocket:
+        queue_response = client.post(
+            "/api/v1/matchmaking/queue",
+            headers={"X-Player-Id": player_id},
+            json={"mode": "RANKED_1V1"},
+        )
+        assert queue_response.status_code == 200
+        websocket.receive_json()
+        websocket.receive_json()
+        started_event = websocket.receive_json()
+        battle_session_id = started_event["payload"]["battleSessionId"]
+
+        battle = game_state_repository.get_battle(battle_session_id)
+        assert battle is not None
+        battle.action_deadline_at = datetime.now(UTC) - timedelta(seconds=1)
+
+        websocket.receive_json()
+        websocket.receive_json()
+
+    with client.websocket_connect(f"/ws?token={ws_token}") as replay_socket:
+        replayed_ended_event = replay_socket.receive_json()
+
+    assert replayed_ended_event["type"] == "battle.ended"
+    assert replayed_ended_event["payload"]["loserPlayerId"] == player_id
+    assert replayed_ended_event["payload"]["endedReason"] == "TIMEOUT"
+
+
 def test_ws_endpoint_emits_timeout_and_ended_events_when_deadline_expires() -> None:
     client = TestClient(create_app())
     guest_response = client.post("/api/v1/players/guest", json={"nickname": "ws-timeout"})

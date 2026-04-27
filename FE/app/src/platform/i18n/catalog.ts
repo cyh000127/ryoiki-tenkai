@@ -103,6 +103,7 @@ export const copy = {
   queueCanceled: "매칭 대기를 취소했습니다.",
   queueJoinFailed: "매칭 대기 시작에 실패했습니다.",
   queueCancelFailed: "매칭 대기 취소에 실패했습니다.",
+  socketReconnecting: "소켓을 다시 연결하는 중입니다. 최신 전투 상태를 복구합니다.",
   socketDisconnected: "소켓 연결이 종료되었습니다. 다시 매칭을 시작해 주세요.",
   actionSubmitFailed: "액션 제출에 실패했습니다. 잠시 후 다시 시도해 주세요.",
   surrenderFailed: "항복 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.",

@@ -82,16 +82,16 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - 프론트 battle workspace의 실제 REST/WS 연동
   pending, rejected, confirmed, timeout, surrender, result 화면 반영
 - 종료 사유 표시와 rematch 진입 흐름
+- reconnect 시 latest active battle snapshot 복구와 ended battle 결과 상태 복원
 
 ## 남은 작업
 
-- reconnect 이후 latest battle snapshot 복구
 - delayed event를 latest snapshot 기준으로 정리하는 hardening
 - live camera recognition adapter와 deterministic fallback input 경계 강화
 - battle timer/deadline, cooldown 상세, compact/mobile UI polish
 - 결과, 전적, 레이팅, leaderboard의 실제 영속화
 - client history/rating/leaderboard 화면 완성
-- end-to-end smoke와 reconnect/timeout hardening 추가
+- end-to-end smoke와 reconnect stale-state hardening 추가
 
 ## 경계
 

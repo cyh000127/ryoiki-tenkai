@@ -55,6 +55,7 @@ export function BattleGameWorkspace() {
   const stateRef = useRef(state);
   const socketConnectionRef = useRef<BattleSocketConnection | null>(null);
   const pendingActionRef = useRef<PendingAction | null>(null);
+  const reconnectInFlightRef = useRef(false);
   const ignoreSocketCloseRef = useRef(false);
   const [nicknameDraft, setNicknameDraft] = useState("local_player");
   const [session, setSession] = useState<PlayerSession | null>(() => loadStoredPlayerSession());
@@ -188,6 +189,19 @@ export function BattleGameWorkspace() {
       closeBattleSocket(true);
     }
   }, [state.socketStatus]);
+
+  useEffect(() => {
+    if (!session || state.socketStatus !== "DISCONNECTED" || state.battle?.status !== "ACTIVE") {
+      return;
+    }
+    if (reconnectInFlightRef.current) {
+      return;
+    }
+
+    dispatch({ type: "socketReconnecting" });
+    setStatusMessage(copy.socketReconnecting);
+    void reconnectBattleSocket(session.playerId);
+  }, [session, state.battle?.status, state.socketStatus]);
 
   useEffect(() => {
     if (!profileQuery.data) {
@@ -494,6 +508,22 @@ export function BattleGameWorkspace() {
     });
   }
 
+  async function reconnectBattleSocket(playerId: string): Promise<void> {
+    if (reconnectInFlightRef.current) {
+      return;
+    }
+
+    reconnectInFlightRef.current = true;
+    try {
+      await ensureBattleSocketConnection(playerId);
+    } catch {
+      dispatch({ type: "socketDisconnected" });
+      setStatusMessage(copy.socketDisconnected);
+    } finally {
+      reconnectInFlightRef.current = false;
+    }
+  }
+
   function closeBattleSocket(suppressCloseMessage: boolean) {
     const connection = socketConnectionRef.current;
     if (!connection) {
@@ -776,6 +806,7 @@ export function BattleGameWorkspace() {
                   </StatusBadge>
                   <span>{getConfirmationHelp(state.input.serverConfirmationStatus)}</span>
                 </div>
+                {statusMessage ? <p className="status-text">{statusMessage}</p> : null}
                 <div className="action-row">
                   <Button
                     disabled={!isMyTurn || isServerConfirming}

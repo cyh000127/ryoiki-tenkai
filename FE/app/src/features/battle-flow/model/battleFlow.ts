@@ -59,6 +59,7 @@ export type BattleFlowAction =
   | { type: "battleStateUpdated"; battle: BattleState; latencyMs: number }
   | { type: "battleEnded"; battle: BattleState; ratingChange: number }
   | { type: "leaveQueue" }
+  | { type: "socketReconnecting" }
   | { type: "socketDisconnected" }
   | { type: "selectSkill"; skillId: string }
   | { type: "simulateGestureStep"; gesture: string; confidence: number }
@@ -236,6 +237,12 @@ export function battleFlowReducer(
           serverConfirmationStatus: "IDLE"
         },
         recentEvents: prependEvent(state, "matchmaking.queue.left")
+      };
+    case "socketReconnecting":
+      return {
+        ...state,
+        socketStatus: "CONNECTING",
+        recentEvents: prependEvent(state, "socket.reconnecting")
       };
     case "socketDisconnected":
       return {
