@@ -2,7 +2,7 @@
 
 This repository is a frontend/backend workspace for a browser-based gesture battle MVP.
 
-Korean documentation is available in `README.ko.md`.
+Korean documentation is available in `README.md`. `README.ko.md` keeps the same Korean content as a mirrored file.
 
 ## Current Status
 
@@ -108,6 +108,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 
 ## MVP Planning and QA
 
+- `docs/implementation-artifacts/mvp-v1-spec-review.en.md`: spec review snapshot that compares current implementation against the MVP stories.
 - `docs/implementation-artifacts/mvp-v1-implementation-plan.en.md`: MVP implementation baseline for WebSocket flow, server authoritative rules, client hand recognition, and excluded scope.
 - `docs/planning-artifacts/mvp-v1/technology-stack.en.md`: selected MVP technology stack, boundaries, deferred choices, and dependency rules.
 - `docs/planning-artifacts/mvp-v1/epics.en.md`: MVP implementation plan split into epic-level outcomes, boundaries, stories, and acceptance signals.

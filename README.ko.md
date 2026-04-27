@@ -4,6 +4,26 @@
 
 영문 문서는 `README.en.md`에 있습니다.
 
+## 명세 점검
+
+- 점검 시점: `2026-04-28`
+- 점검 기준 문서
+  `docs/implementation-artifacts/mvp-v1-implementation-plan.ko.md`
+  `docs/planning-artifacts/mvp-v1/stories.ko.md`
+  `docs/planning-artifacts/mvp-v1/implementation-order.ko.md`
+- 스토리 상태 집계
+  `done 23`
+  `partial 5`
+  `planned 0`
+- 현재 partial 항목
+  `E4-ST01` MVP gesture token set과 skill sequence 정의
+  `E4-ST03` deterministic test 또는 fallback input 추가
+  `E5-ST01` battle state와 action log 렌더링
+  `E5-ST02` sequence progress와 submission readiness 표시
+  `E5-ST04` battle result와 next action 렌더링
+- 상세 점검 문서
+  `docs/implementation-artifacts/mvp-v1-spec-review.ko.md`
+
 ## 현재 상태
 
 현재 구현은 아래 흐름까지 실제로 연결되어 있습니다.
@@ -15,6 +35,10 @@
 - 서버 권위 전투 액션 검증, 중복 방지, 상태 반영
 - practice rival 자동 턴 처리
 - `HP_ZERO`, `TIMEOUT`, `SURRENDER` 종료 처리와 결과 화면 반영
+- reconnect 후 최신 battle snapshot 복구
+- delayed/duplicate socket event 정합성 처리
+- 전적, 레이팅, leaderboard 조회
+- battle result, compact action audit, rating, history의 runtime store 영속화
 
 ## 실행 방법
 
@@ -106,8 +130,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 
 ## 용어 기준
 
-- `skillset`: 제스처 시퀀스, cost, cooldown 같은 전투 규칙이 포함된 서버 승인 스킬 프리셋.
-- `animset`: 플레이어가 선택하는 서버 승인 시각 연출 프리셋.
+- `skillset`: 서버가 승인한 전투 규칙과 gesture sequence 프리셋.
+- `animset`: 서버가 승인한 시각 연출 프리셋.
 - `loadout`: queue entry 전에 저장하는 `skillset + animset` 조합.
 
 ## MVP 계획과 QA
@@ -115,6 +139,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 ### 한국어 문서
 
 - `docs/implementation-artifacts/mvp-v1-implementation-plan.ko.md`: WebSocket 흐름, 서버 권위 규칙, 클라이언트 손 인식, 제외 범위를 포함한 MVP 구현 기준.
+- `docs/implementation-artifacts/mvp-v1-spec-review.ko.md`: 현재 구현과 스토리 명세를 대조한 점검 문서.
 - `docs/planning-artifacts/mvp-v1/technology-stack.ko.md`: 선택한 MVP 기술스택, 경계, 보류 항목, 의존성 추가 규칙.
 - `docs/planning-artifacts/mvp-v1/epics.ko.md`: MVP 구현 계획을 에픽 단위로 분리한 문서.
 - `docs/planning-artifacts/mvp-v1/stories.ko.md`: 스토리 단위 구현 항목, 상태, 범위, 의존성, 검증 메모.
@@ -126,6 +151,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 
 - `README.en.md`
 - `docs/implementation-artifacts/mvp-v1-implementation-plan.en.md`
+- `docs/implementation-artifacts/mvp-v1-spec-review.en.md`
 - `docs/planning-artifacts/mvp-v1/technology-stack.en.md`
 - `docs/planning-artifacts/mvp-v1/epics.en.md`
 - `docs/planning-artifacts/mvp-v1/stories.en.md`
