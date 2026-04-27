@@ -20,6 +20,30 @@ def create_configured_guest(client: TestClient, nickname: str) -> str:
     return player_id
 
 
+def create_started_battle(client: TestClient, player_id: str) -> str:
+    ws_token = client.get("/api/v1/ws-token", headers={"X-Player-Id": player_id}).json()["data"][
+        "wsToken"
+    ]
+
+    with client.websocket_connect(f"/ws?token={ws_token}") as websocket:
+        queue_response = client.post(
+            "/api/v1/matchmaking/queue",
+            headers={"X-Player-Id": player_id},
+            json={"mode": "RANKED_1V1"},
+        )
+        assert queue_response.status_code == 200
+        assert queue_response.json()["data"]["queueStatus"] == "MATCHED"
+
+        ready_event = websocket.receive_json()
+        found_event = websocket.receive_json()
+        started_event = websocket.receive_json()
+
+    assert ready_event["type"] == "battle.match_ready"
+    assert found_event["type"] == "battle.match_found"
+    assert started_event["type"] == "battle.started"
+    return str(started_event["payload"]["battleSessionId"])
+
+
 def test_profile_lookup_and_queue_require_saved_loadout() -> None:
     client = TestClient(create_app())
 
@@ -81,6 +105,45 @@ def test_animset_catalog_and_loadout_validation_are_stable() -> None:
     assert profile_response.json()["data"]["loadoutConfigured"] is True
 
 
+def test_queue_status_and_cancel_are_idempotent() -> None:
+    client = TestClient(create_app())
+    player_id = create_configured_guest(client, "queue-player")
+
+    first_queue_response = client.post(
+        "/api/v1/matchmaking/queue",
+        headers={"X-Player-Id": player_id},
+        json={"mode": "RANKED_1V1"},
+    )
+    assert first_queue_response.status_code == 200
+    assert first_queue_response.json()["data"]["queueStatus"] == "SEARCHING"
+    queued_at = first_queue_response.json()["data"]["queuedAt"]
+
+    repeated_queue_response = client.post(
+        "/api/v1/matchmaking/queue",
+        headers={"X-Player-Id": player_id},
+        json={"mode": "RANKED_1V1"},
+    )
+    assert repeated_queue_response.status_code == 200
+    assert repeated_queue_response.json()["data"]["queueStatus"] == "SEARCHING"
+    assert repeated_queue_response.json()["data"]["queuedAt"] == queued_at
+
+    status_response = client.get("/api/v1/matchmaking/status", headers={"X-Player-Id": player_id})
+    assert status_response.status_code == 200
+    assert status_response.json()["data"]["queueStatus"] == "SEARCHING"
+    assert status_response.json()["data"]["queuedAt"] == queued_at
+
+    cancel_response = client.delete("/api/v1/matchmaking/queue", headers={"X-Player-Id": player_id})
+    assert cancel_response.status_code == 200
+    assert cancel_response.json()["data"]["queueStatus"] == "IDLE"
+
+    repeated_cancel_response = client.delete(
+        "/api/v1/matchmaking/queue",
+        headers={"X-Player-Id": player_id},
+    )
+    assert repeated_cancel_response.status_code == 200
+    assert repeated_cancel_response.json()["data"]["queueStatus"] == "IDLE"
+
+
 def test_guest_player_can_match_and_submit_turn_action() -> None:
     client = TestClient(create_app())
 
@@ -90,13 +153,7 @@ def test_guest_player_can_match_and_submit_turn_action() -> None:
     assert skillsets_response.status_code == 200
     skill = skillsets_response.json()["data"][0]["skills"][0]
 
-    queue_response = client.post(
-        "/api/v1/matchmaking/queue",
-        headers={"X-Player-Id": player_id},
-        json={"mode": "RANKED_1V1"},
-    )
-    assert queue_response.status_code == 200
-    battle_session_id = queue_response.json()["data"]["battleSessionId"]
+    battle_session_id = create_started_battle(client, player_id)
 
     battle_response = client.get(
         f"/api/v1/battles/{battle_session_id}",
@@ -125,11 +182,7 @@ def test_rejects_duplicate_action_id() -> None:
     client = TestClient(create_app())
 
     player_id = create_configured_guest(client, "player-two")
-    battle_session_id = client.post(
-        "/api/v1/matchmaking/queue",
-        headers={"X-Player-Id": player_id},
-        json={"mode": "RANKED_1V1"},
-    ).json()["data"]["battleSessionId"]
+    battle_session_id = create_started_battle(client, player_id)
 
     payload = {
         "playerId": player_id,

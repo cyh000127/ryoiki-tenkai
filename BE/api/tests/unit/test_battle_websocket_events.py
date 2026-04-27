@@ -46,7 +46,9 @@ def test_battle_websocket_handler_submits_action_with_in_memory_engine() -> None
     repository = InMemoryGameStateRepository()
     player = repository.create_guest_player("ws-player")
     player.loadout_configured = True
-    battle = repository.enter_queue(player.player_id)
+    queue_state = repository.enter_queue(player.player_id)
+    assert queue_state is not None
+    battle = repository.create_match_for_player(player.player_id)
     assert battle is not None
     handler = BattleWebSocketEventHandler(repository)
     event = BattleSubmitActionEvent(
@@ -77,7 +79,7 @@ def test_battle_websocket_handler_submits_action_with_in_memory_engine() -> None
     assert duplicate_response.payload.reason == "DUPLICATE_ACTION"
 
 
-def test_ws_endpoint_handles_ping_and_submit_action() -> None:
+def test_ws_endpoint_replays_queue_handoff_and_handles_submit_action() -> None:
     client = TestClient(create_app())
     guest_response = client.post("/api/v1/players/guest", json={"nickname": "ws-client"})
     player_id = guest_response.json()["data"]["playerId"]
@@ -91,17 +93,28 @@ def test_ws_endpoint_handles_ping_and_submit_action() -> None:
         },
     )
     assert loadout_response.status_code == 200
+    ws_token = client.get("/api/v1/ws-token", headers={"X-Player-Id": player_id}).json()["data"][
+        "wsToken"
+    ]
+
     queue_response = client.post(
         "/api/v1/matchmaking/queue",
         headers={"X-Player-Id": player_id},
         json={"mode": "RANKED_1V1"},
     )
-    battle_session_id = queue_response.json()["data"]["battleSessionId"]
-    ws_token = client.get("/api/v1/ws-token", headers={"X-Player-Id": player_id}).json()["data"][
-        "wsToken"
-    ]
+    assert queue_response.status_code == 200
+    assert queue_response.json()["data"]["queueStatus"] == "SEARCHING"
 
     with client.websocket_connect(f"/ws?token={ws_token}") as websocket:
+        ready_event = websocket.receive_json()
+        found_event = websocket.receive_json()
+        started_event = websocket.receive_json()
+
+        assert ready_event["type"] == "battle.match_ready"
+        assert found_event["type"] == "battle.match_found"
+        assert started_event["type"] == "battle.started"
+        battle_session_id = started_event["payload"]["battleSessionId"]
+
         websocket.send_json({"type": "battle.ping", "requestId": "req-ping"})
         assert websocket.receive_json() == {
             "type": "battle.pong",

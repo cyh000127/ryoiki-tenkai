@@ -36,6 +36,18 @@ type LoadoutResponse = {
   loadoutConfigured: boolean;
 };
 
+export type QueueStatusResponse = {
+  queueStatus: "SEARCHING" | "MATCHED" | "IDLE";
+  queuedAt: string | null;
+  matchId: string | null;
+  battleSessionId: string | null;
+};
+
+type WsTokenResponse = {
+  wsToken: string;
+  expiresIn: number;
+};
+
 export class ApiClientError extends Error {
   code: string;
   status: number;
@@ -116,6 +128,31 @@ export async function updateLoadout(
     },
     playerId
   );
+}
+
+export async function enterMatchmakingQueue(playerId: string): Promise<QueueStatusResponse> {
+  return request<QueueStatusResponse>(
+    "/api/v1/matchmaking/queue",
+    {
+      method: "POST",
+      body: JSON.stringify({ mode: "RANKED_1V1" })
+    },
+    playerId
+  );
+}
+
+export async function leaveMatchmakingQueue(playerId: string): Promise<QueueStatusResponse> {
+  return request<QueueStatusResponse>(
+    "/api/v1/matchmaking/queue",
+    {
+      method: "DELETE"
+    },
+    playerId
+  );
+}
+
+export async function getWsToken(playerId: string): Promise<WsTokenResponse> {
+  return request<WsTokenResponse>("/api/v1/ws-token", {}, playerId);
 }
 
 export function toPlayerSummary(profile: PlayerProfileResponse): PlayerSummary {

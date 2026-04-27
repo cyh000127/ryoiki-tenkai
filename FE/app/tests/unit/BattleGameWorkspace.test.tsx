@@ -1,9 +1,10 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { AppProviders } from "../../src/app/AppProviders";
 import { DEFAULT_ANIMSETS, DEFAULT_SKILLSET } from "../../src/entities/game/model";
 import { BattleGameWorkspace } from "../../src/widgets/battle-game/BattleGameWorkspace";
+import type { BattleSocketEvent } from "../../src/platform/api/battleSocket";
 
 type MockSession = {
   playerId: string;
@@ -22,6 +23,8 @@ type MockProfile = {
 };
 
 let storedSession: MockSession | null = null;
+let socketEventHandler: ((event: BattleSocketEvent) => void) | null = null;
+let socketCloseHandler: (() => void) | null = null;
 
 vi.mock("../../src/platform/api/playerSession", () => ({
   loadStoredPlayerSession: () => storedSession,
@@ -32,6 +35,25 @@ vi.mock("../../src/platform/api/playerSession", () => ({
     storedSession = null;
   }
 }));
+
+vi.mock("../../src/platform/api/battleSocket", async () => {
+  const actual = await vi.importActual<typeof import("../../src/platform/api/battleSocket")>(
+    "../../src/platform/api/battleSocket"
+  );
+
+  return {
+    ...actual,
+    connectBattleSocket: vi.fn(async ({ onClose, onEvent }) => {
+      socketCloseHandler = onClose;
+      socketEventHandler = onEvent;
+      return {
+        close: () => {
+          socketCloseHandler?.();
+        }
+      };
+    })
+  };
+});
 
 function renderWorkspace() {
   return render(
@@ -154,13 +176,62 @@ function installGameApiMock(profile: MockProfile | null = null) {
       });
     }
 
+    if (pathname === "/api/v1/ws-token") {
+      return jsonResponse({
+        success: true,
+        data: {
+          wsToken: "wst_pl_guest",
+          expiresIn: 300
+        },
+        error: null
+      });
+    }
+
+    if (pathname === "/api/v1/matchmaking/queue" && init?.method === "POST") {
+      return jsonResponse({
+        success: true,
+        data: {
+          queueStatus: "MATCHED",
+          queuedAt: "2026-04-27T00:00:00Z",
+          matchId: "match_test",
+          battleSessionId: "battle_test"
+        },
+        error: null
+      });
+    }
+
+    if (pathname === "/api/v1/matchmaking/queue" && init?.method === "DELETE") {
+      return jsonResponse({
+        success: true,
+        data: {
+          queueStatus: "IDLE",
+          queuedAt: "2026-04-27T00:00:00Z",
+          matchId: null,
+          battleSessionId: null
+        },
+        error: null
+      });
+    }
+
     throw new Error(`Unhandled fetch request: ${pathname}`);
+  });
+}
+
+function emitSocketEvent(event: BattleSocketEvent) {
+  if (!socketEventHandler) {
+    throw new Error("Socket event handler is not registered.");
+  }
+
+  act(() => {
+    socketEventHandler?.(event);
   });
 }
 
 describe("BattleGameWorkspace", () => {
   beforeEach(() => {
     storedSession = null;
+    socketEventHandler = null;
+    socketCloseHandler = null;
   });
 
   afterEach(() => {
@@ -194,7 +265,7 @@ describe("BattleGameWorkspace", () => {
     expect(screen.getByText("저장된 로드아웃이 있어야 매칭을 시작할 수 있습니다.")).toBeInTheDocument();
   });
 
-  it("creates a guest, saves the loadout, and then enters matchmaking", async () => {
+  it("creates a guest, saves the loadout, and then enters battle from socket events", async () => {
     const user = userEvent.setup();
     installGameApiMock();
 
@@ -214,5 +285,52 @@ describe("BattleGameWorkspace", () => {
     await user.click(screen.getByRole("button", { name: "랭크 1대1 매칭" }));
 
     expect(screen.getByText("SEARCHING")).toBeInTheDocument();
+
+    emitSocketEvent({
+      type: "battle.match_ready",
+      payload: {
+        queueStatus: "SEARCHING",
+        queuedAt: "2026-04-27T00:00:00Z"
+      }
+    });
+    emitSocketEvent({
+      type: "battle.match_found",
+      payload: {
+        matchId: "match_test",
+        battleSessionId: "battle_test",
+        playerSeat: "PLAYER_ONE"
+      }
+    });
+    emitSocketEvent({
+      type: "battle.started",
+      payload: {
+        battleSessionId: "battle_test",
+        playerSeat: "PLAYER_ONE",
+        battle: {
+          battleSessionId: "battle_test",
+          matchId: "match_test",
+          status: "ACTIVE",
+          turnNumber: 1,
+          turnOwnerPlayerId: "pl_guest",
+          self: {
+            playerId: "pl_guest",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          opponent: {
+            playerId: "pl_practice",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          battleLog: [],
+          winnerPlayerId: null
+        }
+      }
+    });
+
+    expect(await screen.findByText("내 턴")).toBeInTheDocument();
+    expect(screen.getAllByText("HP")).toHaveLength(2);
   });
 });

@@ -99,6 +99,10 @@ export const copy = {
   loadoutSaveFailed: "로드아웃 저장에 실패했습니다.",
   matchEntryBlocked: "게스트 생성 또는 플레이어 복구 후 매칭을 시작할 수 있습니다.",
   loadoutRequired: "저장된 로드아웃이 있어야 매칭을 시작할 수 있습니다.",
+  queueCanceled: "매칭 대기를 취소했습니다.",
+  queueJoinFailed: "매칭 대기 시작에 실패했습니다.",
+  queueCancelFailed: "매칭 대기 취소에 실패했습니다.",
+  socketDisconnected: "소켓 연결이 종료되었습니다. 다시 매칭을 시작해 주세요.",
   selectionRequired: "스킬셋과 애니셋을 확인해 주세요.",
   failureReasonNone: "입력 오류가 없습니다.",
   failureReasonText: {

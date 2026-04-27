@@ -2,13 +2,41 @@ import {
   battleFlowReducer,
   initialBattleFlowState
 } from "../../src/features/battle-flow/model/battleFlow";
+import type { BattleState } from "../../src/entities/game/model";
 
 describe("battleFlowReducer", () => {
+  function createStartedBattle(playerId = initialBattleFlowState.player.playerId): BattleState {
+    return {
+      battleSessionId: "battle_test",
+      matchId: "match_test",
+      status: "ACTIVE",
+      turnNumber: 1,
+      turnOwnerPlayerId: playerId,
+      self: {
+        playerId,
+        hp: 100,
+        mana: 100,
+        cooldowns: {}
+      },
+      opponent: {
+        playerId: "pl_practice",
+        hp: 100,
+        mana: 100,
+        cooldowns: {}
+      },
+      battleLog: [],
+      winnerPlayerId: null
+    };
+  }
+
   function createMatchedBattle() {
-    return battleFlowReducer(
-      battleFlowReducer(initialBattleFlowState, { type: "startQueue" }),
-      { type: "matchFound" }
-    );
+    const queued = battleFlowReducer(initialBattleFlowState, { type: "startQueue" });
+    const ready = battleFlowReducer(queued, { type: "queueReady" });
+    const found = battleFlowReducer(ready, { type: "matchFound" });
+    return battleFlowReducer(found, {
+      type: "battleStarted",
+      battle: createStartedBattle()
+    });
   }
 
   function completeDefaultSequence() {
@@ -28,7 +56,12 @@ describe("battleFlowReducer", () => {
 
   it("creates a matched battle from queue", () => {
     const queued = battleFlowReducer(initialBattleFlowState, { type: "startQueue" });
-    const matched = battleFlowReducer(queued, { type: "matchFound" });
+    const ready = battleFlowReducer(queued, { type: "queueReady" });
+    const found = battleFlowReducer(ready, { type: "matchFound" });
+    const matched = battleFlowReducer(found, {
+      type: "battleStarted",
+      battle: createStartedBattle()
+    });
 
     expect(matched.screen).toBe("battle");
     expect(matched.queueStatus).toBe("MATCHED");

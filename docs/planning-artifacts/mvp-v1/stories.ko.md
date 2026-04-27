@@ -39,7 +39,7 @@
 
 ### E2-ST01: matchmaking queue 진입, 취소, 조회
 
-- Status: partial
+- Status: done
 - User story: loadout을 갖춘 player는 ranked 1v1 queue에 들어가거나 취소하고 상태를 확인할 수 있다.
 - Scope: queue entry command, queue cancel command, queue status lookup, repeated command idempotency.
 - Acceptance criteria: repeated enter가 duplicate queue entry를 만들지 않는다. repeated cancel 후 player는 queue 밖에 있다. queue status는 waiting/matched/idle을 명확히 반환한다.
@@ -57,7 +57,7 @@
 
 ### E2-ST03: match-found와 battle-started event 발행
 
-- Status: partial
+- Status: done
 - User story: queue에 있는 player는 polling-only behavior 없이 battle로 이동시키는 server event를 받는다.
 - Scope: match-found event emit, battle session creation, full initial state를 가진 battle-started event emit.
 - Acceptance criteria: event payload가 battle session id, player seat, initial stat, turn owner, deadline, visible status를 포함한다. client가 event data로 battle workspace에 전환한다. duplicate event가 active session을 중복 생성하지 않는다.

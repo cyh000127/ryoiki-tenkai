@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type ReactNode, useEffect, useReducer, useState } from "react";
+import { type ReactNode, useEffect, useReducer, useRef, useState } from "react";
 
 import { DEFAULT_ANIMSETS, DEFAULT_SKILLSET, type Skillset } from "../../entities/game/model";
 import {
@@ -11,9 +11,18 @@ import {
   type ScreenKey
 } from "../../features/battle-flow/model/battleFlow";
 import {
+  connectBattleSocket,
+  toBattleState,
+  type BattleSocketConnection,
+  type BattleSocketEvent
+} from "../../platform/api/battleSocket";
+import {
   ApiClientError,
   createGuestPlayer,
+  enterMatchmakingQueue,
   getMyProfile,
+  getWsToken,
+  leaveMatchmakingQueue,
   listAnimsets,
   listSkillsets,
   toPlayerSummary,
@@ -36,6 +45,8 @@ const serverConfirmationDelayMs = 320;
 export function BattleGameWorkspace() {
   const queryClient = useQueryClient();
   const [state, dispatch] = useReducer(battleFlowReducer, initialBattleFlowState);
+  const socketConnectionRef = useRef<BattleSocketConnection | null>(null);
+  const ignoreSocketCloseRef = useRef(false);
   const [nicknameDraft, setNicknameDraft] = useState("local_player");
   const [session, setSession] = useState<PlayerSession | null>(() => loadStoredPlayerSession());
   const [draftSkillsetId, setDraftSkillsetId] = useState(initialBattleFlowState.equippedSkillsetId);
@@ -112,6 +123,47 @@ export function BattleGameWorkspace() {
       setStatusMessage(copy.loadoutSaveFailed);
     }
   });
+
+  const startQueueMutation = useMutation({
+    mutationFn: async (playerId: string) => {
+      await ensureBattleSocketConnection(playerId);
+      return enterMatchmakingQueue(playerId);
+    },
+    onSuccess: () => {
+      setStatusMessage(null);
+    },
+    onError: () => {
+      closeBattleSocket(true);
+      dispatch({ type: "leaveQueue" });
+      setStatusMessage(copy.queueJoinFailed);
+    }
+  });
+
+  const cancelQueueMutation = useMutation({
+    mutationFn: leaveMatchmakingQueue,
+    onSuccess: (queueStatus) => {
+      if (queueStatus.queueStatus === "IDLE") {
+        closeBattleSocket(true);
+        dispatch({ type: "leaveQueue" });
+        setStatusMessage(copy.queueCanceled);
+      }
+    },
+    onError: () => {
+      setStatusMessage(copy.queueCancelFailed);
+    }
+  });
+
+  useEffect(() => {
+    return () => {
+      closeBattleSocket(true);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (state.socketStatus === "DISCONNECTED" && socketConnectionRef.current) {
+      closeBattleSocket(true);
+    }
+  }, [state.socketStatus]);
 
   useEffect(() => {
     if (state.screen !== "battle" || state.input.serverConfirmationStatus !== "PENDING") {
@@ -226,7 +278,7 @@ export function BattleGameWorkspace() {
   }
 
   function handleStartQueue() {
-    if (!hasPlayerSession) {
+    if (!session || !hasPlayerSession) {
       setStatusMessage(copy.matchEntryBlocked);
       return;
     }
@@ -237,6 +289,7 @@ export function BattleGameWorkspace() {
 
     setStatusMessage(null);
     dispatch({ type: "startQueue" });
+    startQueueMutation.mutate(session.playerId);
   }
 
   function handleSaveLoadout() {
@@ -276,6 +329,67 @@ export function BattleGameWorkspace() {
 
     setStatusMessage(null);
     createGuestMutation.mutate(nickname);
+  }
+
+  function handleCancelQueue() {
+    if (!session) {
+      return;
+    }
+
+    setStatusMessage(null);
+    cancelQueueMutation.mutate(session.playerId);
+  }
+
+  function handleBattleSocketEvent(event: BattleSocketEvent) {
+    if (event.type === "battle.match_ready") {
+      dispatch({ type: "queueReady" });
+      return;
+    }
+
+    if (event.type === "battle.match_found") {
+      dispatch({ type: "matchFound" });
+      return;
+    }
+
+    dispatch({
+      type: "battleStarted",
+      battle: toBattleState(event.payload.battle)
+    });
+    setStatusMessage(null);
+  }
+
+  async function ensureBattleSocketConnection(playerId: string): Promise<void> {
+    if (socketConnectionRef.current) {
+      return;
+    }
+
+    const wsToken = await getWsToken(playerId);
+    socketConnectionRef.current = await connectBattleSocket({
+      token: wsToken.wsToken,
+      onClose: () => {
+        const shouldIgnoreClose = ignoreSocketCloseRef.current;
+        ignoreSocketCloseRef.current = false;
+        socketConnectionRef.current = null;
+        if (shouldIgnoreClose) {
+          return;
+        }
+        dispatch({ type: "socketDisconnected" });
+        setStatusMessage(copy.socketDisconnected);
+      },
+      onEvent: handleBattleSocketEvent
+    });
+  }
+
+  function closeBattleSocket(suppressCloseMessage: boolean) {
+    const connection = socketConnectionRef.current;
+    if (!connection) {
+      ignoreSocketCloseRef.current = false;
+      return;
+    }
+
+    ignoreSocketCloseRef.current = suppressCloseMessage;
+    socketConnectionRef.current = null;
+    connection.close();
   }
 
   const playerStatusLabel = isRestoringPlayer
@@ -335,7 +449,11 @@ export function BattleGameWorkspace() {
                     {copy.startGuest}
                   </Button>
                   <Button onClick={handleOpenLoadout}>{copy.editLoadout}</Button>
-                  <Button variant="primary" onClick={handleStartQueue}>
+                  <Button
+                    disabled={startQueueMutation.isPending}
+                    variant="primary"
+                    onClick={handleStartQueue}
+                  >
                     {copy.startMatch}
                   </Button>
                 </div>
@@ -434,10 +552,10 @@ export function BattleGameWorkspace() {
               />
               {statusMessage ? <p className="status-text">{statusMessage}</p> : null}
               <div className="action-row">
-                <Button variant="primary" onClick={() => dispatch({ type: "matchFound" })}>
-                  match.found
-                </Button>
-                <Button onClick={() => dispatch({ type: "go", screen: "home" })}>
+                <Button
+                  disabled={cancelQueueMutation.isPending || state.queueStatus === "MATCHED"}
+                  onClick={handleCancelQueue}
+                >
                   {copy.cancelQueue}
                 </Button>
               </div>

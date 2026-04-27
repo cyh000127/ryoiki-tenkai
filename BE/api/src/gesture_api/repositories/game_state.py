@@ -16,7 +16,7 @@ from gesture_api.domain.rating import calculate_elo_delta
 class InMemoryGameStateRepository:
     def __init__(self) -> None:
         self.players: dict[str, PlayerRecord] = {}
-        self.queue: list[str] = []
+        self.queue: dict[str, datetime] = {}
         self.battles: dict[str, BattleSession] = {}
         self.player_battle_ids: dict[str, str] = {}
         self.match_history: list[dict[str, object]] = []
@@ -66,29 +66,48 @@ class InMemoryGameStateRepository:
         player.loadout_configured = True
         return player
 
-    def enter_queue(self, player_id: str) -> BattleSession | None:
+    def enter_queue(self, player_id: str) -> tuple[str, datetime | None, BattleSession | None] | None:
         if player_id not in self.players:
             return None
-        if player_id not in self.queue:
-            self.queue.append(player_id)
-        opponent_id = self._pick_opponent(player_id)
-        battle = self._create_battle(player_id, opponent_id)
-        self.queue = [queued_id for queued_id in self.queue if queued_id != player_id]
-        return battle
+        battle = self.get_player_battle(player_id)
+        if battle is not None:
+            return "MATCHED", None, battle
+        queued_at = self.queue.get(player_id)
+        if queued_at is not None:
+            return "SEARCHING", queued_at, None
+        queued_at = datetime.now(UTC)
+        self.queue[player_id] = queued_at
+        return "SEARCHING", queued_at, None
 
     def leave_queue(self, player_id: str) -> bool:
-        before = len(self.queue)
-        self.queue = [queued_id for queued_id in self.queue if queued_id != player_id]
-        return len(self.queue) != before
+        return self.queue.pop(player_id, None) is not None
+
+    def get_queue_entry(self, player_id: str) -> datetime | None:
+        return self.queue.get(player_id)
 
     def get_player_battle(self, player_id: str) -> BattleSession | None:
         battle_id = self.player_battle_ids.get(player_id)
         if battle_id is None:
             return None
-        return self.battles.get(battle_id)
+        battle = self.battles.get(battle_id)
+        if battle is None or battle.status != "ACTIVE":
+            return None
+        return battle
 
     def get_battle(self, battle_session_id: str) -> BattleSession | None:
         return self.battles.get(battle_session_id)
+
+    def create_match_for_player(self, player_id: str) -> BattleSession | None:
+        battle = self.get_player_battle(player_id)
+        if battle is not None:
+            return battle
+        if player_id not in self.queue:
+            return None
+        opponent_id = self._pick_opponent(player_id)
+        self.queue.pop(player_id, None)
+        if opponent_id in self.queue:
+            self.queue.pop(opponent_id, None)
+        return self._create_battle(player_id, opponent_id)
 
     def submit_action(
         self,
@@ -207,6 +226,8 @@ class InMemoryGameStateRepository:
         loser.rating -= rating_delta
         winner.wins += 1
         loser.losses += 1
+        self.player_battle_ids.pop(winner_player_id, None)
+        self.player_battle_ids.pop(loser_player_id, None)
         battle.status = "ENDED"
         battle.winner_player_id = winner_player_id
         battle.loser_player_id = loser_player_id

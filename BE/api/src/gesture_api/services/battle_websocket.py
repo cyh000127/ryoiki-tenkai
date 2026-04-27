@@ -1,12 +1,22 @@
+from datetime import datetime
 from typing import Literal, Protocol
 
+from fastapi import WebSocket
 from gesture_api.api.schemas.game import BattleActionResponse, BattleStateResponse
 from gesture_api.api.schemas.websocket import (
     BattleActionResultEvent,
     BattleInboundEvent,
+    BattleMatchFoundEvent,
+    BattleMatchFoundPayload,
+    BattleMatchReadyEvent,
+    BattleMatchReadyPayload,
     BattlePingEvent,
     BattlePongEvent,
+    BattleStartedEvent,
+    BattleStartedPayload,
+    BattleOutboundEvent,
     BattleSubmitActionEvent,
+    serialize_battle_event,
 )
 from gesture_api.domain.game import BattleSession
 
@@ -20,6 +30,31 @@ class BattleActionRepository(Protocol):
         action_id: str,
         gesture_sequence: list[str],
     ) -> tuple[str, BattleSession | None, str | None]: ...
+
+
+class BattleConnectionManager:
+    def __init__(self) -> None:
+        self._connections: dict[str, WebSocket] = {}
+
+    async def connect(self, player_id: str, websocket: WebSocket) -> None:
+        self._connections[player_id] = websocket
+
+    def disconnect(self, player_id: str, websocket: WebSocket | None = None) -> None:
+        current = self._connections.get(player_id)
+        if current is None:
+            return
+        if websocket is None or current == websocket:
+            self._connections.pop(player_id, None)
+
+    def is_connected(self, player_id: str) -> bool:
+        return player_id in self._connections
+
+    async def send_event(self, player_id: str, event: BattleOutboundEvent) -> bool:
+        websocket = self._connections.get(player_id)
+        if websocket is None:
+            return False
+        await websocket.send_json(serialize_battle_event(event))
+        return True
 
 
 class BattleWebSocketEventHandler:
@@ -59,3 +94,40 @@ class BattleWebSocketEventHandler:
                 battle=battle_state,
             ),
         )
+
+
+def get_player_seat(battle: BattleSession, player_id: str) -> Literal["PLAYER_ONE", "PLAYER_TWO"]:
+    return "PLAYER_ONE" if battle.player_ids[0] == player_id else "PLAYER_TWO"
+
+
+def build_match_ready_event(queued_at: datetime) -> BattleMatchReadyEvent:
+    return BattleMatchReadyEvent(payload=BattleMatchReadyPayload(queued_at=queued_at))
+
+
+def build_match_found_event(
+    battle: BattleSession,
+    player_id: str,
+) -> BattleMatchFoundEvent:
+    return BattleMatchFoundEvent(
+        payload=BattleMatchFoundPayload(
+            match_id=battle.match_id,
+            battle_session_id=battle.battle_session_id,
+            player_seat=get_player_seat(battle, player_id),
+        )
+    )
+
+
+def build_started_event(
+    battle: BattleSession,
+    player_id: str,
+) -> BattleStartedEvent:
+    return BattleStartedEvent(
+        payload=BattleStartedPayload(
+            battle_session_id=battle.battle_session_id,
+            player_seat=get_player_seat(battle, player_id),
+            battle=BattleStateResponse.from_session(battle, player_id),
+        )
+    )
+
+
+battle_connection_manager = BattleConnectionManager()

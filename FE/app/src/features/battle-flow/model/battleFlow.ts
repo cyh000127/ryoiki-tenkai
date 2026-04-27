@@ -52,7 +52,11 @@ export type BattleFlowAction =
   | { type: "hydrateLoadout"; skillsetId: string; animsetId: string; skillId: string }
   | { type: "equip"; skillsetId: string; animsetId: string; skillId: string }
   | { type: "startQueue" }
+  | { type: "queueReady" }
   | { type: "matchFound" }
+  | { type: "battleStarted"; battle: BattleState }
+  | { type: "leaveQueue" }
+  | { type: "socketDisconnected" }
   | { type: "selectSkill"; skillId: string }
   | { type: "simulateGestureStep"; gesture: string; confidence: number }
   | { type: "submitSkill" }
@@ -150,23 +154,74 @@ export function battleFlowReducer(
         socketStatus: "CONNECTING",
         recentEvents: prependEvent(state, "matchmaking.queue.entered")
       };
+    case "queueReady":
+      return {
+        ...state,
+        screen: "matchmaking",
+        queueStatus: "SEARCHING",
+        socketStatus: "CONNECTED",
+        recentEvents: prependEvent(state, "battle.match_ready")
+      };
     case "matchFound":
+      return {
+        ...state,
+        queueStatus: "MATCHED",
+        socketStatus: "CONNECTED",
+        screen: "matchmaking",
+        battle: state.battle,
+        recentEvents: prependEvent(state, "battle.match_found")
+      };
+    case "battleStarted":
       return {
         ...state,
         screen: "battle",
         queueStatus: "MATCHED",
         socketStatus: "CONNECTED",
-        battle: createInitialBattle(state.player.playerId),
+        battle: action.battle,
         input: {
           ...state.input,
           cameraReady: true,
           handDetected: true,
+          currentGesture: null,
           currentStep: 0,
           failureReason: null,
-          networkLatencyMs: 42,
+          networkLatencyMs: state.input.networkLatencyMs,
           serverConfirmationStatus: "IDLE"
         },
-        recentEvents: prependEvent(state, "match.found")
+        recentEvents: prependEvent(state, "battle.started")
+      };
+    case "leaveQueue":
+      return {
+        ...state,
+        screen: "home",
+        queueStatus: "IDLE",
+        socketStatus: "DISCONNECTED",
+        battle: null,
+        input: {
+          ...state.input,
+          cameraReady: false,
+          handDetected: false,
+          currentGesture: null,
+          currentStep: 0,
+          failureReason: null,
+          networkLatencyMs: 0,
+          serverConfirmationStatus: "IDLE"
+        },
+        recentEvents: prependEvent(state, "matchmaking.queue.left")
+      };
+    case "socketDisconnected":
+      return {
+        ...state,
+        screen: state.screen === "matchmaking" ? "home" : state.screen,
+        queueStatus: state.battle ? "MATCHED" : "IDLE",
+        socketStatus: "DISCONNECTED",
+        input: {
+          ...state.input,
+          cameraReady: state.battle ? state.input.cameraReady : false,
+          handDetected: state.battle ? state.input.handDetected : false,
+          networkLatencyMs: state.battle ? state.input.networkLatencyMs : 0
+        },
+        recentEvents: prependEvent(state, "socket.disconnected")
       };
     case "selectSkill":
       return {

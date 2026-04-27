@@ -1,4 +1,3 @@
-from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Header, WebSocket, WebSocketDisconnect, status
@@ -29,9 +28,16 @@ from gesture_api.api.schemas.websocket import (
     extract_battle_request_id,
     serialize_battle_event,
 )
+from gesture_api.domain.game import BattleSession
 from gesture_api.domain.errors import DomainError
 from gesture_api.repositories.game_state import game_state_repository
-from gesture_api.services.battle_websocket import BattleWebSocketEventHandler
+from gesture_api.services.battle_websocket import (
+    BattleWebSocketEventHandler,
+    battle_connection_manager,
+    build_match_found_event,
+    build_match_ready_event,
+    build_started_event,
+)
 from pydantic import ValidationError
 
 router = APIRouter()
@@ -95,7 +101,7 @@ def update_my_loadout(
 
 
 @api_router.post("/matchmaking/queue", response_model=ApiResponse[QueueStatusResponse])
-def enter_matchmaking_queue(
+async def enter_matchmaking_queue(
     _: QueueRequest,
     player_id: PlayerIdHeader,
 ) -> ApiResponse[QueueStatusResponse]:
@@ -109,21 +115,53 @@ def enter_matchmaking_queue(
             "Save a valid loadout before entering matchmaking.",
             400,
         )
-    battle = game_state_repository.enter_queue(player_id)
-    if battle is None:
+    queue_state = game_state_repository.enter_queue(player_id)
+    if queue_state is None:
         raise DomainError("PLAYER_NOT_FOUND", "Player not found", "Unknown player.", 404)
+    queue_status, queued_at, battle = queue_state
+    if battle is not None:
+        return ok(
+            QueueStatusResponse(
+                queue_status="MATCHED",
+                queued_at=queued_at,
+                match_id=battle.match_id,
+                battle_session_id=battle.battle_session_id,
+            )
+        )
+    if queued_at is None:
+        raise DomainError("QUEUE_STATE_INVALID", "Queue state invalid", "Queue state is invalid.", 500)
+    if battle_connection_manager.is_connected(player_id):
+        await battle_connection_manager.send_event(player_id, build_match_ready_event(queued_at))
+        battle = game_state_repository.create_match_for_player(player_id)
+        if battle is not None:
+            await emit_battle_handoff(battle)
+            return ok(
+                QueueStatusResponse(
+                    queue_status="MATCHED",
+                    queued_at=queued_at,
+                    match_id=battle.match_id,
+                    battle_session_id=battle.battle_session_id,
+                )
+            )
     return ok(
         QueueStatusResponse(
-            queue_status="MATCHED",
-            queued_at=datetime.now(UTC),
-            match_id=battle.match_id,
-            battle_session_id=battle.battle_session_id,
+            queue_status=queue_status,
+            queued_at=queued_at,
         )
     )
 
 
 @api_router.delete("/matchmaking/queue", response_model=ApiResponse[QueueStatusResponse])
 def leave_matchmaking_queue(player_id: PlayerIdHeader) -> ApiResponse[QueueStatusResponse]:
+    battle = game_state_repository.get_player_battle(player_id)
+    if battle is not None:
+        return ok(
+            QueueStatusResponse(
+                queue_status="MATCHED",
+                match_id=battle.match_id,
+                battle_session_id=battle.battle_session_id,
+            )
+        )
     game_state_repository.leave_queue(player_id)
     return ok(QueueStatusResponse(queue_status="IDLE"))
 
@@ -131,15 +169,18 @@ def leave_matchmaking_queue(player_id: PlayerIdHeader) -> ApiResponse[QueueStatu
 @api_router.get("/matchmaking/status", response_model=ApiResponse[QueueStatusResponse])
 def get_matchmaking_status(player_id: PlayerIdHeader) -> ApiResponse[QueueStatusResponse]:
     battle = game_state_repository.get_player_battle(player_id)
-    if battle is None:
-        return ok(QueueStatusResponse(queue_status="IDLE"))
-    return ok(
-        QueueStatusResponse(
-            queue_status="MATCHED",
-            match_id=battle.match_id,
-            battle_session_id=battle.battle_session_id,
+    if battle is not None:
+        return ok(
+            QueueStatusResponse(
+                queue_status="MATCHED",
+                match_id=battle.match_id,
+                battle_session_id=battle.battle_session_id,
+            )
         )
-    )
+    queued_at = game_state_repository.get_queue_entry(player_id)
+    if queued_at is not None:
+        return ok(QueueStatusResponse(queue_status="SEARCHING", queued_at=queued_at))
+    return ok(QueueStatusResponse(queue_status="IDLE"))
 
 
 @api_router.get("/battles/{battle_session_id}", response_model=ApiResponse[BattleStateResponse])
@@ -235,53 +276,91 @@ def create_ws_token(player_id: PlayerIdHeader) -> ApiResponse[WsTokenResponse]:
 
 @router.websocket("/ws")
 async def battle_websocket(websocket: WebSocket, token: str | None = None) -> None:
-    if not is_valid_ws_token(token):
+    player_id = get_player_id_from_ws_token(token)
+    if player_id is None:
         await websocket.close(code=1008)
         return
     handler = BattleWebSocketEventHandler(game_state_repository)
     await websocket.accept()
-    while True:
-        try:
-            message = await websocket.receive_json()
-        except WebSocketDisconnect:
-            return
-        except ValueError:
-            await websocket.send_json(
-                serialize_battle_event(
-                    BattleErrorEvent(
-                        payload=BattleErrorPayload(
-                            code="INVALID_JSON",
-                            message="Message must be valid JSON.",
+    await battle_connection_manager.connect(player_id, websocket)
+    try:
+        await replay_player_matchmaking_state(player_id)
+        while True:
+            try:
+                message = await websocket.receive_json()
+            except WebSocketDisconnect:
+                return
+            except ValueError:
+                await websocket.send_json(
+                    serialize_battle_event(
+                        BattleErrorEvent(
+                            payload=BattleErrorPayload(
+                                code="INVALID_JSON",
+                                message="Message must be valid JSON.",
+                            )
                         )
                     )
                 )
-            )
-            continue
+                continue
 
-        try:
-            event = deserialize_battle_event(message)
-        except ValidationError:
-            await websocket.send_json(
-                serialize_battle_event(
-                    BattleErrorEvent(
-                        request_id=extract_battle_request_id(message),
-                        payload=BattleErrorPayload(
-                            code="INVALID_EVENT",
-                            message="Unsupported or invalid battle event.",
-                        ),
+            try:
+                event = deserialize_battle_event(message)
+            except ValidationError:
+                await websocket.send_json(
+                    serialize_battle_event(
+                        BattleErrorEvent(
+                            request_id=extract_battle_request_id(message),
+                            payload=BattleErrorPayload(
+                                code="INVALID_EVENT",
+                                message="Unsupported or invalid battle event.",
+                            ),
+                        )
                     )
                 )
-            )
-            continue
+                continue
 
-        await websocket.send_json(serialize_battle_event(handler.handle(event)))
+            await websocket.send_json(serialize_battle_event(handler.handle(event)))
+    finally:
+        battle_connection_manager.disconnect(player_id, websocket)
 
 
-def is_valid_ws_token(token: str | None) -> bool:
+def get_player_id_from_ws_token(token: str | None) -> str | None:
     if token is None or not token.startswith("wst_"):
-        return False
+        return None
     player_id = token.removeprefix("wst_")
-    return game_state_repository.get_player(player_id) is not None
+    return player_id if game_state_repository.get_player(player_id) is not None else None
+
+
+async def replay_player_matchmaking_state(player_id: str) -> None:
+    battle = game_state_repository.get_player_battle(player_id)
+    if battle is not None:
+        await emit_battle_handoff(battle, player_ids=(player_id,))
+        return
+    queued_at = game_state_repository.get_queue_entry(player_id)
+    if queued_at is None:
+        return
+    await battle_connection_manager.send_event(player_id, build_match_ready_event(queued_at))
+    battle = game_state_repository.create_match_for_player(player_id)
+    if battle is not None:
+        await emit_battle_handoff(battle)
+
+
+async def emit_battle_handoff(
+    battle: BattleSession,
+    player_ids: tuple[str, ...] | None = None,
+) -> None:
+    recipients = player_ids if player_ids is not None else battle.player_ids
+    for participant_id in recipients:
+        if not battle_connection_manager.is_connected(participant_id):
+            continue
+        await battle_connection_manager.send_event(
+            participant_id,
+            build_match_found_event(battle, participant_id),
+        )
+        await battle_connection_manager.send_event(
+            participant_id,
+            build_started_event(battle, participant_id),
+        )
 
 
 router.include_router(api_router)
