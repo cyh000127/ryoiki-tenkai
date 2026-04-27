@@ -390,7 +390,7 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E6-ST01: Persist Battle Result and Compact Action Audit
 
-- Status: planned
+- Status: done
 - User story: As the backend, I can store completed battle results and a compact action audit.
 - Scope:
   - Battle result record.

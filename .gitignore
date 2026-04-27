@@ -30,6 +30,7 @@ test-results/
 *.log
 tmp/
 .tmp/
+BE/api/.runtime/
 
 # Build artifacts
 build/

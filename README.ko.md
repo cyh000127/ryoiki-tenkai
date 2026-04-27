@@ -85,12 +85,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - reconnect 시 latest active battle snapshot 복구와 ended battle 결과 상태 복원
 - delayed/duplicate socket event를 최신 battle state 기준으로 정리해 UI rollback과 중복 결과 반영 방지
 - server-backed 전적/레이팅/leaderboard 화면과 loading/empty/error 상태 렌더링
+- battle result, compact action audit, rating, history를 백엔드 runtime store에 영속화
 
 ## 남은 작업
 
 - live camera recognition adapter와 deterministic fallback input 경계 강화
 - battle timer/deadline, cooldown 상세, compact/mobile UI polish
-- 결과, 전적, 레이팅, leaderboard의 실제 영속화
 - end-to-end smoke coverage 추가
 
 ## 경계

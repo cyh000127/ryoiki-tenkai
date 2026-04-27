@@ -98,12 +98,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - reconnect restore for the latest active battle snapshot and ended battle result state
 - delayed and duplicate socket events are reconciled so stale snapshots do not rewind the UI or reapply results
 - server-backed history, rating, and leaderboard screens with loading, empty, and error states
+- battle results, compact action audit, ratings, and history now persist in the backend runtime store
 
 ## Remaining Work
 
 - live camera recognition adapter hardening and clearer separation from deterministic fallback input
 - deadline/timer visibility, cooldown detail, and compact/mobile UX polish
-- durable persistence for results, compact action audit, rating history, and leaderboard data
 - final end-to-end smoke coverage
 
 ## MVP Planning and QA

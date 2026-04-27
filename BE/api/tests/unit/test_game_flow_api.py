@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 from gesture_api.main import create_app
@@ -306,3 +307,62 @@ def test_history_and_leaderboard_reflect_completed_battle_rating_updates() -> No
     assert ratings == sorted(ratings, reverse=True)
     player_row = next(row for row in leaderboard_rows if row["playerId"] == player_id)
     assert player_row["rating"] == profile["rating"]
+
+
+def test_completed_battle_persists_profile_history_and_compact_audit_after_reload(
+    game_state_path: Path,
+) -> None:
+    client = TestClient(create_app())
+    player_id = create_configured_guest(client, "player-persisted")
+    skill = client.get("/api/v1/skillsets").json()["data"][0]["skills"][0]
+    battle_session_id = create_started_battle(client, player_id)
+
+    action_response = client.post(
+        f"/api/v1/battles/{battle_session_id}/actions",
+        json={
+            "playerId": player_id,
+            "turnNumber": 1,
+            "actionId": "act-persisted",
+            "gestureSequence": skill["gestureSequence"],
+            "submittedAt": "2026-04-27T00:00:00Z",
+        },
+    )
+    assert action_response.status_code == 202
+    surrender_response = client.post(
+        f"/api/v1/battles/{battle_session_id}/surrender",
+        headers={"X-Player-Id": player_id},
+    )
+    assert surrender_response.status_code == 200
+
+    history_before_reload = client.get(
+        "/api/v1/matches/history",
+        headers={"X-Player-Id": player_id},
+    ).json()["data"]
+    profile_before_reload = client.get(
+        "/api/v1/players/me",
+        headers={"X-Player-Id": player_id},
+    ).json()["data"]
+    audit_before_reload = game_state_repository.get_match_audit(battle_session_id)
+
+    assert history_before_reload
+    assert audit_before_reload
+    assert "gestureSequence" not in audit_before_reload[0]
+    assert "tracking" not in audit_before_reload[0]
+
+    game_state_repository.reset_runtime_state(persistence_path=game_state_path)
+    reloaded_client = TestClient(create_app())
+
+    profile_after_reload = reloaded_client.get(
+        "/api/v1/players/me",
+        headers={"X-Player-Id": player_id},
+    )
+    history_after_reload = reloaded_client.get(
+        "/api/v1/matches/history",
+        headers={"X-Player-Id": player_id},
+    )
+
+    assert profile_after_reload.status_code == 200
+    assert history_after_reload.status_code == 200
+    assert profile_after_reload.json()["data"] == profile_before_reload
+    assert history_after_reload.json()["data"] == history_before_reload
+    assert game_state_repository.get_match_audit(battle_session_id) == audit_before_reload

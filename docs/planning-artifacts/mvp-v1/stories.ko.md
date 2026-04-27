@@ -200,7 +200,7 @@
 
 ### E6-ST01: battle result와 compact action audit 저장
 
-- Status: planned
+- Status: done
 - User story: backend는 completed battle result와 compact action audit을 저장할 수 있다.
 - Scope: battle result record, compact action log, player별 retrieval.
 - Acceptance criteria: result가 한 번만 기록된다. action audit은 raw camera와 raw tracking data를 제외한다. history lookup이 recent completed battle을 반환한다.
