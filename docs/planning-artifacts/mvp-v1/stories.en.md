@@ -200,16 +200,16 @@ This document expands the MVP epics into story-sized implementation units. Story
 
 ### E3-ST04: Resolve Timeout and Surrender Paths
 
-- Status: partial
+- Status: done
 - User story: As the system, I can resolve stalled or conceded turns so battles do not hang.
 - Scope:
   - Turn timeout rule.
   - Surrender command.
   - Event emission for timeout, surrender, and resulting state.
 - Acceptance criteria:
-  - Timeout advances turn or ends battle according to the documented rule.
+  - The MVP timeout rule is that the turn owner immediately loses after `action_deadline_at` expires.
+  - A timeout event is followed by an ended event and the result is recorded once.
   - Surrender ends battle immediately with correct winner.
-  - Result is recorded once.
 - Dependencies:
   - Battle clock model.
   - E6-ST01 result persistence.

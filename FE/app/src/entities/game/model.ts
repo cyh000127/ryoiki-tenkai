@@ -44,10 +44,13 @@ export type BattleState = {
   status: "ACTIVE" | "ENDED";
   turnNumber: number;
   turnOwnerPlayerId: string;
+  actionDeadlineAt?: string;
   self: FighterState;
   opponent: FighterState;
   battleLog: BattleLogItem[];
   winnerPlayerId: string | null;
+  loserPlayerId?: string | null;
+  endedReason?: "HP_ZERO" | "SURRENDER" | "TIMEOUT" | "DISCONNECT" | null;
 };
 
 export type MatchRecord = {

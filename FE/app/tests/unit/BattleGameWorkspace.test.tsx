@@ -320,6 +320,7 @@ describe("BattleGameWorkspace", () => {
           status: "ACTIVE",
           turnNumber: 1,
           turnOwnerPlayerId: "pl_guest",
+          actionDeadlineAt: "2026-04-27T00:00:30Z",
           self: {
             playerId: "pl_guest",
             hp: 100,
@@ -333,7 +334,9 @@ describe("BattleGameWorkspace", () => {
             cooldowns: {}
           },
           battleLog: [],
-          winnerPlayerId: null
+          winnerPlayerId: null,
+          loserPlayerId: null,
+          endedReason: null
         }
       }
     });
@@ -380,6 +383,7 @@ describe("BattleGameWorkspace", () => {
           status: "ACTIVE",
           turnNumber: 1,
           turnOwnerPlayerId: "pl_guest",
+          actionDeadlineAt: "2026-04-27T00:00:30Z",
           self: {
             playerId: "pl_guest",
             hp: 100,
@@ -393,7 +397,9 @@ describe("BattleGameWorkspace", () => {
             cooldowns: {}
           },
           battleLog: [],
-          winnerPlayerId: null
+          winnerPlayerId: null,
+          loserPlayerId: null,
+          endedReason: null
         }
       }
     });
@@ -434,6 +440,7 @@ describe("BattleGameWorkspace", () => {
           status: "ACTIVE",
           turnNumber: 3,
           turnOwnerPlayerId: "pl_guest",
+          actionDeadlineAt: "2026-04-27T00:01:30Z",
           self: {
             playerId: "pl_guest",
             hp: 75,
@@ -460,7 +467,9 @@ describe("BattleGameWorkspace", () => {
               message: "pulse_strike dealt 25"
             }
           ],
-          winnerPlayerId: null
+          winnerPlayerId: null,
+          loserPlayerId: null,
+          endedReason: null
         }
       }
     });
@@ -471,5 +480,145 @@ describe("BattleGameWorkspace", () => {
     expect(screen.getAllByText("75")).toHaveLength(2);
     expect(screen.getByText("T1 pulse_strike dealt 25")).toBeInTheDocument();
     expect(screen.getByText("T2 pulse_strike dealt 25")).toBeInTheDocument();
+  });
+
+  it("renders timeout reason on the result screen when the server ends the battle", async () => {
+    const user = userEvent.setup();
+    installGameApiMock();
+
+    renderWorkspace();
+
+    await user.clear(screen.getByRole("textbox", { name: "닉네임" }));
+    await user.type(screen.getByRole("textbox", { name: "닉네임" }), "rookie");
+    await user.click(screen.getByRole("button", { name: "게스트 시작" }));
+    await user.click(await screen.findByRole("button", { name: "로드아웃 저장" }));
+    await user.click(await screen.findByRole("button", { name: "랭크 1대1 매칭" }));
+
+    emitSocketEvent({
+      type: "battle.match_ready",
+      payload: {
+        queueStatus: "SEARCHING",
+        queuedAt: "2026-04-27T00:00:00Z"
+      }
+    });
+    emitSocketEvent({
+      type: "battle.match_found",
+      payload: {
+        matchId: "match_test",
+        battleSessionId: "battle_test",
+        playerSeat: "PLAYER_ONE"
+      }
+    });
+    emitSocketEvent({
+      type: "battle.started",
+      payload: {
+        battleSessionId: "battle_test",
+        playerSeat: "PLAYER_ONE",
+        battle: {
+          battleSessionId: "battle_test",
+          matchId: "match_test",
+          status: "ACTIVE",
+          turnNumber: 1,
+          turnOwnerPlayerId: "pl_guest",
+          actionDeadlineAt: "2026-04-27T00:00:30Z",
+          self: {
+            playerId: "pl_guest",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          opponent: {
+            playerId: "pl_practice",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          battleLog: [],
+          winnerPlayerId: null,
+          loserPlayerId: null,
+          endedReason: null
+        }
+      }
+    });
+
+    emitSocketEvent({
+      type: "battle.timeout",
+      payload: {
+        battleSessionId: "battle_test",
+        turnNumber: 1,
+        timedOutPlayerId: "pl_guest",
+        battle: {
+          battleSessionId: "battle_test",
+          matchId: "match_test",
+          status: "ENDED",
+          turnNumber: 1,
+          turnOwnerPlayerId: "pl_guest",
+          actionDeadlineAt: "2026-04-27T00:00:31Z",
+          self: {
+            playerId: "pl_guest",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          opponent: {
+            playerId: "pl_practice",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          battleLog: [
+            {
+              turnNumber: 1,
+              message: "pl_guest timed out"
+            }
+          ],
+          winnerPlayerId: "pl_practice",
+          loserPlayerId: "pl_guest",
+          endedReason: "TIMEOUT"
+        }
+      }
+    });
+    emitSocketEvent({
+      type: "battle.ended",
+      payload: {
+        battleSessionId: "battle_test",
+        winnerPlayerId: "pl_practice",
+        loserPlayerId: "pl_guest",
+        endedReason: "TIMEOUT",
+        ratingChange: -18,
+        battle: {
+          battleSessionId: "battle_test",
+          matchId: "match_test",
+          status: "ENDED",
+          turnNumber: 1,
+          turnOwnerPlayerId: "pl_guest",
+          actionDeadlineAt: "2026-04-27T00:00:31Z",
+          self: {
+            playerId: "pl_guest",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          opponent: {
+            playerId: "pl_practice",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          battleLog: [
+            {
+              turnNumber: 1,
+              message: "pl_guest timed out"
+            }
+          ],
+          winnerPlayerId: "pl_practice",
+          loserPlayerId: "pl_guest",
+          endedReason: "TIMEOUT"
+        }
+      }
+    });
+
+    expect(await screen.findByRole("heading", { name: "전투 결과" })).toBeInTheDocument();
+    expect(screen.getByText("턴 타임아웃")).toBeInTheDocument();
   });
 });

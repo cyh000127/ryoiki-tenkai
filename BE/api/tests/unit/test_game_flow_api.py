@@ -1,5 +1,8 @@
+from datetime import UTC, datetime, timedelta
+
 from fastapi.testclient import TestClient
 from gesture_api.main import create_app
+from gesture_api.repositories.game_state import game_state_repository
 
 
 def create_configured_guest(client: TestClient, nickname: str) -> str:
@@ -203,6 +206,33 @@ def test_rejects_duplicate_action_id() -> None:
     assert duplicate_response.json()["data"]["reason"] == "DUPLICATE_ACTION"
 
 
+def test_submit_action_after_deadline_returns_turn_timeout() -> None:
+    client = TestClient(create_app())
+    player_id = create_configured_guest(client, "player-timeout")
+    battle_session_id = create_started_battle(client, player_id)
+
+    battle = game_state_repository.get_battle(battle_session_id)
+    assert battle is not None
+    battle.action_deadline_at = datetime.now(UTC) - timedelta(seconds=1)
+
+    response = client.post(
+        f"/api/v1/battles/{battle_session_id}/actions",
+        json={
+            "playerId": player_id,
+            "turnNumber": 1,
+            "actionId": "act-timeout",
+            "gestureSequence": ["seal_1", "seal_3"],
+            "submittedAt": "2026-04-27T00:00:00Z",
+        },
+    )
+
+    assert response.status_code == 202
+    assert response.json()["data"]["status"] == "REJECTED"
+    assert response.json()["data"]["reason"] == "TURN_TIMEOUT"
+    assert response.json()["data"]["battle"]["status"] == "ENDED"
+    assert response.json()["data"]["battle"]["endedReason"] == "TIMEOUT"
+
+
 def test_surrender_ends_battle_and_emits_ended_event() -> None:
     client = TestClient(create_app())
     player_id = create_configured_guest(client, "player-surrender")
@@ -227,11 +257,14 @@ def test_surrender_ends_battle_and_emits_ended_event() -> None:
             f"/api/v1/battles/{battle_session_id}/surrender",
             headers={"X-Player-Id": player_id},
         )
+        surrendered_event = websocket.receive_json()
         ended_event = websocket.receive_json()
 
     assert surrender_response.status_code == 200
     assert surrender_response.json()["data"]["status"] == "ENDED"
     assert surrender_response.json()["data"]["result"] == "LOSE"
+    assert surrendered_event["type"] == "battle.surrendered"
+    assert surrendered_event["payload"]["surrenderedPlayerId"] == player_id
     assert ended_event["type"] == "battle.ended"
     assert ended_event["payload"]["loserPlayerId"] == player_id
     assert ended_event["payload"]["endedReason"] == "SURRENDER"

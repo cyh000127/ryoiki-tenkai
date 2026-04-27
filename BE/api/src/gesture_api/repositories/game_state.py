@@ -118,6 +118,9 @@ class InMemoryGameStateRepository:
         action_id: str,
         gesture_sequence: list[str],
     ) -> tuple[str, BattleSession | None, str | None]:
+        timed_out, battle, _ = self.resolve_timeout_if_due(battle_session_id)
+        if timed_out:
+            return "rejected", battle, "TURN_TIMEOUT"
         battle = self.get_battle(battle_session_id)
         if battle is None:
             return "rejected", None, "BATTLE_NOT_FOUND"
@@ -176,6 +179,9 @@ class InMemoryGameStateRepository:
         return "accepted", battle, None
 
     def surrender(self, battle_session_id: str, player_id: str) -> BattleSession | None:
+        timed_out, battle, _ = self.resolve_timeout_if_due(battle_session_id)
+        if timed_out:
+            return battle
         battle = self.get_battle(battle_session_id)
         if battle is None or battle.status != "ACTIVE":
             return battle
@@ -186,6 +192,34 @@ class InMemoryGameStateRepository:
             reason="SURRENDER",
         )
         return battle
+
+    def resolve_timeout_if_due(
+        self,
+        battle_session_id: str,
+    ) -> tuple[bool, BattleSession | None, str | None]:
+        battle = self.get_battle(battle_session_id)
+        if battle is None or battle.status != "ACTIVE":
+            return False, battle, None
+        if datetime.now(UTC) < battle.action_deadline_at:
+            return False, battle, None
+
+        timed_out_player_id = battle.turn_owner_player_id
+        winner_player_id = battle.opponent_of(timed_out_player_id)
+        battle.battle_log.append(
+            BattleLogEntry(
+                turn_number=battle.turn_number,
+                actor_player_id=timed_out_player_id,
+                message=f"{timed_out_player_id} timed out",
+                created_at=datetime.now(UTC),
+            )
+        )
+        self._finish_battle(
+            battle,
+            winner_player_id=winner_player_id,
+            loser_player_id=timed_out_player_id,
+            reason="TIMEOUT",
+        )
+        return True, battle, timed_out_player_id
 
     def _pick_opponent(self, player_id: str) -> str:
         for queued_id in self.queue:

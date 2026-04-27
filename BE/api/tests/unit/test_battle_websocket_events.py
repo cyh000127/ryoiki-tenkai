@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -11,7 +11,7 @@ from gesture_api.api.schemas.websocket import (
     serialize_battle_event,
 )
 from gesture_api.main import create_app
-from gesture_api.repositories.game_state import InMemoryGameStateRepository
+from gesture_api.repositories.game_state import InMemoryGameStateRepository, game_state_repository
 from gesture_api.services.battle_websocket import BattleWebSocketEventHandler
 from starlette.websockets import WebSocketDisconnect
 
@@ -154,6 +154,52 @@ def test_ws_endpoint_replays_queue_handoff_and_handles_submit_action() -> None:
     assert state_updated_event["payload"]["battle"]["turnOwnerPlayerId"] == player_id
     assert state_updated_event["payload"]["battle"]["self"]["hp"] == 75
     assert state_updated_event["payload"]["battle"]["opponent"]["hp"] == 75
+
+
+def test_ws_endpoint_emits_timeout_and_ended_events_when_deadline_expires() -> None:
+    client = TestClient(create_app())
+    guest_response = client.post("/api/v1/players/guest", json={"nickname": "ws-timeout"})
+    player_id = guest_response.json()["data"]["playerId"]
+    loadout_response = client.post(
+        "/api/v1/players/me/loadout",
+        headers={"X-Player-Id": player_id},
+        json={
+            "skillsetId": "skillset_seal_basic",
+            "animsetId": "animset_basic_2d",
+        },
+    )
+    assert loadout_response.status_code == 200
+    ws_token = client.get("/api/v1/ws-token", headers={"X-Player-Id": player_id}).json()["data"][
+        "wsToken"
+    ]
+
+    with client.websocket_connect(f"/ws?token={ws_token}") as websocket:
+        queue_response = client.post(
+            "/api/v1/matchmaking/queue",
+            headers={"X-Player-Id": player_id},
+            json={"mode": "RANKED_1V1"},
+        )
+        assert queue_response.status_code == 200
+
+        websocket.receive_json()
+        websocket.receive_json()
+        started_event = websocket.receive_json()
+        battle_session_id = started_event["payload"]["battleSessionId"]
+
+        battle = game_state_repository.get_battle(battle_session_id)
+        assert battle is not None
+        battle.action_deadline_at = datetime.now(UTC) - timedelta(seconds=1)
+
+        timeout_event = websocket.receive_json()
+        ended_event = websocket.receive_json()
+
+    assert timeout_event["type"] == "battle.timeout"
+    assert timeout_event["payload"]["battleSessionId"] == battle_session_id
+    assert timeout_event["payload"]["timedOutPlayerId"] == player_id
+    assert timeout_event["payload"]["battle"]["endedReason"] == "TIMEOUT"
+    assert ended_event["type"] == "battle.ended"
+    assert ended_event["payload"]["loserPlayerId"] == player_id
+    assert ended_event["payload"]["endedReason"] == "TIMEOUT"
 
 
 def test_ws_endpoint_rejects_invalid_token() -> None:

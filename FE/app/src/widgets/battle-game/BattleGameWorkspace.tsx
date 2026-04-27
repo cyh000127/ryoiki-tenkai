@@ -448,6 +448,9 @@ export function BattleGameWorkspace() {
         setStatusMessage(null);
         return;
       }
+      case "battle.timeout":
+      case "battle.surrendered":
+        return;
       case "battle.ended": {
         consumePendingActionLatency();
         dispatch({
@@ -811,6 +814,10 @@ export function BattleGameWorkspace() {
                 label={copy.battleResult}
                 value={state.battle?.winnerPlayerId === state.player.playerId ? copy.win : copy.lose}
               />
+              <Metric
+                label={copy.endedReason}
+                value={getEndedReasonText(state.battle?.endedReason ?? null)}
+              />
               <Metric label={copy.ratingChange} value={state.history[0]?.ratingChange ?? 0} />
               <Metric label={copy.playerRating} value={state.player.rating} />
               <div className="action-row">
@@ -1024,4 +1031,14 @@ function getConfirmationHelp(status: ServerConfirmationStatus): string {
   }
 
   return status === "CONFIRMED" ? copy.serverConfirmConfirmedHelp : copy.serverConfirmReadyHelp;
+}
+
+function getEndedReasonText(
+  reason: "HP_ZERO" | "SURRENDER" | "TIMEOUT" | "DISCONNECT" | null
+): string {
+  if (reason === null) {
+    return "-";
+  }
+
+  return copy.endedReasonText[reason];
 }

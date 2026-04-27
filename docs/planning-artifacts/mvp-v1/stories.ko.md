@@ -104,10 +104,10 @@
 
 ### E3-ST04: timeout과 surrender path 해결
 
-- Status: partial
+- Status: done
 - User story: system은 멈춘 턴이나 포기를 처리해 battle이 멈추지 않게 한다.
 - Scope: turn timeout rule, surrender command, timeout/surrender/resulting state event emission.
-- Acceptance criteria: timeout은 documented rule에 따라 turn을 넘기거나 battle을 끝낸다. surrender는 battle을 즉시 종료하고 winner를 정확히 기록한다. result는 한 번만 기록된다.
+- Acceptance criteria: MVP timeout rule은 `action_deadline_at`을 넘긴 turn owner가 즉시 패배하는 것이다. timeout event 뒤에 ended event가 이어지고 result는 한 번만 기록된다. surrender는 battle을 즉시 종료하고 winner를 정확히 기록한다.
 - Dependencies: battle clock model, E6-ST01 result persistence.
 - Verification: backend timeout/surrender test.
 

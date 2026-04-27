@@ -55,6 +55,7 @@ export const copy = {
   equipAndQueue: "로드아웃 저장 후 매칭",
   saveLoadout: "로드아웃 저장",
   battleResult: "전투 결과",
+  endedReason: "종료 사유",
   ratingChange: "레이팅 변동",
   rematch: "다시 매칭",
   noHistory: "아직 전적이 없습니다.",
@@ -114,6 +115,12 @@ export const copy = {
     not_your_turn: "상대 턴에는 입력할 수 없습니다.",
     insufficient_mana: "마나가 부족합니다.",
     server_pending: "확정 대기 중에는 새 입력을 받을 수 없습니다."
+  },
+  endedReasonText: {
+    HP_ZERO: "체력 소진",
+    SURRENDER: "항복",
+    TIMEOUT: "턴 타임아웃",
+    DISCONNECT: "연결 종료"
   }
 } as const;
 

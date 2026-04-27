@@ -19,10 +19,13 @@ type BattleStateResponse = {
   status: "ACTIVE" | "ENDED";
   turnNumber: number;
   turnOwnerPlayerId: string;
+  actionDeadlineAt: string;
   self: BattleParticipantResponse;
   opponent: BattleParticipantResponse;
   battleLog: BattleLogResponse[];
   winnerPlayerId: string | null;
+  loserPlayerId?: string | null;
+  endedReason?: "HP_ZERO" | "SURRENDER" | "TIMEOUT" | "DISCONNECT" | null;
 };
 
 type BattleActionResultPayload = {
@@ -75,6 +78,25 @@ type BattleStateUpdatedEvent = {
   };
 };
 
+type BattleTimeoutEvent = {
+  type: "battle.timeout";
+  payload: {
+    battleSessionId: string;
+    turnNumber: number;
+    timedOutPlayerId: string;
+    battle: BattleStateResponse;
+  };
+};
+
+type BattleSurrenderedEvent = {
+  type: "battle.surrendered";
+  payload: {
+    battleSessionId: string;
+    surrenderedPlayerId: string;
+    battle: BattleStateResponse;
+  };
+};
+
 type BattleEndedEvent = {
   type: "battle.ended";
   payload: {
@@ -102,6 +124,8 @@ export type BattleSocketEvent =
   | BattleStartedEvent
   | BattleActionResultEvent
   | BattleStateUpdatedEvent
+  | BattleTimeoutEvent
+  | BattleSurrenderedEvent
   | BattleEndedEvent
   | BattleErrorEvent;
 
@@ -201,13 +225,16 @@ export function toBattleState(snapshot: BattleStateResponse): BattleState {
     status: snapshot.status,
     turnNumber: snapshot.turnNumber,
     turnOwnerPlayerId: snapshot.turnOwnerPlayerId,
+    actionDeadlineAt: snapshot.actionDeadlineAt,
     self: snapshot.self,
     opponent: snapshot.opponent,
     battleLog: snapshot.battleLog.map((entry) => ({
       turnNumber: entry.turnNumber,
       message: entry.message
     })),
-    winnerPlayerId: snapshot.winnerPlayerId
+    winnerPlayerId: snapshot.winnerPlayerId,
+    loserPlayerId: snapshot.loserPlayerId ?? null,
+    endedReason: snapshot.endedReason ?? null
   };
 }
 
@@ -220,6 +247,8 @@ function isSupportedBattleSocketEvent(
     payload.type === "battle.started" ||
     payload.type === "battle.action_result" ||
     payload.type === "battle.state_updated" ||
+    payload.type === "battle.timeout" ||
+    payload.type === "battle.surrendered" ||
     payload.type === "battle.ended" ||
     payload.type === "battle.error"
   );

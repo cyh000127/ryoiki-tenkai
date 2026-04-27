@@ -14,10 +14,14 @@ from gesture_api.api.schemas.websocket import (
     BattleMatchReadyPayload,
     BattlePingEvent,
     BattlePongEvent,
+    BattleSurrenderedEvent,
+    BattleSurrenderedPayload,
     BattleStateUpdatedEvent,
     BattleStateUpdatedPayload,
     BattleStartedEvent,
     BattleStartedPayload,
+    BattleTimeoutEvent,
+    BattleTimeoutPayload,
     BattleOutboundEvent,
     BattleSubmitActionEvent,
     serialize_battle_event,
@@ -144,6 +148,35 @@ def build_state_updated_event(
             battle_session_id=battle.battle_session_id,
             battle=BattleStateResponse.from_session(battle, player_id),
             source_action_id=source_action_id,
+        )
+    )
+
+
+def build_timeout_event(
+    battle: BattleSession,
+    player_id: str,
+    timed_out_player_id: str,
+) -> BattleTimeoutEvent:
+    return BattleTimeoutEvent(
+        payload=BattleTimeoutPayload(
+            battle_session_id=battle.battle_session_id,
+            turn_number=battle.turn_number,
+            timed_out_player_id=timed_out_player_id,
+            battle=BattleStateResponse.from_session(battle, player_id),
+        )
+    )
+
+
+def build_surrendered_event(
+    battle: BattleSession,
+    player_id: str,
+    surrendered_player_id: str,
+) -> BattleSurrenderedEvent:
+    return BattleSurrenderedEvent(
+        payload=BattleSurrenderedPayload(
+            battle_session_id=battle.battle_session_id,
+            surrendered_player_id=surrendered_player_id,
+            battle=BattleStateResponse.from_session(battle, player_id),
         )
     )
 

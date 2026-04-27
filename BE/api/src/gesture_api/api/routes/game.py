@@ -1,3 +1,5 @@
+import asyncio
+from contextlib import suppress
 from typing import Annotated
 
 from fastapi import APIRouter, Header, WebSocket, WebSocketDisconnect, status
@@ -39,8 +41,10 @@ from gesture_api.services.battle_websocket import (
     build_ended_event,
     build_match_found_event,
     build_match_ready_event,
+    build_surrendered_event,
     build_state_updated_event,
     build_started_event,
+    build_timeout_event,
 )
 from pydantic import ValidationError
 
@@ -192,6 +196,7 @@ def get_battle(
     battle_session_id: str,
     player_id: PlayerIdHeader,
 ) -> ApiResponse[BattleStateResponse]:
+    game_state_repository.resolve_timeout_if_due(battle_session_id)
     battle = game_state_repository.get_battle(battle_session_id)
     if battle is None:
         raise DomainError("BATTLE_NOT_FOUND", "Battle not found", "Unknown battle session.", 404)
@@ -207,6 +212,18 @@ async def submit_battle_action(
     battle_session_id: str,
     request: SubmitBattleActionRequest,
 ) -> ApiResponse[BattleActionResponse]:
+    timed_out_battle = await resolve_due_timeout_and_emit(battle_session_id)
+    if timed_out_battle is not None:
+        return ok(
+            BattleActionResponse(
+                battle_session_id=battle_session_id,
+                turn_number=request.turn_number,
+                action_id=request.action_id,
+                status="REJECTED",
+                reason="TURN_TIMEOUT",
+                battle=BattleStateResponse.from_session(timed_out_battle, request.player_id),
+            )
+        )
     action_status, battle, reason = game_state_repository.submit_action(
         battle_session_id=battle_session_id,
         player_id=request.player_id,
@@ -225,8 +242,14 @@ async def submit_battle_action(
             battle=BattleStateResponse.from_session(battle, request.player_id) if battle else None,
         )
     )
-    if action_status == "accepted" and battle is not None:
-        await emit_battle_resolution_events(battle, request.action_id)
+    if battle is not None:
+        if action_status == "accepted":
+            await emit_battle_resolution_events(battle, source_action_id=request.action_id)
+        elif reason == "TURN_TIMEOUT" and battle.ended_reason == "TIMEOUT":
+            await emit_battle_resolution_events(
+                battle,
+                timed_out_player_id=battle.loser_player_id,
+            )
     return response
 
 
@@ -244,7 +267,11 @@ async def surrender_battle(
     if battle is None:
         raise DomainError("BATTLE_NOT_FOUND", "Battle not found", "Unknown battle session.", 404)
     if was_active and battle.status == "ENDED":
-        await emit_battle_resolution_events(battle, "surrender")
+        await emit_battle_resolution_events(
+            battle,
+            timed_out_player_id=battle.loser_player_id if battle.ended_reason == "TIMEOUT" else None,
+            surrendered_player_id=player_id if battle.ended_reason == "SURRENDER" else None,
+        )
     return ok(SurrenderResponse.from_session(battle, player_id))
 
 
@@ -294,6 +321,7 @@ async def battle_websocket(websocket: WebSocket, token: str | None = None) -> No
     handler = BattleWebSocketEventHandler(game_state_repository)
     await websocket.accept()
     await battle_connection_manager.connect(player_id, websocket)
+    timeout_task = asyncio.create_task(watch_player_battle_timeout(player_id))
     try:
         await replay_player_matchmaking_state(player_id)
         while True:
@@ -330,14 +358,55 @@ async def battle_websocket(websocket: WebSocket, token: str | None = None) -> No
                 )
                 continue
 
+            if isinstance(event, BattleSubmitActionEvent):
+                timed_out, timed_out_battle, timed_out_player_id = game_state_repository.resolve_timeout_if_due(
+                    event.payload.battle_session_id
+                )
+                if timed_out and timed_out_battle is not None and timed_out_player_id is not None:
+                    await websocket.send_json(
+                        serialize_battle_event(
+                            BattleActionResultEvent(
+                                request_id=event.request_id,
+                                payload=BattleActionResponse(
+                                    battle_session_id=event.payload.battle_session_id,
+                                    turn_number=event.payload.turn_number,
+                                    action_id=event.payload.action_id,
+                                    status="REJECTED",
+                                    reason="TURN_TIMEOUT",
+                                    battle=BattleStateResponse.from_session(
+                                        timed_out_battle,
+                                        event.payload.player_id,
+                                    ),
+                                ),
+                            )
+                        )
+                    )
+                    await emit_battle_resolution_events(
+                        timed_out_battle,
+                        timed_out_player_id=timed_out_player_id,
+                    )
+                    continue
+
             response = handler.handle(event)
             await websocket.send_json(serialize_battle_event(response))
             if isinstance(event, BattleSubmitActionEvent) and isinstance(response, BattleActionResultEvent):
+                battle = game_state_repository.get_battle(event.payload.battle_session_id)
+                if battle is None:
+                    continue
                 if response.payload.status == "ACCEPTED":
-                    battle = game_state_repository.get_battle(event.payload.battle_session_id)
-                    if battle is not None:
-                        await emit_battle_resolution_events(battle, event.payload.action_id)
+                    await emit_battle_resolution_events(
+                        battle,
+                        source_action_id=event.payload.action_id,
+                    )
+                elif response.payload.reason == "TURN_TIMEOUT" and battle.ended_reason == "TIMEOUT":
+                    await emit_battle_resolution_events(
+                        battle,
+                        timed_out_player_id=battle.loser_player_id,
+                    )
     finally:
+        timeout_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await timeout_task
         battle_connection_manager.disconnect(player_id, websocket)
 
 
@@ -382,16 +451,38 @@ async def emit_battle_handoff(
 
 async def emit_battle_resolution_events(
     battle: BattleSession,
-    source_action_id: str,
+    source_action_id: str | None = None,
+    timed_out_player_id: str | None = None,
+    surrendered_player_id: str | None = None,
 ) -> None:
     for participant_id in battle.player_ids:
         if not battle_connection_manager.is_connected(participant_id):
             continue
         if battle.status == "ENDED":
+            if timed_out_player_id is not None:
+                await battle_connection_manager.send_event(
+                    participant_id,
+                    build_timeout_event(
+                        battle,
+                        participant_id,
+                        timed_out_player_id,
+                    ),
+                )
+            if surrendered_player_id is not None:
+                await battle_connection_manager.send_event(
+                    participant_id,
+                    build_surrendered_event(
+                        battle,
+                        participant_id,
+                        surrendered_player_id,
+                    ),
+                )
             await battle_connection_manager.send_event(
                 participant_id,
                 build_ended_event(battle, participant_id),
             )
+            continue
+        if source_action_id is None:
             continue
         await battle_connection_manager.send_event(
             participant_id,
@@ -401,6 +492,28 @@ async def emit_battle_resolution_events(
                 source_action_id=source_action_id,
             ),
         )
+
+
+async def resolve_due_timeout_and_emit(battle_session_id: str) -> BattleSession | None:
+    timed_out, battle, timed_out_player_id = game_state_repository.resolve_timeout_if_due(
+        battle_session_id
+    )
+    if not timed_out or battle is None or timed_out_player_id is None:
+        return None
+    await emit_battle_resolution_events(
+        battle,
+        timed_out_player_id=timed_out_player_id,
+    )
+    return battle
+
+
+async def watch_player_battle_timeout(player_id: str) -> None:
+    while True:
+        await asyncio.sleep(0.1)
+        battle = game_state_repository.get_player_battle(player_id)
+        if battle is None:
+            continue
+        await resolve_due_timeout_and_emit(battle.battle_session_id)
 
 
 router.include_router(api_router)
