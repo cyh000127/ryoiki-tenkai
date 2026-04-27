@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Header, status
+from fastapi import APIRouter, Header, WebSocket, WebSocketDisconnect, status
 from gesture_api.api.schemas.base import ApiResponse, ok
 from gesture_api.api.schemas.game import (
     AnimsetResponse,
@@ -22,14 +22,24 @@ from gesture_api.api.schemas.game import (
     UpdateLoadoutRequest,
     WsTokenResponse,
 )
+from gesture_api.api.schemas.websocket import (
+    BattleErrorEvent,
+    BattleErrorPayload,
+    deserialize_battle_event,
+    extract_battle_request_id,
+    serialize_battle_event,
+)
 from gesture_api.domain.errors import DomainError
 from gesture_api.repositories.game_state import game_state_repository
+from gesture_api.services.battle_websocket import BattleWebSocketEventHandler
+from pydantic import ValidationError
 
-router = APIRouter(prefix="/api/v1", tags=["game"])
+router = APIRouter()
+api_router = APIRouter(prefix="/api/v1", tags=["game"])
 PlayerIdHeader = Annotated[str, Header(alias="X-Player-Id")]
 
 
-@router.post(
+@api_router.post(
     "/players/guest",
     response_model=ApiResponse[GuestPlayerResponse],
     status_code=status.HTTP_201_CREATED,
@@ -39,7 +49,7 @@ def create_guest_player(request: CreateGuestPlayerRequest) -> ApiResponse[GuestP
     return ok(GuestPlayerResponse.from_record(player))
 
 
-@router.get("/players/me", response_model=ApiResponse[PlayerProfileResponse])
+@api_router.get("/players/me", response_model=ApiResponse[PlayerProfileResponse])
 def get_my_profile(player_id: PlayerIdHeader) -> ApiResponse[PlayerProfileResponse]:
     player = game_state_repository.get_player(player_id)
     if player is None:
@@ -47,7 +57,7 @@ def get_my_profile(player_id: PlayerIdHeader) -> ApiResponse[PlayerProfileRespon
     return ok(PlayerProfileResponse.from_record(player))
 
 
-@router.get("/skillsets", response_model=ApiResponse[list[SkillsetResponse]])
+@api_router.get("/skillsets", response_model=ApiResponse[list[SkillsetResponse]])
 def list_skillsets() -> ApiResponse[list[SkillsetResponse]]:
     skillsets = [
         SkillsetResponse(
@@ -60,7 +70,7 @@ def list_skillsets() -> ApiResponse[list[SkillsetResponse]]:
     return ok(skillsets)
 
 
-@router.get("/animsets", response_model=ApiResponse[list[AnimsetResponse]])
+@api_router.get("/animsets", response_model=ApiResponse[list[AnimsetResponse]])
 def list_animsets() -> ApiResponse[list[AnimsetResponse]]:
     animsets = [
         AnimsetResponse.from_definition(animset)
@@ -69,7 +79,7 @@ def list_animsets() -> ApiResponse[list[AnimsetResponse]]:
     return ok(animsets)
 
 
-@router.post("/players/me/loadout", response_model=ApiResponse[LoadoutResponse])
+@api_router.post("/players/me/loadout", response_model=ApiResponse[LoadoutResponse])
 def update_my_loadout(
     request: UpdateLoadoutRequest,
     player_id: PlayerIdHeader,
@@ -84,7 +94,7 @@ def update_my_loadout(
     return ok(LoadoutResponse.from_record(player))
 
 
-@router.post("/matchmaking/queue", response_model=ApiResponse[QueueStatusResponse])
+@api_router.post("/matchmaking/queue", response_model=ApiResponse[QueueStatusResponse])
 def enter_matchmaking_queue(
     _: QueueRequest,
     player_id: PlayerIdHeader,
@@ -102,13 +112,13 @@ def enter_matchmaking_queue(
     )
 
 
-@router.delete("/matchmaking/queue", response_model=ApiResponse[QueueStatusResponse])
+@api_router.delete("/matchmaking/queue", response_model=ApiResponse[QueueStatusResponse])
 def leave_matchmaking_queue(player_id: PlayerIdHeader) -> ApiResponse[QueueStatusResponse]:
     game_state_repository.leave_queue(player_id)
     return ok(QueueStatusResponse(queue_status="IDLE"))
 
 
-@router.get("/matchmaking/status", response_model=ApiResponse[QueueStatusResponse])
+@api_router.get("/matchmaking/status", response_model=ApiResponse[QueueStatusResponse])
 def get_matchmaking_status(player_id: PlayerIdHeader) -> ApiResponse[QueueStatusResponse]:
     battle = game_state_repository.get_player_battle(player_id)
     if battle is None:
@@ -122,7 +132,7 @@ def get_matchmaking_status(player_id: PlayerIdHeader) -> ApiResponse[QueueStatus
     )
 
 
-@router.get("/battles/{battle_session_id}", response_model=ApiResponse[BattleStateResponse])
+@api_router.get("/battles/{battle_session_id}", response_model=ApiResponse[BattleStateResponse])
 def get_battle(
     battle_session_id: str,
     player_id: PlayerIdHeader,
@@ -133,7 +143,7 @@ def get_battle(
     return ok(BattleStateResponse.from_session(battle, player_id))
 
 
-@router.post(
+@api_router.post(
     "/battles/{battle_session_id}/actions",
     response_model=ApiResponse[BattleActionResponse],
     status_code=status.HTTP_202_ACCEPTED,
@@ -162,7 +172,7 @@ def submit_battle_action(
     )
 
 
-@router.post(
+@api_router.post(
     "/battles/{battle_session_id}/surrender",
     response_model=ApiResponse[SurrenderResponse],
 )
@@ -176,7 +186,7 @@ def surrender_battle(
     return ok(SurrenderResponse.from_session(battle, player_id))
 
 
-@router.get("/matches/history", response_model=ApiResponse[list[MatchHistoryItemResponse]])
+@api_router.get("/matches/history", response_model=ApiResponse[list[MatchHistoryItemResponse]])
 def list_match_history(player_id: PlayerIdHeader) -> ApiResponse[list[MatchHistoryItemResponse]]:
     rows = [
         MatchHistoryItemResponse.model_validate(row)
@@ -186,7 +196,7 @@ def list_match_history(player_id: PlayerIdHeader) -> ApiResponse[list[MatchHisto
     return ok(rows)
 
 
-@router.get("/ratings/leaderboard", response_model=ApiResponse[list[LeaderboardItemResponse]])
+@api_router.get("/ratings/leaderboard", response_model=ApiResponse[list[LeaderboardItemResponse]])
 def get_leaderboard() -> ApiResponse[list[LeaderboardItemResponse]]:
     players = sorted(
         game_state_repository.players.values(),
@@ -206,8 +216,62 @@ def get_leaderboard() -> ApiResponse[list[LeaderboardItemResponse]]:
     )
 
 
-@router.get("/ws-token", response_model=ApiResponse[WsTokenResponse])
+@api_router.get("/ws-token", response_model=ApiResponse[WsTokenResponse])
 def create_ws_token(player_id: PlayerIdHeader) -> ApiResponse[WsTokenResponse]:
     if game_state_repository.get_player(player_id) is None:
         raise DomainError("PLAYER_NOT_FOUND", "Player not found", "Unknown player.", 404)
     return ok(WsTokenResponse(ws_token=f"wst_{player_id}", expires_in=300))
+
+
+@router.websocket("/ws")
+async def battle_websocket(websocket: WebSocket, token: str | None = None) -> None:
+    if not is_valid_ws_token(token):
+        await websocket.close(code=1008)
+        return
+    handler = BattleWebSocketEventHandler(game_state_repository)
+    await websocket.accept()
+    while True:
+        try:
+            message = await websocket.receive_json()
+        except WebSocketDisconnect:
+            return
+        except ValueError:
+            await websocket.send_json(
+                serialize_battle_event(
+                    BattleErrorEvent(
+                        payload=BattleErrorPayload(
+                            code="INVALID_JSON",
+                            message="Message must be valid JSON.",
+                        )
+                    )
+                )
+            )
+            continue
+
+        try:
+            event = deserialize_battle_event(message)
+        except ValidationError:
+            await websocket.send_json(
+                serialize_battle_event(
+                    BattleErrorEvent(
+                        request_id=extract_battle_request_id(message),
+                        payload=BattleErrorPayload(
+                            code="INVALID_EVENT",
+                            message="Unsupported or invalid battle event.",
+                        ),
+                    )
+                )
+            )
+            continue
+
+        await websocket.send_json(serialize_battle_event(handler.handle(event)))
+
+
+def is_valid_ws_token(token: str | None) -> bool:
+    if token is None or not token.startswith("wst_"):
+        return False
+    player_id = token.removeprefix("wst_")
+    return game_state_repository.get_player(player_id) is not None
+
+
+router.include_router(api_router)

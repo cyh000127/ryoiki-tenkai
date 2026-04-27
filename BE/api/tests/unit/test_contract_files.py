@@ -18,3 +18,21 @@ def test_async_event_schema_keeps_required_fields() -> None:
 
     assert "skillActionKey" in schema["required"]
     assert schema["properties"]["createdAt"]["format"] == "date-time"
+
+
+def test_battle_websocket_contract_contains_core_events() -> None:
+    schema = json.loads(
+        (ROOT / "contracts/async/battle-websocket-event.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    event_types = {option["properties"]["type"]["const"] for option in schema["oneOf"]}
+
+    assert {
+        "battle.ping",
+        "battle.submit_action",
+        "battle.pong",
+        "battle.action_result",
+        "battle.error",
+    }.issubset(event_types)
