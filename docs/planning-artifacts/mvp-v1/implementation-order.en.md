@@ -20,7 +20,7 @@ Keep the workspace runnable before feature work expands.
 - Repository setup commands are documented.
 - Automated checks run from the repository root.
 - New work has a clear owning directory.
-- Technology stack changes are captured in `technology-stack.md`.
+- Technology stack changes are captured in `technology-stack.en.md`.
 
 ## Phase 1: Contracts and Domain Fixtures
 

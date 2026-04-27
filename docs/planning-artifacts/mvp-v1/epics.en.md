@@ -1,6 +1,6 @@
 ﻿# MVP v1 Epics
 
-This document breaks the MVP into implementation epics. Each epic describes the product outcome, engineering boundary, included stories, and acceptance signals. Use `stories.md` for story-level execution details.
+This document breaks the MVP into implementation epics. Each epic describes the product outcome, engineering boundary, included stories, and acceptance signals. Use `stories.en.md` for story-level execution details.
 
 ## Epic E1: Player Entry and Loadout
 

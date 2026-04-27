@@ -1,6 +1,9 @@
 # Backend Workspace
 
-Backend packages follow the repository convention in `docs/conventions/backend_convention.md`.
+Backend packages follow the repository convention:
+
+- Korean: `docs/conventions/backend_convention.ko.md`
+- English: `docs/conventions/backend_convention.en.md`
 
 ## Packages
 

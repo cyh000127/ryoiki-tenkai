@@ -1,6 +1,9 @@
 # Frontend App
 
-This app follows the frontend convention in `docs/conventions/frontend_convention.md`.
+This app follows the frontend convention:
+
+- Korean: `docs/conventions/frontend_convention.ko.md`
+- English: `docs/conventions/frontend_convention.en.md`
 
 ## Commands
 

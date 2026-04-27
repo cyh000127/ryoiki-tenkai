@@ -4,11 +4,11 @@ This document records the MVP implementation baseline derived from the v1 produc
 
 ## Detailed Planning Artifacts
 
-- `docs/planning-artifacts/mvp-v1/technology-stack.md`: selected MVP technology stack, boundaries, deferred choices, and dependency rules.
-- `docs/planning-artifacts/mvp-v1/epics.md`: epic-level outcomes, boundaries, stories, and acceptance signals.
-- `docs/planning-artifacts/mvp-v1/stories.md`: story-sized implementation units with status, scope, dependencies, and verification notes.
-- `docs/planning-artifacts/mvp-v1/implementation-order.md`: recommended build order and commit order.
-- `docs/planning-artifacts/mvp-v1/prerequisites.md`: prerequisites for product, contracts, FE, BE, input runtime, persistence, QA, and merge readiness.
+- `docs/planning-artifacts/mvp-v1/technology-stack.en.md`: selected MVP technology stack, boundaries, deferred choices, and dependency rules.
+- `docs/planning-artifacts/mvp-v1/epics.en.md`: epic-level outcomes, boundaries, stories, and acceptance signals.
+- `docs/planning-artifacts/mvp-v1/stories.en.md`: story-sized implementation units with status, scope, dependencies, and verification notes.
+- `docs/planning-artifacts/mvp-v1/implementation-order.en.md`: recommended build order and commit order.
+- `docs/planning-artifacts/mvp-v1/prerequisites.en.md`: prerequisites for product, contracts, FE, BE, input runtime, persistence, QA, and merge readiness.
 
 ## Product Baseline
 
