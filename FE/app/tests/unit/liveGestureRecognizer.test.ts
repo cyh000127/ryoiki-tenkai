@@ -462,26 +462,37 @@ describe("createBrowserLiveGestureRecognizer", () => {
     const video = {} as HTMLVideoElement;
     const session = await runtime.start({ video });
 
-    expect(session.recognizeFrame({
+    const unstableObservation = session.recognizeFrame({
       video,
       targetSequence: ["pinch"],
       expectedToken: "pinch",
       atMs: 1000
-    })).toMatchObject({
+    });
+
+    expect(unstableObservation).toMatchObject({
       token: "pinch",
       handDetected: true,
       reason: "unstable"
     });
-    expect(session.recognizeFrame({
+    expect(unstableObservation?.handLandmarks?.[0]?.[0]).toEqual(
+      expect.objectContaining({ x: expect.any(Number), y: expect.any(Number) })
+    );
+
+    const recognizedObservation = session.recognizeFrame({
       video,
       targetSequence: ["pinch"],
       expectedToken: "pinch",
       atMs: 1500
-    })).toMatchObject({
+    });
+
+    expect(recognizedObservation).toMatchObject({
       token: "pinch",
       handDetected: true,
       reason: "recognized"
     });
+    expect(recognizedObservation?.handLandmarks?.[0]?.[0]).toEqual(
+      expect.objectContaining({ x: expect.any(Number), y: expect.any(Number) })
+    );
 
     session.stop?.();
 

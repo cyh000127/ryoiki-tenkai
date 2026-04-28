@@ -29,6 +29,7 @@ import {
 import {
   LIVE_GESTURE_MIN_CONFIDENCE,
   createBrowserLiveGestureRecognizer,
+  type LiveGestureLandmark,
   type LiveGestureObservation,
   type LiveGestureRecognizer,
   type LiveGestureRecognizerStatus
@@ -110,6 +111,7 @@ export function BattleGameWorkspace() {
   const liveRecognizerRef = useRef<LiveGestureRecognizer | null>(null);
   const practiceRecognizerRef = useRef<LiveGestureRecognizer | null>(null);
   const practiceVideoRef = useRef<HTMLVideoElement | null>(null);
+  const practiceMeshCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const startupVoiceRecognizerRef = useRef<StartupVoiceCommandRecognizer | null>(null);
   const skillVoiceRecognizerRef = useRef<StartupVoiceCommandRecognizer | null>(null);
   const practiceProgressRef = useRef<PracticeProgress>({
@@ -308,6 +310,15 @@ export function BattleGameWorkspace() {
       stopPracticeRecognizer();
     }
   }, [state.screen]);
+
+  useEffect(() => {
+    drawHandMeshOverlay(
+      practiceMeshCanvasRef.current,
+      practiceRecognizerStatus === "ready"
+        ? practiceObservation?.handLandmarks ?? []
+        : []
+    );
+  }, [practiceObservation, practiceRecognizerStatus]);
 
   useEffect(() => {
     if (state.screen === "battle" && state.battle?.status === "ACTIVE") {
@@ -1397,6 +1408,11 @@ export function BattleGameWorkspace() {
                       playsInline
                       ref={practiceVideoRef}
                     />
+                    <canvas
+                      aria-hidden="true"
+                      className="practice-camera__mesh"
+                      ref={practiceMeshCanvasRef}
+                    />
                     <div className="practice-camera__overlay">
                       <StatusBadge tone={getPracticeStatusTone(practiceState)}>
                         {getPracticeStatusLabel(practiceState)}
@@ -2438,6 +2454,30 @@ function getLiveRecognizerStatusTone(
 
 type PracticeState = "ready" | "running" | "complete";
 
+const HAND_MESH_CONNECTIONS: Array<[number, number]> = [
+  [0, 1],
+  [1, 2],
+  [2, 3],
+  [3, 4],
+  [0, 5],
+  [5, 6],
+  [6, 7],
+  [7, 8],
+  [5, 9],
+  [9, 10],
+  [10, 11],
+  [11, 12],
+  [9, 13],
+  [13, 14],
+  [14, 15],
+  [15, 16],
+  [13, 17],
+  [17, 18],
+  [18, 19],
+  [19, 20],
+  [0, 17]
+];
+
 function getPracticeState(
   status: LiveGestureRecognizerStatus,
   completedStepCount: number,
@@ -2546,6 +2586,79 @@ function getPracticeRuntimeHelp(
 
 function getLiveObservationReasonLabel(reason: LiveGestureObservation["reason"]): string {
   return copy.liveObservationReasonText[reason];
+}
+
+function drawHandMeshOverlay(
+  canvas: HTMLCanvasElement | null,
+  handLandmarks: LiveGestureLandmark[][]
+) {
+  if (!canvas) {
+    return;
+  }
+
+  const bounds = canvas.getBoundingClientRect();
+  const width = Math.max(1, Math.round(bounds.width));
+  const height = Math.max(1, Math.round(bounds.height));
+  const pixelRatio = window.devicePixelRatio || 1;
+  const targetWidth = Math.round(width * pixelRatio);
+  const targetHeight = Math.round(height * pixelRatio);
+
+  if (handLandmarks.length === 0) {
+    if (canvas.width > 0 || canvas.height > 0) {
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+    }
+    return;
+  }
+
+  const context = canvas.getContext("2d");
+  if (!context) {
+    return;
+  }
+
+  if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+  }
+
+  context.clearRect(0, 0, canvas.width, canvas.height);
+
+  context.save();
+  context.scale(pixelRatio, pixelRatio);
+  context.lineCap = "round";
+  context.lineJoin = "round";
+
+  for (const landmarks of handLandmarks) {
+    context.strokeStyle = "rgba(55, 224, 138, 0.96)";
+    context.lineWidth = 3;
+    context.shadowColor = "rgba(55, 224, 138, 0.54)";
+    context.shadowBlur = 8;
+
+    for (const [fromIndex, toIndex] of HAND_MESH_CONNECTIONS) {
+      const from = landmarks[fromIndex];
+      const to = landmarks[toIndex];
+
+      if (!from || !to) {
+        continue;
+      }
+
+      context.beginPath();
+      context.moveTo(from.x * width, from.y * height);
+      context.lineTo(to.x * width, to.y * height);
+      context.stroke();
+    }
+
+    context.shadowBlur = 0;
+    context.fillStyle = "rgba(148, 255, 193, 0.98)";
+
+    for (const landmark of landmarks) {
+      context.beginPath();
+      context.arc(landmark.x * width, landmark.y * height, 3.2, 0, Math.PI * 2);
+      context.fill();
+    }
+  }
+
+  context.restore();
 }
 
 function getLiveHandState(observation: LiveGestureObservation | null): LiveHandState {

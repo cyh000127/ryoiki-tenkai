@@ -6,6 +6,7 @@ import {
   createFrameRecognizerRuntime,
   type LiveGestureFrameRecognizer,
   type LiveGestureFrameRuntime,
+  type LiveGestureLandmark,
   type LiveGestureObservation,
   type LiveGestureRuntimeSession
 } from "./liveGestureRuntime";
@@ -21,6 +22,7 @@ export {
   type LiveGestureFrame,
   type LiveGestureFrameRecognizer,
   type LiveGestureFrameSignalSample,
+  type LiveGestureLandmark,
   type LiveGestureFrameRuntime,
   type LiveGestureObservation,
   type LiveGestureObservationReason,
@@ -248,14 +250,36 @@ function toNormalizedInput(
 function getObservationFingerprint(observation: LiveGestureObservation): string {
   const confidenceBucket = Math.round(observation.confidence * 100);
   const stabilityBucket = Math.floor(observation.stabilityMs / 250);
+  const meshBucket = getHandMeshFingerprint(observation.handLandmarks);
 
   return [
     observation.reason,
     observation.token ?? "",
     observation.handDetected ? "1" : "0",
     confidenceBucket,
-    stabilityBucket
+    stabilityBucket,
+    meshBucket
   ].join(":");
+}
+
+function getHandMeshFingerprint(
+  handLandmarks: LiveGestureLandmark[][] | undefined
+): string {
+  const firstHand = handLandmarks?.[0];
+  if (!firstHand) {
+    return "";
+  }
+
+  const wrist = firstHand[0];
+  const indexTip = firstHand[8];
+  const pinkyTip = firstHand[20];
+
+  return [wrist, indexTip, pinkyTip]
+    .filter(Boolean)
+    .map((landmark) =>
+      `${Math.round(landmark.x * 32)}.${Math.round(landmark.y * 32)}`
+    )
+    .join("|");
 }
 
 function getBrowserMediaDevices(): Pick<MediaDevices, "getUserMedia"> | undefined {

@@ -5,6 +5,7 @@ import type {
 
 import type {
   LiveGestureFrameRuntime,
+  LiveGestureLandmark,
   LiveGestureObservation,
   LiveGestureRuntimeSession
 } from "./liveGestureRuntime";
@@ -88,6 +89,7 @@ export function createMediaPipeHandGestureRuntime(
       return {
         recognizeFrame: ({ video, expectedToken, atMs }) => {
           const result = handLandmarker.detectForVideo(video, atMs);
+          const handLandmarks = toLiveGestureLandmarks(result.landmarks);
           const classifiedGesture = classifyMediaPipeHandGesture(
             result,
             expectedToken
@@ -101,7 +103,8 @@ export function createMediaPipeHandGestureRuntime(
               confidence: 0,
               handDetected: result.landmarks.length > 0,
               stabilityMs: 0,
-              reason: result.landmarks.length > 0 ? "unstable" : "no_hand"
+              reason: result.landmarks.length > 0 ? "unstable" : "no_hand",
+              handLandmarks
             };
           }
 
@@ -120,7 +123,8 @@ export function createMediaPipeHandGestureRuntime(
             confidence: classifiedGesture.confidence,
             handDetected: true,
             stabilityMs,
-            reason: isRecognized ? "recognized" : "unstable"
+            reason: isRecognized ? "recognized" : "unstable",
+            handLandmarks
           } satisfies LiveGestureObservation;
         },
         stop: () => {
@@ -213,6 +217,18 @@ function matchesExpectedToken(
     default:
       return false;
   }
+}
+
+function toLiveGestureLandmarks(
+  landmarkGroups: NormalizedLandmark[][]
+): LiveGestureLandmark[][] {
+  return landmarkGroups.map((landmarks) =>
+    landmarks.map((landmark) => ({
+      x: landmark.x,
+      y: landmark.y,
+      z: landmark.z
+    }))
+  );
 }
 
 function getHandFeatures(landmarks: NormalizedLandmark[]): HandFeatures {

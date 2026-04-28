@@ -7,12 +7,19 @@ export type LiveGestureObservationReason =
   | "unsupported"
   | "camera_error";
 
+export type LiveGestureLandmark = {
+  x: number;
+  y: number;
+  z?: number;
+};
+
 export type LiveGestureObservation = {
   token: string | null;
   confidence: number;
   handDetected: boolean;
   stabilityMs: number;
   reason: LiveGestureObservationReason;
+  handLandmarks?: LiveGestureLandmark[][];
 };
 
 export type LiveGestureFrame = {
