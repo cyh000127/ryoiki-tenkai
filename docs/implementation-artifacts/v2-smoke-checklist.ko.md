@@ -64,7 +64,8 @@
   - 근거: `docs/implementation-artifacts/v2-6-socket-reconnect-resync.ko.md`
 - [x] delayed/duplicate event가 UI를 stale state로 되돌리지 않는지 확인한다.
   - 근거: `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.ko.md`
-- [ ] timeout/surrender/ended event ordering이 안정적인지 확인한다.
+- [x] timeout/surrender/ended event ordering이 안정적인지 확인한다.
+  - 근거: `docs/implementation-artifacts/v2-8-timeout-surrender-fanout.ko.md`
 
 ## v2 Recognition Runtime
 
@@ -105,8 +106,8 @@
   - 근거: `docs/implementation-artifacts/v2-6-socket-reconnect-resync.ko.md`, `BE/api/tests/unit/test_battle_websocket_events.py`
 - [x] delayed/duplicate event reconciliation 회귀 테스트가 확대되어 있다.
   - 근거: `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.ko.md`
-- [ ] timeout watcher와 surrender event fanout이 disconnected player path를 포함한다.
-  - 계획 story: `V2-E3-ST04`
+- [x] timeout watcher와 surrender event fanout이 disconnected player path를 포함한다.
+  - 근거: `docs/implementation-artifacts/v2-8-timeout-surrender-fanout.ko.md`
 
 ## Skill and Resource Intake
 

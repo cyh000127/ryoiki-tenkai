@@ -20,6 +20,7 @@
 - v2 two-player queue pairing rule이 강화되었습니다.
 - v2 socket reconnect latest snapshot 재동기화가 강화되었습니다.
 - v2 delayed/duplicate event reconciliation이 강화되었습니다.
+- v2 timeout/surrender fanout hardening이 완료되었습니다.
 - 스킬명, 스킬 효과, 손동작 리소스, 시각 자산은 별도 domain source 확정 후 진행합니다.
 - 구체 frame recognizer 바인딩은 v2 follow-up 범위입니다.
 - 최종 릴리스 점검 문서: `docs/implementation-artifacts/v1-release-readiness.ko.md`
@@ -57,6 +58,7 @@
 - reconnect 후 최신 battle snapshot 복구
 - two-player reconnect 후 최신 turn/hp/mana/cooldown snapshot 복구
 - delayed/duplicate socket event 정합성 처리
+- timeout/surrender final state fanout과 disconnected participant replay
 - 전적, 레이팅, leaderboard 조회
 - battle result, compact action audit, rating, history의 storage adapter 영속화
 - live camera adapter의 시작/중지/상태 표시와 recognized token의 normalized input boundary 연결
@@ -178,12 +180,13 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - recognition UI state hardening과 no-hand/unstable/recognized 상태 회귀 테스트
 - two-player queue pairing rule 강화와 socket handoff 회귀 테스트
 - socket reconnect latest snapshot 복구와 ended replay result 회귀 테스트
+- timeout/surrender fanout과 disconnected participant replay 회귀 테스트
 
 ## 남은 작업
 
 - v1 릴리스 차단 작업 없음
 - v2 또는 follow-up 범위
-  구체 frame recognizer 바인딩, recognizer restart/cleanup hardening, timeout/surrender fanout hardening, 스킬 domain source 확정 후 skill/resource 구현
+  구체 frame recognizer 바인딩, recognizer restart/cleanup hardening, 스킬 domain source 확정 후 skill/resource 구현
 
 ## 경계
 
@@ -215,6 +218,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v2-5-two-player-queue-pairing.ko.md`: two-player queue pairing 구현 기록.
 - `docs/implementation-artifacts/v2-6-socket-reconnect-resync.ko.md`: socket reconnect 재동기화 구현 기록.
 - `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.ko.md`: delayed/duplicate event reconciliation 구현 기록.
+- `docs/implementation-artifacts/v2-8-timeout-surrender-fanout.ko.md`: timeout/surrender fanout 구현 기록.
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.ko.md`: storage adapter persistence 구현 기록.
 - `docs/implementation-artifacts/v2-planning-baseline.ko.md`: v2 planning baseline 구현 기록.
 - `docs/implementation-artifacts/v2-smoke-checklist.ko.md`: v2 smoke checklist와 blocked 항목.
@@ -246,6 +250,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v2-5-two-player-queue-pairing.en.md`
 - `docs/implementation-artifacts/v2-6-socket-reconnect-resync.en.md`
 - `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.en.md`
+- `docs/implementation-artifacts/v2-8-timeout-surrender-fanout.en.md`
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`
 - `docs/implementation-artifacts/v2-planning-baseline.en.md`
 - `docs/implementation-artifacts/v2-smoke-checklist.en.md`

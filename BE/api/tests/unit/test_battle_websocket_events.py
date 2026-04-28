@@ -321,6 +321,137 @@ def test_ws_endpoint_replays_latest_two_player_battle_snapshot_on_reconnect() ->
     assert replayed_battle["battleLog"][0]["turnNumber"] == 1
 
 
+def test_get_battle_resolves_timeout_and_fans_out_to_connected_opponent() -> None:
+    client = TestClient(create_app())
+    first_player_id = create_configured_guest(client, "timeout-owner")
+    second_player_id = create_configured_guest(client, "timeout-opponent")
+    first_ws_token = get_ws_token(client, first_player_id)
+    second_ws_token = get_ws_token(client, second_player_id)
+
+    with client.websocket_connect(f"/ws?token={first_ws_token}") as first_socket:
+        first_queue_response = client.post(
+            "/api/v1/matchmaking/queue",
+            headers={"X-Player-Id": first_player_id},
+            json={"mode": "RANKED_1V1"},
+        )
+        assert first_queue_response.status_code == 200
+        assert first_socket.receive_json()["type"] == "battle.match_ready"
+
+        with client.websocket_connect(f"/ws?token={second_ws_token}") as second_socket:
+            second_queue_response = client.post(
+                "/api/v1/matchmaking/queue",
+                headers={"X-Player-Id": second_player_id},
+                json={"mode": "RANKED_1V1"},
+            )
+            assert second_queue_response.status_code == 200
+            battle_session_id = second_queue_response.json()["data"]["battleSessionId"]
+
+            assert second_socket.receive_json()["type"] == "battle.match_ready"
+            assert first_socket.receive_json()["type"] == "battle.match_found"
+            assert first_socket.receive_json()["type"] == "battle.started"
+            assert second_socket.receive_json()["type"] == "battle.match_found"
+            assert second_socket.receive_json()["type"] == "battle.started"
+
+            first_socket.close()
+            battle = game_state_repository.get_battle(battle_session_id)
+            assert battle is not None
+            battle.action_deadline_at = datetime.now(UTC) - timedelta(seconds=1)
+
+            lookup_response = client.get(
+                f"/api/v1/battles/{battle_session_id}",
+                headers={"X-Player-Id": first_player_id},
+            )
+            timeout_event = second_socket.receive_json()
+            ended_event = second_socket.receive_json()
+
+    assert lookup_response.status_code == 200
+    lookup_battle = lookup_response.json()["data"]
+    assert lookup_battle["status"] == "ENDED"
+    assert lookup_battle["endedReason"] == "TIMEOUT"
+    assert lookup_battle["loserPlayerId"] == first_player_id
+
+    assert timeout_event["type"] == "battle.timeout"
+    assert timeout_event["payload"]["battleSessionId"] == battle_session_id
+    assert timeout_event["payload"]["timedOutPlayerId"] == first_player_id
+    assert timeout_event["payload"]["battle"]["self"]["playerId"] == second_player_id
+    assert timeout_event["payload"]["battle"]["endedReason"] == "TIMEOUT"
+    assert ended_event["type"] == "battle.ended"
+    assert ended_event["payload"]["winnerPlayerId"] == second_player_id
+    assert ended_event["payload"]["loserPlayerId"] == first_player_id
+    assert ended_event["payload"]["endedReason"] == "TIMEOUT"
+    assert ended_event["payload"]["ratingChange"] is not None
+    assert ended_event["payload"]["ratingChange"] > 0
+
+    with client.websocket_connect(f"/ws?token={first_ws_token}") as replay_socket:
+        replayed_ended_event = replay_socket.receive_json()
+
+    assert replayed_ended_event["type"] == "battle.ended"
+    assert replayed_ended_event["payload"]["winnerPlayerId"] == second_player_id
+    assert replayed_ended_event["payload"]["loserPlayerId"] == first_player_id
+    assert replayed_ended_event["payload"]["endedReason"] == "TIMEOUT"
+    assert replayed_ended_event["payload"]["ratingChange"] is not None
+    assert replayed_ended_event["payload"]["ratingChange"] < 0
+
+
+def test_surrender_fanout_replays_ended_state_to_disconnected_opponent() -> None:
+    client = TestClient(create_app())
+    first_player_id = create_configured_guest(client, "surrender-owner")
+    second_player_id = create_configured_guest(client, "surrender-opponent")
+    first_ws_token = get_ws_token(client, first_player_id)
+    second_ws_token = get_ws_token(client, second_player_id)
+
+    with client.websocket_connect(f"/ws?token={first_ws_token}") as first_socket:
+        first_queue_response = client.post(
+            "/api/v1/matchmaking/queue",
+            headers={"X-Player-Id": first_player_id},
+            json={"mode": "RANKED_1V1"},
+        )
+        assert first_queue_response.status_code == 200
+        assert first_socket.receive_json()["type"] == "battle.match_ready"
+
+        second_queue_response = client.post(
+            "/api/v1/matchmaking/queue",
+            headers={"X-Player-Id": second_player_id},
+            json={"mode": "RANKED_1V1"},
+        )
+        assert second_queue_response.status_code == 200
+        battle_session_id = second_queue_response.json()["data"]["battleSessionId"]
+
+        found_event = first_socket.receive_json()
+        started_event = first_socket.receive_json()
+        assert found_event["type"] == "battle.match_found"
+        assert started_event["type"] == "battle.started"
+
+        surrender_response = client.post(
+            f"/api/v1/battles/{battle_session_id}/surrender",
+            headers={"X-Player-Id": first_player_id},
+        )
+        surrendered_event = first_socket.receive_json()
+        ended_event = first_socket.receive_json()
+
+    assert surrender_response.status_code == 200
+    assert surrender_response.json()["data"]["status"] == "ENDED"
+    assert surrender_response.json()["data"]["result"] == "LOSE"
+    assert surrendered_event["type"] == "battle.surrendered"
+    assert surrendered_event["payload"]["surrenderedPlayerId"] == first_player_id
+    assert ended_event["type"] == "battle.ended"
+    assert ended_event["payload"]["winnerPlayerId"] == second_player_id
+    assert ended_event["payload"]["loserPlayerId"] == first_player_id
+    assert ended_event["payload"]["endedReason"] == "SURRENDER"
+    assert ended_event["payload"]["ratingChange"] is not None
+    assert ended_event["payload"]["ratingChange"] < 0
+
+    with client.websocket_connect(f"/ws?token={second_ws_token}") as replay_socket:
+        replayed_ended_event = replay_socket.receive_json()
+
+    assert replayed_ended_event["type"] == "battle.ended"
+    assert replayed_ended_event["payload"]["winnerPlayerId"] == second_player_id
+    assert replayed_ended_event["payload"]["loserPlayerId"] == first_player_id
+    assert replayed_ended_event["payload"]["endedReason"] == "SURRENDER"
+    assert replayed_ended_event["payload"]["ratingChange"] is not None
+    assert replayed_ended_event["payload"]["ratingChange"] > 0
+
+
 def test_ws_endpoint_replays_latest_active_battle_snapshot_on_reconnect() -> None:
     client = TestClient(create_app())
     player_id = create_configured_guest(client, "ws-reconnect")

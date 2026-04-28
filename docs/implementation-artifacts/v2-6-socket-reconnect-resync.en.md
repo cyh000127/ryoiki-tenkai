@@ -54,6 +54,5 @@ This document is the implementation record for `V2-E3-ST02`. Socket reconnect no
 
 ## Remaining v2 Prerequisites
 
-- `V2-E3-ST04`: stabilize timeout watcher and surrender event fanout.
 - `V2-E1-ST02`: select and bind the concrete frame recognizer runtime.
 - `V2-E4-ST01` and later: obtain an approved skill domain source.

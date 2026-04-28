@@ -116,12 +116,12 @@
 
 ### V2-E3-ST04: timeout watcher와 surrender event fanout 안정화
 
-- Status: planned
+- Status: done
 - User story: battle은 timeout 또는 surrender 후 모든 참여자에게 같은 최종 상태를 전달한다.
 - Scope: timeout watcher lifecycle, event ordering, disconnected player handling.
 - Acceptance criteria: timeout/surrender/ended event 순서가 안정적이다. disconnected player도 next lookup에서 ended state를 받는다.
 - Dependencies: v1 timeout and surrender rules.
-- Verification: backend socket test.
+- Verification: `docs/implementation-artifacts/v2-8-timeout-surrender-fanout.ko.md`, `BE/api/tests/unit/test_battle_websocket_events.py`.
 
 ## V2-E4: Skill and Resource Domain Intake
 

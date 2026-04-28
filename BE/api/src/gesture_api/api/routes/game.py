@@ -198,11 +198,11 @@ def get_matchmaking_status(player_id: PlayerIdHeader) -> ApiResponse[QueueStatus
 
 
 @api_router.get("/battles/{battle_session_id}", response_model=ApiResponse[BattleStateResponse])
-def get_battle(
+async def get_battle(
     battle_session_id: str,
     player_id: PlayerIdHeader,
 ) -> ApiResponse[BattleStateResponse]:
-    game_state_repository.resolve_timeout_if_due(battle_session_id)
+    await resolve_due_timeout_and_emit(battle_session_id)
     battle = game_state_repository.get_battle(battle_session_id)
     if battle is None:
         raise DomainError("BATTLE_NOT_FOUND", "Battle not found", "Unknown battle session.", 404)

@@ -116,12 +116,12 @@ Status values:
 
 ### V2-E3-ST04: Stabilize timeout watcher and surrender event fanout
 
-- Status: planned
+- Status: done
 - User story: battle timeout or surrender sends the same final state to all participants.
 - Scope: timeout watcher lifecycle, event ordering, disconnected player handling.
 - Acceptance criteria: timeout/surrender/ended event order is stable. Disconnected players receive ended state on the next lookup.
 - Dependencies: v1 timeout and surrender rules.
-- Verification: backend socket test.
+- Verification: `docs/implementation-artifacts/v2-8-timeout-surrender-fanout.en.md`, `BE/api/tests/unit/test_battle_websocket_events.py`.
 
 ## V2-E4: Skill and Resource Domain Intake
 
