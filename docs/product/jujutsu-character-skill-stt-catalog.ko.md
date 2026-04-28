@@ -2,7 +2,7 @@
 
 ## 목적
 
-이 문서는 `C:/Users/SSAFY/Desktop/1.md`를 Phase 1 도메인 참고자료로 저장한 결과입니다. 현재 프로젝트는 먼저 주술회전 캐릭터와 술식을 기준으로 STT trigger, 스킬 후보, 추후 손모양 구현 계획을 정리합니다.
+이 문서는 Phase 1 도메인 참고자료를 제품 카탈로그 형태로 정리한 결과입니다. 현재 프로젝트는 먼저 주술회전 캐릭터와 술식을 기준으로 STT trigger, 스킬 후보, 추후 손모양 구현 계획을 정리합니다.
 
 ## 구현 경계
 
@@ -99,16 +99,16 @@
 | 후시구로 메구미 | `玉犬`, `鵺` | `嵌合暗翳庭` | 소환형 스킬 구조를 검증하기 좋음 |
 | 이누마키 토게 | `止まれ`, `爆ぜろ` | 없음 또는 추후 | STT 콘셉트와 직접적으로 맞음 |
 
-## jutsu 자료 반영 결과
+## 외부 참고자료 반영 결과
 
-`C:/Users/SSAFY/Documents/jutsu` 자료를 확인해 Phase 1 runtime catalog에는 다음 술식을 먼저 반영합니다.
+로컬 참고자료 검토 결과, Phase 1 runtime catalog에는 다음 술식을 먼저 반영합니다.
 
 | 반영 ID | 술식 | 참고 자료 | normalized gesture token | 구현 상태 |
 | --- | --- | --- | --- | --- |
-| `jjk_gojo_red` | 赫 | `SAT0RU` index finger trigger | `index_up` | catalog 적용 |
-| `jjk_gojo_hollow_purple` | 虚式「茈」 | Hollow Purple AR orb collision concept / `SAT0RU` pinch trigger | `pinch`, `blue_orb`, `red_orb`, `orb_collision` | catalog 적용 |
-| `jjk_gojo_infinite_void` | 領域展開「無量空処」 | Domain Expansion recognition / SAT0RU cross gesture | `two_finger_cross`, `domain_seal` | catalog 적용 |
-| `jjk_sukuna_malevolent_shrine` | 領域展開「伏魔御厨子」 | Domain Expansion recognition / SAT0RU prayer gesture | `flat_prayer`, `domain_seal` | catalog 적용 |
+| `jjk_gojo_red` | 赫 | index finger trigger 참고 | `index_up` | catalog 적용 |
+| `jjk_gojo_hollow_purple` | 虚式「茈」 | orb collision concept / pinch trigger 참고 | `pinch`, `blue_orb`, `red_orb`, `orb_collision` | catalog 적용 |
+| `jjk_gojo_infinite_void` | 領域展開「無量空処」 | domain recognition / cross gesture 참고 | `two_finger_cross`, `domain_seal` | catalog 적용 |
+| `jjk_sukuna_malevolent_shrine` | 領域展開「伏魔御厨子」 | domain recognition / prayer gesture 참고 | `flat_prayer`, `domain_seal` | catalog 적용 |
 | `jjk_megumi_chimera_shadow_garden` | 領域展開「嵌合暗翳庭」 | Domain Expansion recognition dataset | `shadow_seal`, `domain_seal` | catalog 적용 |
 
 외부 데모의 소스 코드, 이미지, 모델 파일은 프로젝트에 복사하지 않습니다. 현재 반영 범위는 술식명, 전투 수치 초안, normalized gesture token 계약입니다. 실제 landmark 판정과 시각 효과는 별도 구현 단위로 진행합니다.

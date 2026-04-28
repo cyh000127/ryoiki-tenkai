@@ -2,7 +2,7 @@
 
 ## Input
 
-- Local reference file: `C:/Users/SSAFY/Desktop/1.md`
+- Reference material: `docs/product/jujutsu-technique-domain-reference.ko.md`
 - Request: organize characters and skills for STT and skill creation, while keeping internal hand shapes as a future implementation plan.
 
 ## Decision

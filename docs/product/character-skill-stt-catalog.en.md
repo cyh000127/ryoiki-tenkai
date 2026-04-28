@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document records original character and skill expansion candidates after reviewing `C:/Users/SSAFY/Desktop/1.md`.
+This document records original character and skill expansion candidates after reviewing the Phase 1 reference material.
 
 Phase 1 starts with Jujutsu Kaisen characters and technique names. That Phase 1 catalog is stored in `docs/product/jujutsu-character-skill-stt-catalog.en.md`. This document is a fallback or expansion option for later original characters.
 

@@ -2,7 +2,7 @@
 
 ## 입력
 
-- 로컬 참고 파일: `C:/Users/SSAFY/Desktop/1.md`
+- 참고자료: `docs/product/jujutsu-technique-domain-reference.ko.md`
 - 요청: STT와 스킬 제작을 위한 캐릭터, 스킬 정리. 내부 손모양은 추후 구현 계획으로 분리.
 
 ## 판단

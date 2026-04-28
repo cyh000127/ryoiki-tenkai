@@ -1,14 +1,14 @@
-# v4-5 jutsu Skill Catalog Intake
+# v4-5 Technique Skill Catalog Intake
 
 ## Purpose
 
-Review `C:/Users/SSAFY/Documents/jutsu` and add the first selectable technique catalog for battle loadouts.
+Review local reference material and add the first selectable technique catalog for battle loadouts.
 
 ## Sources Reviewed
 
-- `SAT0RU`: confirmed index up, pinch, cross, and prayer gesture concepts for the technique visualizer.
-- `Hollow-Purple-AR-Real-Time-Gesture-Mapping-Hand-Tracking-3D-Drawing`: confirmed the blue/red orb collision concept for Hollow Purple.
-- `Jujutsu-Kaisen-Domain-Expansion`: confirmed Infinite Void, Malevolent Shrine, and Chimera Shadow Garden domain candidates and the training data shape.
+- Hand-motion technique visualizer reference: confirmed index up, pinch, cross, and prayer gesture concepts.
+- Hollow Purple reference: confirmed the blue/red orb collision concept.
+- Domain expansion recognition reference: confirmed Infinite Void, Malevolent Shrine, and Chimera Shadow Garden domain candidates and the training data shape.
 
 ## Implementation
 

@@ -1,14 +1,14 @@
-# v4-5 jutsu 술식 카탈로그 반영 기록
+# v4-5 술식 카탈로그 반영 기록
 
 ## 목적
 
-`C:/Users/SSAFY/Documents/jutsu`의 참고 자료를 확인해, 전투 로드아웃에서 선택 가능한 1차 술식 카탈로그를 추가한다.
+로컬 참고자료를 확인해, 전투 로드아웃에서 선택 가능한 1차 술식 카탈로그를 추가한다.
 
 ## 참고한 자료
 
-- `SAT0RU`: index up, pinch, cross, prayer gesture와 술식 visualizer 구성을 확인했다.
-- `Hollow-Purple-AR-Real-Time-Gesture-Mapping-Hand-Tracking-3D-Drawing`: blue/red orb collision 기반 Hollow Purple 흐름을 확인했다.
-- `Jujutsu-Kaisen-Domain-Expansion`: Infinite Void, Malevolent Shrine, Chimera Shadow Garden domain 후보와 학습 데이터 구성을 확인했다.
+- 손동작 기반 술식 visualizer 참고자료: index up, pinch, cross, prayer gesture 구성을 확인했다.
+- Hollow Purple 참고자료: blue/red orb collision 기반 흐름을 확인했다.
+- 영역전개 인식 참고자료: Infinite Void, Malevolent Shrine, Chimera Shadow Garden domain 후보와 학습 데이터 구성을 확인했다.
 
 ## 구현 내용
 

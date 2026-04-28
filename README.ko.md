@@ -352,8 +352,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check
 - `docs/implementation-artifacts/v4-2-stt-module-boundary.ko.md`: STT 공용 모듈 경계 분리 구현 기록.
 - `docs/implementation-artifacts/v4-3-character-skill-stt-intake.ko.md`: 캐릭터/스킬/STT 후보 정리 기록.
 - `docs/product/jujutsu-character-skill-stt-catalog.ko.md`: Phase 1 주술회전 캐릭터, 술식, STT trigger 후보 카탈로그.
+- `docs/product/jujutsu-technique-domain-reference.ko.md`: Phase 1 술식/영역전개 도메인 참고자료.
 - `docs/product/character-skill-stt-catalog.ko.md`: 오리지널 캐릭터, 스킬, STT trigger 후보 카탈로그.
 - `docs/implementation-artifacts/v4-4-postgres-game-state-storage.ko.md`: PostgreSQL game state storage 전환 기록.
+- `docs/implementation-artifacts/v4-5-technique-skill-catalog.ko.md`: 술식 카탈로그 반영 기록.
 - `docs/planning-artifacts/v4/technology-stack.ko.md`: v4 음성 시동 기술스택 결정.
 - `docs/planning-artifacts/v4/epics.ko.md`: v4 에픽, 경계, 수용 신호.
 - `docs/planning-artifacts/v4/stories.ko.md`: v4 스토리 상태와 검증 기준.
