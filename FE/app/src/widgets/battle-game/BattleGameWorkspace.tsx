@@ -1415,6 +1415,9 @@ export function BattleGameWorkspace() {
                       <span>{practiceExpectedGesture ?? copy.noGesture}</span>
                     </div>
                     <p>{getPracticeGestureGuide(practiceExpectedGesture)}</p>
+                    <p className="helper-text">
+                      {getPracticeRuntimeHelp(practiceRecognizerStatus, practiceObservation)}
+                    </p>
                   </div>
                   <ProgressMeter
                     current={practiceCompletedStepCount}
@@ -2497,6 +2500,47 @@ function getPracticeGestureGuide(gesture: string | null): string {
       return "마지막 결계 인장 자세를 흔들림 없이 유지합니다.";
     default:
       return "가이드가 준비되지 않은 동작입니다. 화면의 현재 입력 상태를 확인하세요.";
+  }
+}
+
+function getPracticeRuntimeHelp(
+  status: LiveGestureRecognizerStatus,
+  observation: LiveGestureObservation | null
+): string {
+  if (status === "ready" && observation) {
+    switch (observation.reason) {
+      case "recognized":
+        return copy.practiceRuntimeRecognizedHelp;
+      case "unstable":
+        return copy.practiceRuntimeUnstableHelp;
+      case "no_hand":
+        return copy.practiceRuntimeNoHandHelp;
+      case "permission_denied":
+        return copy.practiceRuntimeBlockedHelp;
+      case "unsupported":
+        return copy.practiceRuntimeUnsupportedHelp;
+      case "camera_error":
+        return copy.practiceRuntimeErrorHelp;
+      case "camera_ready":
+        return copy.practiceRuntimeReadyHelp;
+    }
+  }
+
+  switch (status) {
+    case "starting":
+      return copy.practiceRuntimeStartingHelp;
+    case "ready":
+      return copy.practiceRuntimeReadyHelp;
+    case "blocked":
+      return copy.practiceRuntimeBlockedHelp;
+    case "unsupported":
+      return copy.practiceRuntimeUnsupportedHelp;
+    case "error":
+      return copy.practiceRuntimeErrorHelp;
+    case "stopped":
+      return copy.practiceRuntimeStoppedHelp;
+    case "idle":
+      return copy.practiceRuntimeIdleHelp;
   }
 }
 
