@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
+from gesture_api.db.session import SessionLocal
 from gesture_api.domain.catalog import ANIMSETS, SKILLSETS, find_animset, find_skillset
 from gesture_api.domain.game import (
     TURN_SECONDS,
@@ -18,7 +19,9 @@ from gesture_api.repositories.game_state_storage import (
     GameStateStorageAdapter,
     JsonGameStateStorageAdapter,
     NullGameStateStorageAdapter,
+    SqlGameStateStorageAdapter,
 )
+from gesture_api.settings import get_settings
 
 DEFAULT_GAME_STATE_PATH = Path(__file__).resolve().parents[3] / ".runtime" / "game-state.json"
 
@@ -451,6 +454,18 @@ class InMemoryGameStateRepository:
         return NullGameStateStorageAdapter()
 
 
+def create_default_game_state_storage_adapter() -> GameStateStorageAdapter:
+    backend = get_settings().game_state_storage_backend.strip().lower()
+
+    if backend == "sql":
+        return SqlGameStateStorageAdapter(SessionLocal)
+    if backend == "json":
+        return JsonGameStateStorageAdapter(DEFAULT_GAME_STATE_PATH)
+    if backend in {"ephemeral", "null"}:
+        return NullGameStateStorageAdapter()
+    raise ValueError(f"Unsupported game state storage backend: {backend}")
+
+
 game_state_repository = InMemoryGameStateRepository(
-    storage_adapter=JsonGameStateStorageAdapter(DEFAULT_GAME_STATE_PATH)
+    storage_adapter=create_default_game_state_storage_adapter()
 )

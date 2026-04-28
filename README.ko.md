@@ -35,6 +35,7 @@
 - v4 STT 모듈 경계가 공용 transcript recognizer port로 분리되었습니다.
 - v4 캐릭터/스킬/STT 후보 카탈로그가 작성되었습니다.
 - v4 Phase 1 주술회전 캐릭터/술식/STT 카탈로그가 작성되었습니다.
+- game state persistence 기본 backend가 PostgreSQL storage adapter로 전환되었습니다.
 - 스킬명, 스킬 효과, 손동작 리소스, 시각 자산은 별도 domain source 확정 후 진행합니다.
 - 최종 릴리스 점검 문서: `docs/implementation-artifacts/v1-release-readiness.ko.md`
 - v2-1 구현 기록: `docs/implementation-artifacts/v2-1-live-recognizer-adapter.ko.md`
@@ -49,6 +50,7 @@
 - v4 STT 모듈 경계 기록: `docs/implementation-artifacts/v4-2-stt-module-boundary.ko.md`
 - v4 캐릭터/스킬/STT 정리 기록: `docs/implementation-artifacts/v4-3-character-skill-stt-intake.ko.md`
 - v4 Phase 1 주술회전 카탈로그: `docs/product/jujutsu-character-skill-stt-catalog.ko.md`
+- PostgreSQL game state storage 전환 기록: `docs/implementation-artifacts/v4-4-postgres-game-state-storage.ko.md`
 
 ## 명세 점검
 
@@ -83,6 +85,7 @@
 - timeout/surrender final state fanout과 disconnected participant replay
 - 전적, 레이팅, leaderboard 조회
 - battle result, compact action audit, rating, history의 storage adapter 영속화
+- game state persistence 기본값을 Docker Compose PostgreSQL로 전환
 - live camera adapter의 시작/중지/상태 표시와 recognized token의 normalized input boundary 연결
 - live camera adapter 내부 runtime session port 분리
 - live camera adapter의 기본 browser frame signal runtime 연결
@@ -140,7 +143,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\dev-deps.ps1
 docker compose up --build
 ```
 
-호스트에서 백엔드를 직접 실행할 때는 `BE/api/.env.example`을 그대로 `BE/api/.env`로 복사하지 마세요. 해당 파일의 database host는 compose container용 `db`입니다. 직접 실행은 기본 `localhost:5432` 설정을 사용하거나 `DATABASE_URL=postgresql+psycopg://app:app@localhost:5432/gesture_skill`을 지정합니다.
+game state persistence는 기본적으로 PostgreSQL storage adapter를 사용합니다. Docker Compose 실행 시 `api`는 `db-migrate` 완료 후 시작되고 `GAME_STATE_STORAGE_BACKEND=sql`로 동작합니다.
+
+호스트에서 백엔드를 직접 실행할 때는 `BE/api/.env.example`을 그대로 `BE/api/.env`로 복사하지 마세요. 해당 파일의 database host는 compose container용 `db`입니다. 직접 실행은 기본 `localhost:5432` 설정을 사용하거나 `DATABASE_URL=postgresql+psycopg://app:app@localhost:5432/gesture_skill`을 지정합니다. 임시 JSON 저장이 필요할 때만 `GAME_STATE_STORAGE_BACKEND=json`을 명시합니다.
 
 참고로 브라우저에서 `POST` 전용 API를 직접 열면 `405 Method Not Allowed`가 정상적으로 나올 수 있습니다. 예를 들어 queue enter는 `POST /api/v1/matchmaking/queue`입니다.
 
@@ -206,6 +211,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check
 - delayed/duplicate socket event를 최신 battle state 기준으로 정리해 UI rollback과 중복 결과 반영 방지
 - server-backed 전적/레이팅/leaderboard 화면과 loading/empty/error 상태 렌더링
 - battle result, compact action audit, rating, history를 백엔드 storage adapter 경계로 영속화
+- 기본 game state storage를 PostgreSQL adapter로 전환하고 JSON은 테스트/임시 모드로 격리
 - v2 planning baseline 작성과 스킬 구현 blocked 조건 문서화
 - v2 smoke checklist 작성과 implemented/planned/blocked 항목 분리
 - v2 release readiness checkpoint 작성과 full v2 release blocker 분리
@@ -282,6 +288,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check
 - `docs/implementation-artifacts/v4-3-character-skill-stt-intake.ko.md`: 캐릭터/스킬/STT 후보 정리 기록.
 - `docs/product/jujutsu-character-skill-stt-catalog.ko.md`: Phase 1 주술회전 캐릭터, 술식, STT trigger 후보 카탈로그.
 - `docs/product/character-skill-stt-catalog.ko.md`: 오리지널 캐릭터, 스킬, STT trigger 후보 카탈로그.
+- `docs/implementation-artifacts/v4-4-postgres-game-state-storage.ko.md`: PostgreSQL game state storage 전환 기록.
 - `docs/planning-artifacts/v4/technology-stack.ko.md`: v4 음성 시동 기술스택 결정.
 - `docs/planning-artifacts/v4/epics.ko.md`: v4 에픽, 경계, 수용 신호.
 - `docs/planning-artifacts/v4/stories.ko.md`: v4 스토리 상태와 검증 기준.

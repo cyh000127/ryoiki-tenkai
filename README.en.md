@@ -35,6 +35,7 @@ Korean documentation is available in `README.md`. `README.ko.md` keeps the same 
 - The v4 STT module boundary is separated as a shared transcript recognizer port.
 - The v4 character, skill, and STT candidate catalog is written.
 - The v4 Phase 1 Jujutsu character, technique, and STT catalog is written.
+- The default game state persistence backend now uses the PostgreSQL storage adapter.
 - Skill names, skill effects, hand-motion resources, and visual assets will proceed only after a separate domain source is approved.
 - Final release readiness document: `docs/implementation-artifacts/v1-release-readiness.en.md`
 - v2-1 implementation record: `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`
@@ -49,6 +50,7 @@ Korean documentation is available in `README.md`. `README.ko.md` keeps the same 
 - v4 STT module boundary record: `docs/implementation-artifacts/v4-2-stt-module-boundary.en.md`
 - v4 character, skill, and STT intake record: `docs/implementation-artifacts/v4-3-character-skill-stt-intake.en.md`
 - v4 Phase 1 Jujutsu catalog: `docs/product/jujutsu-character-skill-stt-catalog.en.md`
+- PostgreSQL game state storage transition record: `docs/implementation-artifacts/v4-4-postgres-game-state-storage.en.md`
 
 ## Current Status
 
@@ -88,6 +90,7 @@ The repository is currently wired through the following playable flow:
 - Original character, skill, and STT trigger candidate catalog documented
 - Phase 1 Jujutsu character, technique, and STT trigger candidate catalog documented
 - result/history/rating persistence moved behind the storage adapter boundary
+- default game state persistence moved to Docker Compose PostgreSQL
 - v2 epics, stories, implementation order, prerequisites, and technology stack documented
 - v2 camera/runtime/storage/matching smoke checklist documented
 - v2 release readiness checkpoint documented
@@ -131,7 +134,9 @@ To start the whole runtime in containers, use this command. `api` starts after t
 docker compose up --build
 ```
 
-Do not copy `BE/api/.env.example` directly to `BE/api/.env` when running the backend on the host. Its database host is the compose container host `db`. Host-run backend uses the default `localhost:5432` setting or an explicit `DATABASE_URL=postgresql+psycopg://app:app@localhost:5432/gesture_skill`.
+Game state persistence uses the PostgreSQL storage adapter by default. In Docker Compose, `api` starts after `db-migrate` completes and runs with `GAME_STATE_STORAGE_BACKEND=sql`.
+
+Do not copy `BE/api/.env.example` directly to `BE/api/.env` when running the backend on the host. Its database host is the compose container host `db`. Host-run backend uses the default `localhost:5432` setting or an explicit `DATABASE_URL=postgresql+psycopg://app:app@localhost:5432/gesture_skill`. Use `GAME_STATE_STORAGE_BACKEND=json` only for temporary JSON storage.
 
 Opening a `POST`-only API directly in a browser can return `405 Method Not Allowed`. For example, queue enter is `POST /api/v1/matchmaking/queue`.
 
@@ -211,6 +216,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check
 - delayed and duplicate socket events are reconciled so stale snapshots do not rewind the UI or reapply results
 - server-backed history, rating, and leaderboard screens with loading, empty, and error states
 - battle results, compact action audit, ratings, and history now persist behind the backend storage adapter boundary
+- default game state storage now uses the PostgreSQL adapter, while JSON is isolated to tests or temporary mode
 - v2 planning baseline and blocked conditions for skill implementation are documented
 - v2 smoke checklist separates implemented, planned, and blocked items
 - v2 release readiness checkpoint separates full v2 release blockers
@@ -267,6 +273,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check
 - `docs/implementation-artifacts/v4-3-character-skill-stt-intake.en.md`: character, skill, and STT candidate intake record.
 - `docs/product/jujutsu-character-skill-stt-catalog.en.md`: Phase 1 Jujutsu character, technique, and STT trigger candidate catalog.
 - `docs/product/character-skill-stt-catalog.en.md`: original character, skill, and STT trigger candidate catalog.
+- `docs/implementation-artifacts/v4-4-postgres-game-state-storage.en.md`: PostgreSQL game state storage transition record.
 - `docs/planning-artifacts/v4/technology-stack.en.md`: v4 voice startup technology decision.
 - `docs/planning-artifacts/v4/epics.en.md`: v4 epics, boundaries, and acceptance signals.
 - `docs/planning-artifacts/v4/stories.en.md`: v4 story status and verification criteria.

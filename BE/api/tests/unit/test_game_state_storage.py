@@ -4,13 +4,17 @@ from datetime import UTC, datetime
 import pytest
 from gesture_api.db.base import Base
 from gesture_api.domain.game import PlayerRecord
-from gesture_api.repositories.game_state import InMemoryGameStateRepository
+from gesture_api.repositories.game_state import (
+    InMemoryGameStateRepository,
+    create_default_game_state_storage_adapter,
+)
 from gesture_api.repositories.game_state_storage import (
     GameStatePersistenceSnapshot,
     JsonGameStateStorageAdapter,
     NullGameStateStorageAdapter,
     SqlGameStateStorageAdapter,
 )
+from gesture_api.settings import get_settings
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -166,3 +170,14 @@ def test_sql_game_state_storage_adapter_round_trips_snapshot() -> None:
     assert reloaded.players[0].losses == 1
     assert reloaded.match_history[0]["rating_change"] == -16
     assert reloaded.match_audits["battle_sql"][0]["message"] == "pl_sql surrendered"
+
+
+def test_default_game_state_storage_backend_is_sql(monkeypatch) -> None:
+    monkeypatch.setenv("GAME_STATE_STORAGE_BACKEND", "sql")
+    get_settings.cache_clear()
+    try:
+        adapter = create_default_game_state_storage_adapter()
+    finally:
+        get_settings.cache_clear()
+
+    assert isinstance(adapter, SqlGameStateStorageAdapter)

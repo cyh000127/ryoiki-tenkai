@@ -1,6 +1,10 @@
+import os
 from pathlib import Path
 
 import pytest
+
+os.environ.setdefault("GAME_STATE_STORAGE_BACKEND", "json")
+
 from gesture_api.repositories.game_state import game_state_repository
 
 
