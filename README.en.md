@@ -4,12 +4,12 @@ This repository is a frontend/backend workspace for a browser-based gesture batt
 
 Korean documentation is available in `README.md`. `README.ko.md` keeps the same Korean content as a mirrored file.
 
-## Temporary Implementation Note
+## v1 Release Status
 
-- Skill names, skill images, and hand-motion assets will be replaced later from a separate source.
-- Until then, prioritize functional implementation, contracts, and flow completion over visual assets.
-- Any current skill names, skill images, or hand-motion representations in code and docs should be treated as placeholders.
-- Remove this note when the implementation is fully complete.
+- The v1 functional MVP is release-ready.
+- There are no release blockers.
+- Final skill names, skill images, hand-motion assets, full live recognizer adapter integration, and production persistence are v2 or follow-up scope.
+- Final release readiness document: `docs/implementation-artifacts/v1-release-readiness.en.md`
 
 ## Current Status
 
@@ -124,11 +124,14 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 
 ## Remaining Work
 
-- final end-to-end smoke coverage
+- no v1 release blockers
+- v2 or follow-up scope
+  live recognizer adapter integration, real-device camera smoke automation, production persistence, and final asset replacement
 
 ## MVP Planning and QA
 
 - `docs/implementation-artifacts/mvp-v1-spec-review.en.md`: spec review snapshot that compares current implementation against the MVP stories.
+- `docs/implementation-artifacts/v1-release-readiness.en.md`: v1 release readiness decision and verification evidence.
 - `docs/implementation-artifacts/mvp-v1-implementation-plan.en.md`: MVP implementation baseline for WebSocket flow, server authoritative rules, client hand recognition, and excluded scope.
 - `docs/planning-artifacts/mvp-v1/technology-stack.en.md`: selected MVP technology stack, boundaries, deferred choices, and dependency rules.
 - `docs/planning-artifacts/mvp-v1/epics.en.md`: MVP implementation plan split into epic-level outcomes, boundaries, stories, and acceptance signals.

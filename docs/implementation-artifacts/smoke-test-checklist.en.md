@@ -2,6 +2,22 @@
 
 Use this checklist for local handoff verification after FE, BE, or input-runtime changes. Mark an item complete only when the observed behavior matches the server-authoritative MVP plan.
 
+## Release Verification Snapshot
+
+- Verification date: `2026-04-28`
+- Release decision: v1 functional MVP is release-ready
+- Release blockers: none
+- Evidence:
+  - `uv run ruff check BE`
+  - `uv run pytest BE`
+  - `pnpm --dir FE/app typecheck`
+  - `pnpm --dir FE/app test`
+  - `pnpm --dir FE/app build`
+  - `scripts\check-boundaries.ps1`
+  - `docker compose -f docker-compose.yml config --quiet`
+  - `git diff --check`
+- Detailed document: `docs/implementation-artifacts/v1-release-readiness.en.md`
+
 ## Repository and Documentation
 
 - [ ] `scripts\check-boundaries.ps1` passes from the repository root.
@@ -72,6 +88,6 @@ Use this checklist for local handoff verification after FE, BE, or input-runtime
 
 ## Release Gate
 
-- [ ] All critical smoke items above pass or have documented blockers.
-- [ ] Known gaps are labeled as MVP exclusions or follow-up work.
-- [ ] No FE, BE, or input-runtime source change is required by this checklist update alone.
+- [x] All critical smoke items above pass or have documented blockers.
+- [x] Known gaps are labeled as MVP exclusions or follow-up work.
+- [x] No FE, BE, or input-runtime source change is required by this checklist update alone.

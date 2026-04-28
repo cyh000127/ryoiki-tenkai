@@ -14,6 +14,8 @@ This document is a quick snapshot of how far the current implementation satisfie
 
 - The core playable loop is implemented end to end.
   player entry -> loadout -> queue -> WebSocket handoff -> battle -> result -> history/rating -> runtime persistence
+- The v1 functional MVP is release-ready.
+- There are no release blockers.
 - Story status summary
   `done 28`
   `partial 0`
@@ -69,5 +71,5 @@ This document is a quick snapshot of how far the current implementation satisfie
 
 ## Recommended Next Priorities
 
-- `E7-ST02` follow-up hardening
-  Expand practical local smoke coverage.
+- v2 or follow-up hardening
+  Connect the live recognizer adapter, automate real-device camera smoke checks, move persistence to the production storage adapter, and replace final resources.

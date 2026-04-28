@@ -14,6 +14,8 @@
 
 - 핵심 플레이 루프는 명세 기준으로 실제 동작합니다.
   player entry -> loadout -> queue -> WebSocket handoff -> battle -> result -> history/rating -> runtime persistence
+- v1 기능 MVP는 릴리스 준비 완료 상태입니다.
+- 릴리스 차단 항목은 없습니다.
 - 스토리 상태 집계
   `done 28`
   `partial 0`
@@ -69,5 +71,5 @@
 
 ## 다음 우선순위
 
-- `E7-ST02` follow-up hardening
-  local smoke coverage를 실제 실행 기준으로 더 채웁니다.
+- v2 또는 follow-up hardening
+  live recognizer adapter 연결, 실기기 카메라 smoke 자동화, production persistence 전환, 정식 리소스 교체를 진행합니다.

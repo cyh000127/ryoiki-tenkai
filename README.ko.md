@@ -4,12 +4,12 @@
 
 영문 문서는 `README.en.md`에 있습니다.
 
-## 임시 구현 메모
+## v1 릴리스 상태
 
-- 스킬명, 스킬 이미지, 손동작 리소스는 추후 별도 소스로 교체합니다.
-- 그전까지는 시각 자산보다 기능적 구현, 계약, 흐름 완성에 우선순위를 둡니다.
-- 현재 코드와 문서의 스킬명, 스킬 이미지, 손동작 표현은 모두 임시값으로 간주합니다.
-- 구현 완료 시 이 메모는 삭제합니다.
+- v1 기능 MVP는 릴리스 준비 완료 상태입니다.
+- 릴리스 차단 항목은 없습니다.
+- 정식 스킬명, 스킬 이미지, 손동작 리소스, live recognizer adapter 완전 결합, production persistence 전환은 v2 또는 follow-up 범위입니다.
+- 최종 릴리스 점검 문서: `docs/implementation-artifacts/v1-release-readiness.ko.md`
 
 ## 명세 점검
 
@@ -120,7 +120,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 
 ## 남은 작업
 
-- end-to-end smoke coverage 추가
+- v1 릴리스 차단 작업 없음
+- v2 또는 follow-up 범위
+  live recognizer adapter 연결, 실기기 카메라 smoke 자동화, production persistence 전환, 정식 리소스 교체
 
 ## 경계
 
@@ -145,6 +147,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 
 - `docs/implementation-artifacts/mvp-v1-implementation-plan.ko.md`: WebSocket 흐름, 서버 권위 규칙, 클라이언트 손 인식, 제외 범위를 포함한 MVP 구현 기준.
 - `docs/implementation-artifacts/mvp-v1-spec-review.ko.md`: 현재 구현과 스토리 명세를 대조한 점검 문서.
+- `docs/implementation-artifacts/v1-release-readiness.ko.md`: v1 릴리스 준비 완료 판정과 검증 근거.
 - `docs/planning-artifacts/mvp-v1/technology-stack.ko.md`: 선택한 MVP 기술스택, 경계, 보류 항목, 의존성 추가 규칙.
 - `docs/planning-artifacts/mvp-v1/epics.ko.md`: MVP 구현 계획을 에픽 단위로 분리한 문서.
 - `docs/planning-artifacts/mvp-v1/stories.ko.md`: 스토리 단위 구현 항목, 상태, 범위, 의존성, 검증 메모.
@@ -157,6 +160,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `README.en.md`
 - `docs/implementation-artifacts/mvp-v1-implementation-plan.en.md`
 - `docs/implementation-artifacts/mvp-v1-spec-review.en.md`
+- `docs/implementation-artifacts/v1-release-readiness.en.md`
 - `docs/planning-artifacts/mvp-v1/technology-stack.en.md`
 - `docs/planning-artifacts/mvp-v1/epics.en.md`
 - `docs/planning-artifacts/mvp-v1/stories.en.md`
