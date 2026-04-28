@@ -55,8 +55,7 @@
 - `uv run ruff check BE/api/src/gesture_api/repositories/game_state.py BE/api/src/gesture_api/api/routes/game.py BE/api/tests/unit/test_battle_websocket_events.py BE/api/tests/unit/test_game_flow_api.py`
 - `uv run pytest BE/api/tests/unit/test_battle_websocket_events.py BE/api/tests/unit/test_game_flow_api.py`
 
-## 남은 v2 선행조건
+## 후속 v2 선행조건
 
-- `V2-E3-ST02`: socket reconnect와 latest snapshot 재동기화 hardening.
 - `V2-E3-ST03`: delayed/duplicate event reconciliation 회귀 테스트 확대.
 - `V2-E3-ST04`: timeout watcher와 surrender event fanout 안정화.

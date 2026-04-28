@@ -55,8 +55,7 @@ This document is the implementation record for `V2-E3-ST01`. Ranked queue pairin
 - `uv run ruff check BE/api/src/gesture_api/repositories/game_state.py BE/api/src/gesture_api/api/routes/game.py BE/api/tests/unit/test_battle_websocket_events.py BE/api/tests/unit/test_game_flow_api.py`
 - `uv run pytest BE/api/tests/unit/test_battle_websocket_events.py BE/api/tests/unit/test_game_flow_api.py`
 
-## Remaining v2 Prerequisites
+## Follow-up v2 Prerequisites
 
-- `V2-E3-ST02`: harden socket reconnect and latest snapshot resync.
 - `V2-E3-ST03`: expand delayed/duplicate event reconciliation regression tests.
 - `V2-E3-ST04`: stabilize timeout watcher and surrender event fanout.

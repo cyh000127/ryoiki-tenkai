@@ -21,6 +21,7 @@
 | Camera permission smoke automation | PASS | `docs/implementation-artifacts/v2-2-camera-permission-smoke.ko.md` |
 | Recognition UI state separation | PASS | `docs/implementation-artifacts/v2-4-recognition-ui-state.ko.md` |
 | Two-player queue pairing | PASS | `docs/implementation-artifacts/v2-5-two-player-queue-pairing.ko.md` |
+| Socket reconnect latest snapshot resync | PASS | `docs/implementation-artifacts/v2-6-socket-reconnect-resync.ko.md` |
 | Storage adapter persistence | PASS | `docs/implementation-artifacts/v2-3-storage-adapter-persistence.ko.md` |
 | SQL migration smoke procedure | PASS | `docs/implementation-artifacts/v2-sql-migration-smoke.ko.md` |
 | Storage failure/fallback policy | PASS | `docs/implementation-artifacts/v2-storage-failure-policy.ko.md` |
@@ -36,7 +37,7 @@
 | --- | --- | --- |
 | V2-E1 Live Recognition Runtime Hardening | partial | adapter boundary, camera smoke, no-hand/unstable/recognized UI 분리는 완료, concrete runtime 선택과 restart/cleanup hardening은 남아 있음 |
 | V2-E2 Persistence and Runtime Operation Readiness | done | storage adapter 전환, migration smoke, failure policy, audit retention boundary가 완료됨 |
-| V2-E3 Real Match Flow and Session Robustness | partial | two-player queue pairing은 완료, reconnect, event reconciliation, fanout hardening이 남아 있음 |
+| V2-E3 Real Match Flow and Session Robustness | partial | two-player queue pairing과 reconnect latest snapshot 복구는 완료, event reconciliation 확대와 fanout hardening이 남아 있음 |
 | V2-E4 Skill and Resource Domain Intake | blocked | approved skill domain source가 필요함 |
 | V2-E5 QA, Release, and Handoff | done | planning baseline, smoke checklist, readiness, scan 기록이 완료됨 |
 
@@ -46,7 +47,7 @@
 
 - `V2-E1-ST02`: concrete frame recognizer runtime 선택 및 adapter 결합.
 - `V2-E1-ST04`: recognizer restart, cleanup, permission recovery hardening.
-- `V2-E3-ST02`부터 `V2-E3-ST04`: real two-player match flow와 session robustness.
+- `V2-E3-ST03`부터 `V2-E3-ST04`: real two-player match flow와 session robustness.
 - `V2-E4-ST01`부터 `V2-E4-ST04`: approved skill domain source 이후의 skill/resource intake.
 
 ## 보류 기준
@@ -55,25 +56,27 @@
 
 ## 검증
 
-이번 readiness 재점검은 frontend UI state hardening과 docs update를 함께 반영합니다.
+이번 readiness 재점검은 socket reconnect latest snapshot 재동기화와 docs update를 함께 반영합니다.
 
 | 검증 항목 | 상태 | 비고 |
 | --- | --- | --- |
 | `pnpm --dir FE/app typecheck` | PASS | frontend type check |
-| `pnpm --dir FE/app test` | PASS | 34 tests |
+| `pnpm --dir FE/app test` | PASS | 37 tests |
 | `pnpm --dir FE/app smoke:camera` | PASS | 2 tests |
 | `pnpm --dir FE/app build` | PASS | production build |
 | `uv run ruff check BE` | PASS | backend lint |
-| `uv run pytest BE/api/tests/unit/test_battle_websocket_events.py BE/api/tests/unit/test_game_flow_api.py` | PASS | 17 tests |
+| `uv run pytest BE` | PASS | 36 tests |
+| `uv run pytest BE/api/tests/unit/test_battle_websocket_events.py` | PASS | 10 tests |
+| `pnpm --dir FE/app exec vitest run tests/unit/battleFlow.test.ts tests/unit/BattleGameWorkspace.test.tsx` | PASS | 26 tests |
 | `git diff --check` | PASS | whitespace/error check |
 | Provider-neutral targeted text scan | PASS | 무시 대상 파일 외 매칭 없음 |
 | README link review | PASS | v2 readiness 문서가 한국어/영어 링크에 포함됨 |
-| Story status review | PASS | `V2-E3-ST01` 완료 상태 반영 |
+| Story status review | PASS | `V2-E3-ST02` 완료 상태 반영 |
 
 ## 다음 구현 순서
 
 스킬 domain source가 아직 없으므로 다음 안전한 구현 단위는 승인된 기존 runtime boundary 안에서 진행합니다.
 
-1. `V2-E3-ST02`: socket reconnect와 latest snapshot 재동기화 hardening.
-2. `V2-E3-ST03`: delayed/duplicate event reconciliation 회귀 테스트 확대.
-3. `V2-E3-ST04`: timeout watcher와 surrender event fanout 안정화.
+1. `V2-E3-ST03`: delayed/duplicate event reconciliation 회귀 테스트 확대.
+2. `V2-E3-ST04`: timeout watcher와 surrender event fanout 안정화.
+3. `V2-E1-ST02`: concrete frame recognizer runtime 선택 및 adapter 결합은 runtime 선택이 승인된 뒤 진행.

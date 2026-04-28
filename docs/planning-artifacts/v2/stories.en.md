@@ -98,12 +98,12 @@ Status values:
 
 ### V2-E3-ST02: Harden socket reconnect and latest snapshot resync
 
-- Status: planned
+- Status: done
 - User story: the player does not lose latest battle state after socket reconnect.
 - Scope: reconnect replay, ended battle result recovery, stale event suppression.
 - Acceptance criteria: reconnect restores latest turn/hp/mana/cooldown. Ended battle restores into the result screen.
 - Dependencies: V2-E3-ST01.
-- Verification: frontend reducer/component test, backend socket test.
+- Verification: `docs/implementation-artifacts/v2-6-socket-reconnect-resync.en.md`, `BE/api/tests/unit/test_battle_websocket_events.py`, `FE/app/tests/unit/battleFlow.test.ts`, `FE/app/tests/unit/BattleGameWorkspace.test.tsx`.
 
 ### V2-E3-ST03: Expand delayed/duplicate event reconciliation regression tests
 

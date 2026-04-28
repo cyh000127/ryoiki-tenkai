@@ -662,10 +662,14 @@ export function BattleGameWorkspace() {
       case "battle.surrendered":
         return;
       case "battle.ended": {
+        const battle = toBattleState(event.payload.battle);
+        if (shouldIgnoreIncomingBattleSnapshot(stateRef.current.battle, battle)) {
+          return;
+        }
         consumePendingActionLatency();
         dispatch({
           type: "battleEnded",
-          battle: toBattleState(event.payload.battle),
+          battle,
           ratingChange: event.payload.ratingChange ?? 0
         });
         if (session) {

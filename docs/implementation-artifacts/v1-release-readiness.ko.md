@@ -91,3 +91,5 @@
    - 구현 기록: `docs/implementation-artifacts/v2-4-recognition-ui-state.ko.md`
 13. [x] two-player queue pairing rule을 강화합니다.
    - 구현 기록: `docs/implementation-artifacts/v2-5-two-player-queue-pairing.ko.md`
+14. [x] socket reconnect latest snapshot 재동기화를 강화합니다.
+   - 구현 기록: `docs/implementation-artifacts/v2-6-socket-reconnect-resync.ko.md`

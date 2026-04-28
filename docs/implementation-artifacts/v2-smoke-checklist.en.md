@@ -60,7 +60,8 @@ Use this document for local v2 handoff verification. Skill names, skill effects,
 
 - [x] Two-player queue pairing smoke or backend socket tests run.
   - Evidence: `docs/implementation-artifacts/v2-5-two-player-queue-pairing.en.md`
-- [ ] Reconnect preserves the latest snapshot.
+- [x] Reconnect preserves the latest snapshot.
+  - Evidence: `docs/implementation-artifacts/v2-6-socket-reconnect-resync.en.md`
 - [ ] Delayed/duplicate events do not roll the UI back to stale state.
 - [ ] Timeout/surrender/ended event ordering is stable.
 
@@ -99,8 +100,8 @@ Use this document for local v2 handoff verification. Skill names, skill effects,
   - Evidence: `docs/implementation-artifacts/v2-5-two-player-queue-pairing.en.md`
 - [x] Both players receive the same battle id, opposite seats, and the same turn state.
   - Evidence: `BE/api/tests/unit/test_battle_websocket_events.py`
-- [ ] Reconnect restores the latest snapshot in a two-player battle.
-  - Planned story: `V2-E3-ST02`
+- [x] Reconnect restores the latest snapshot in a two-player battle.
+  - Evidence: `docs/implementation-artifacts/v2-6-socket-reconnect-resync.en.md`, `BE/api/tests/unit/test_battle_websocket_events.py`
 - [ ] Delayed/duplicate event reconciliation regression tests are expanded.
   - Planned story: `V2-E3-ST03`
 - [ ] Timeout watcher and surrender event fanout include disconnected-player paths.

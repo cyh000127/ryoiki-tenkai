@@ -247,6 +247,80 @@ def test_ws_endpoint_pairs_two_connected_players_without_practice_rival() -> Non
     assert first_status_response.json()["data"]["battleSessionId"] == battle_session_id
 
 
+def test_ws_endpoint_replays_latest_two_player_battle_snapshot_on_reconnect() -> None:
+    client = TestClient(create_app())
+    first_player_id = create_configured_guest(client, "replay-player-one")
+    second_player_id = create_configured_guest(client, "replay-player-two")
+    first_ws_token = get_ws_token(client, first_player_id)
+    second_ws_token = get_ws_token(client, second_player_id)
+    skill = client.get("/api/v1/skillsets").json()["data"][0]["skills"][0]
+
+    with client.websocket_connect(f"/ws?token={first_ws_token}") as first_socket:
+        first_queue_response = client.post(
+            "/api/v1/matchmaking/queue",
+            headers={"X-Player-Id": first_player_id},
+            json={"mode": "RANKED_1V1"},
+        )
+        assert first_queue_response.status_code == 200
+        assert first_socket.receive_json()["type"] == "battle.match_ready"
+
+        with client.websocket_connect(f"/ws?token={second_ws_token}") as second_socket:
+            second_queue_response = client.post(
+                "/api/v1/matchmaking/queue",
+                headers={"X-Player-Id": second_player_id},
+                json={"mode": "RANKED_1V1"},
+            )
+            assert second_queue_response.status_code == 200
+            battle_session_id = second_queue_response.json()["data"]["battleSessionId"]
+
+            assert second_socket.receive_json()["type"] == "battle.match_ready"
+            assert first_socket.receive_json()["type"] == "battle.match_found"
+            assert first_socket.receive_json()["type"] == "battle.started"
+            assert second_socket.receive_json()["type"] == "battle.match_found"
+            assert second_socket.receive_json()["type"] == "battle.started"
+
+            first_socket.send_json(
+                {
+                    "type": "battle.submit_action",
+                    "requestId": "req-two-player-reconnect",
+                    "payload": {
+                        "battleSessionId": battle_session_id,
+                        "playerId": first_player_id,
+                        "turnNumber": 1,
+                        "actionId": "act-two-player-reconnect",
+                        "gestureSequence": skill["gestureSequence"],
+                        "submittedAt": "2026-04-27T00:00:00Z",
+                    },
+                }
+            )
+            action_result = first_socket.receive_json()
+            first_update = first_socket.receive_json()
+            second_update = second_socket.receive_json()
+
+    assert action_result["type"] == "battle.action_result"
+    assert first_update["type"] == "battle.state_updated"
+    assert second_update["type"] == "battle.state_updated"
+
+    with client.websocket_connect(f"/ws?token={first_ws_token}") as replay_socket:
+        replayed_found_event = replay_socket.receive_json()
+        replayed_started_event = replay_socket.receive_json()
+
+    replayed_battle = replayed_started_event["payload"]["battle"]
+    assert replayed_found_event["type"] == "battle.match_found"
+    assert replayed_started_event["type"] == "battle.started"
+    assert replayed_started_event["payload"]["battleSessionId"] == battle_session_id
+    assert replayed_battle["turnNumber"] == 2
+    assert replayed_battle["turnOwnerPlayerId"] == second_player_id
+    assert replayed_battle["self"]["playerId"] == first_player_id
+    assert replayed_battle["self"]["hp"] == 100
+    assert replayed_battle["self"]["mana"] == 80
+    assert replayed_battle["self"]["cooldowns"]["pulse_strike"] == 1
+    assert replayed_battle["opponent"]["playerId"] == second_player_id
+    assert replayed_battle["opponent"]["hp"] == 75
+    assert replayed_battle["opponent"]["mana"] == 100
+    assert replayed_battle["battleLog"][0]["turnNumber"] == 1
+
+
 def test_ws_endpoint_replays_latest_active_battle_snapshot_on_reconnect() -> None:
     client = TestClient(create_app())
     player_id = create_configured_guest(client, "ws-reconnect")
@@ -286,6 +360,35 @@ def test_ws_endpoint_replays_latest_active_battle_snapshot_on_reconnect() -> Non
     assert replayed_started_event["payload"]["battle"]["turnOwnerPlayerId"] == player_id
     assert replayed_started_event["payload"]["battle"]["self"]["hp"] == 75
     assert replayed_started_event["payload"]["battle"]["opponent"]["hp"] == 75
+
+
+def test_ws_endpoint_resolves_due_timeout_before_reconnect_replay() -> None:
+    client = TestClient(create_app())
+    player_id = create_configured_guest(client, "ws-timeout-reconnect")
+    battle_session_id = create_practice_battle(client, player_id)
+    ws_token = get_ws_token(client, player_id)
+
+    with client.websocket_connect(f"/ws?token={ws_token}") as websocket:
+        assert websocket.receive_json()["type"] == "battle.match_found"
+        started_event = websocket.receive_json()
+        assert started_event["payload"]["battleSessionId"] == battle_session_id
+
+    battle = game_state_repository.get_battle(battle_session_id)
+    assert battle is not None
+    battle.action_deadline_at = datetime.now(UTC) - timedelta(seconds=1)
+
+    with client.websocket_connect(f"/ws?token={ws_token}") as replay_socket:
+        replayed_timeout_event = replay_socket.receive_json()
+        replayed_ended_event = replay_socket.receive_json()
+
+    assert replayed_timeout_event["type"] == "battle.timeout"
+    assert replayed_timeout_event["payload"]["battleSessionId"] == battle_session_id
+    assert replayed_timeout_event["payload"]["timedOutPlayerId"] == player_id
+    assert replayed_timeout_event["payload"]["battle"]["status"] == "ENDED"
+    assert replayed_ended_event["type"] == "battle.ended"
+    assert replayed_ended_event["payload"]["battleSessionId"] == battle_session_id
+    assert replayed_ended_event["payload"]["loserPlayerId"] == player_id
+    assert replayed_ended_event["payload"]["endedReason"] == "TIMEOUT"
 
 
 def test_ws_endpoint_replays_latest_ended_battle_on_reconnect() -> None:

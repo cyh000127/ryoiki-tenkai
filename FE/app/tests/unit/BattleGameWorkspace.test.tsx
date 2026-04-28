@@ -1684,4 +1684,121 @@ describe("BattleGameWorkspace", () => {
     expect(screen.getByText("T1 pulse_strike dealt 25")).toBeInTheDocument();
     expect(screen.queryByText("소켓을 다시 연결하는 중입니다. 최신 전투 상태를 복구합니다.")).not.toBeInTheDocument();
   });
+
+  it("reconnects and restores an ended battle replay into the result screen", async () => {
+    const user = createUser();
+    installGameApiMock();
+
+    renderWorkspace();
+
+    await enterActiveBattle(user);
+    expect(await screen.findByText("내 턴")).toBeInTheDocument();
+    expect(socketConnectCount).toBe(1);
+
+    act(() => {
+      socketCloseHandler?.();
+    });
+
+    await waitFor(() => {
+      expect(socketConnectCount).toBe(2);
+    });
+
+    emitSocketEvent({
+      type: "battle.timeout",
+      payload: {
+        battleSessionId: "battle_test",
+        turnNumber: 2,
+        timedOutPlayerId: "pl_guest",
+        battle: {
+          battleSessionId: "battle_test",
+          matchId: "match_test",
+          status: "ENDED",
+          turnNumber: 2,
+          turnOwnerPlayerId: "pl_guest",
+          actionDeadlineAt: "2026-04-27T00:01:00Z",
+          self: {
+            playerId: "pl_guest",
+            hp: 75,
+            mana: 90,
+            cooldowns: {
+              pulse_strike: 0
+            }
+          },
+          opponent: {
+            playerId: "pl_practice",
+            hp: 75,
+            mana: 80,
+            cooldowns: {
+              pulse_strike: 1
+            }
+          },
+          battleLog: [
+            {
+              turnNumber: 1,
+              message: "pulse_strike dealt 25"
+            },
+            {
+              turnNumber: 2,
+              message: "pl_guest timed out"
+            }
+          ],
+          winnerPlayerId: "pl_practice",
+          loserPlayerId: "pl_guest",
+          endedReason: "TIMEOUT"
+        }
+      }
+    });
+    emitSocketEvent({
+      type: "battle.ended",
+      payload: {
+        battleSessionId: "battle_test",
+        winnerPlayerId: "pl_practice",
+        loserPlayerId: "pl_guest",
+        endedReason: "TIMEOUT",
+        ratingChange: -18,
+        battle: {
+          battleSessionId: "battle_test",
+          matchId: "match_test",
+          status: "ENDED",
+          turnNumber: 2,
+          turnOwnerPlayerId: "pl_guest",
+          actionDeadlineAt: "2026-04-27T00:01:00Z",
+          self: {
+            playerId: "pl_guest",
+            hp: 75,
+            mana: 90,
+            cooldowns: {
+              pulse_strike: 0
+            }
+          },
+          opponent: {
+            playerId: "pl_practice",
+            hp: 75,
+            mana: 80,
+            cooldowns: {
+              pulse_strike: 1
+            }
+          },
+          battleLog: [
+            {
+              turnNumber: 1,
+              message: "pulse_strike dealt 25"
+            },
+            {
+              turnNumber: 2,
+              message: "pl_guest timed out"
+            }
+          ],
+          winnerPlayerId: "pl_practice",
+          loserPlayerId: "pl_guest",
+          endedReason: "TIMEOUT"
+        }
+      }
+    });
+
+    expect((await screen.findAllByText("패배")).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("턴 타임아웃").length).toBeGreaterThan(0);
+    expect(screen.getByText("-18")).toBeInTheDocument();
+    expect(screen.queryByText("소켓을 다시 연결하는 중입니다. 최신 전투 상태를 복구합니다.")).not.toBeInTheDocument();
+  });
 });

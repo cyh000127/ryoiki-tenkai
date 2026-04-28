@@ -60,7 +60,8 @@
 
 - [x] two-player queue pairing smoke 또는 backend socket test를 실행한다.
   - 근거: `docs/implementation-artifacts/v2-5-two-player-queue-pairing.ko.md`
-- [ ] reconnect 후 latest snapshot이 유지되는지 확인한다.
+- [x] reconnect 후 latest snapshot이 유지되는지 확인한다.
+  - 근거: `docs/implementation-artifacts/v2-6-socket-reconnect-resync.ko.md`
 - [ ] delayed/duplicate event가 UI를 stale state로 되돌리지 않는지 확인한다.
 - [ ] timeout/surrender/ended event ordering이 안정적인지 확인한다.
 
@@ -99,8 +100,8 @@
   - 근거: `docs/implementation-artifacts/v2-5-two-player-queue-pairing.ko.md`
 - [x] 두 player가 같은 battle id, 반대 seat, 동일 turn state를 받는다.
   - 근거: `BE/api/tests/unit/test_battle_websocket_events.py`
-- [ ] reconnect가 two-player battle에서 latest snapshot을 복구한다.
-  - 계획 story: `V2-E3-ST02`
+- [x] reconnect가 two-player battle에서 latest snapshot을 복구한다.
+  - 근거: `docs/implementation-artifacts/v2-6-socket-reconnect-resync.ko.md`, `BE/api/tests/unit/test_battle_websocket_events.py`
 - [ ] delayed/duplicate event reconciliation 회귀 테스트가 확대되어 있다.
   - 계획 story: `V2-E3-ST03`
 - [ ] timeout watcher와 surrender event fanout이 disconnected player path를 포함한다.

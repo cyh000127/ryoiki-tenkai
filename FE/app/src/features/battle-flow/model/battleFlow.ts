@@ -226,12 +226,12 @@ export function battleFlowReducer(
       return {
         ...state,
         screen: state.screen === "matchmaking" ? "home" : state.screen,
-        queueStatus: state.battle ? "MATCHED" : "IDLE",
+        queueStatus: state.battle?.status === "ACTIVE" ? "MATCHED" : "IDLE",
         socketStatus: "DISCONNECTED",
         input: {
           ...state.input,
-          cameraReady: state.battle ? state.input.cameraReady : false,
-          handDetected: state.battle ? state.input.handDetected : false,
+          cameraReady: state.battle?.status === "ACTIVE" ? state.input.cameraReady : false,
+          handDetected: state.battle?.status === "ACTIVE" ? state.input.handDetected : false,
           networkLatencyMs: state.battle ? state.input.networkLatencyMs : 0
         },
         recentEvents: prependEvent(state, "socket.disconnected")
@@ -521,6 +521,10 @@ function finishBattleFromServer(
   battle: BattleState,
   ratingChange: number
 ): BattleFlowState {
+  if (shouldIgnoreIncomingBattleSnapshot(state.battle, battle)) {
+    return state;
+  }
+
   const isCurrentBattle = state.battle?.battleSessionId === battle.battleSessionId;
   const alreadyRecordedMatch = state.history.some((record) => record.matchId === battle.matchId);
   if (alreadyRecordedMatch && !isCurrentBattle) {

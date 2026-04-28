@@ -429,6 +429,15 @@ def get_player_id_from_ws_token(token: str | None) -> str | None:
 async def replay_player_matchmaking_state(player_id: str) -> None:
     battle = game_state_repository.get_player_battle(player_id)
     if battle is not None:
+        timed_out, timed_out_battle, timed_out_player_id = (
+            game_state_repository.resolve_timeout_if_due(battle.battle_session_id)
+        )
+        if timed_out and timed_out_battle is not None and timed_out_player_id is not None:
+            await emit_battle_resolution_events(
+                timed_out_battle,
+                timed_out_player_id=timed_out_player_id,
+            )
+            return
         await emit_battle_handoff(battle, player_ids=(player_id,))
         return
     latest_battle = game_state_repository.get_latest_player_battle(player_id)

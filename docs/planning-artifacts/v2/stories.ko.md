@@ -98,12 +98,12 @@
 
 ### V2-E3-ST02: socket reconnect와 latest snapshot 재동기화 hardening
 
-- Status: planned
+- Status: done
 - User story: player는 socket reconnect 후 최신 battle state를 잃지 않는다.
 - Scope: reconnect replay, ended battle result recovery, stale event suppression.
 - Acceptance criteria: reconnect가 최신 turn/hp/mana/cooldown을 복구한다. ended battle은 result screen으로 복구된다.
 - Dependencies: V2-E3-ST01.
-- Verification: frontend reducer/component test, backend socket test.
+- Verification: `docs/implementation-artifacts/v2-6-socket-reconnect-resync.ko.md`, `BE/api/tests/unit/test_battle_websocket_events.py`, `FE/app/tests/unit/battleFlow.test.ts`, `FE/app/tests/unit/BattleGameWorkspace.test.tsx`.
 
 ### V2-E3-ST03: delayed/duplicate event reconciliation 회귀 테스트 확대
 

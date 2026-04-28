@@ -278,6 +278,85 @@ describe("battleFlowReducer", () => {
     expect(staleStarted.battle?.self.hp).toBe(75);
   });
 
+  it("ignores stale ended snapshots after a newer active battle snapshot", () => {
+    const matched = createMatchedBattle();
+    const advanced = battleFlowReducer(matched, {
+      type: "battleStateUpdated",
+      latencyMs: 24,
+      battle: {
+        ...matched.battle!,
+        turnNumber: 3,
+        actionDeadlineAt: "2026-04-27T00:01:30Z",
+        self: {
+          ...matched.battle!.self,
+          hp: 75,
+          mana: 90
+        },
+        opponent: {
+          ...matched.battle!.opponent,
+          hp: 75,
+          mana: 80
+        },
+        battleLog: [
+          {
+            turnNumber: 1,
+            message: "pulse_strike dealt 25"
+          },
+          {
+            turnNumber: 2,
+            message: "pulse_strike dealt 25"
+          }
+        ]
+      }
+    });
+    const staleEndedBattle: BattleState = {
+      ...matched.battle!,
+      status: "ENDED",
+      turnNumber: 1,
+      winnerPlayerId: matched.battle!.opponent.playerId,
+      loserPlayerId: matched.player.playerId,
+      endedReason: "TIMEOUT",
+      battleLog: [
+        {
+          turnNumber: 1,
+          message: "pl_local timed out"
+        }
+      ]
+    };
+
+    const afterStaleEnded = battleFlowReducer(advanced, {
+      type: "battleEnded",
+      ratingChange: -18,
+      battle: staleEndedBattle
+    });
+
+    expect(afterStaleEnded.screen).toBe("battle");
+    expect(afterStaleEnded.battle?.turnNumber).toBe(3);
+    expect(afterStaleEnded.battle?.self.hp).toBe(75);
+    expect(afterStaleEnded.history).toHaveLength(0);
+    expect(afterStaleEnded.player.losses).toBe(initialBattleFlowState.player.losses);
+  });
+
+  it("keeps ended result state out of the matched queue after socket disconnect", () => {
+    const matched = createMatchedBattle();
+    const ended = battleFlowReducer(matched, {
+      type: "battleEnded",
+      ratingChange: 18,
+      battle: {
+        ...matched.battle!,
+        status: "ENDED",
+        turnNumber: 4,
+        winnerPlayerId: matched.player.playerId
+      }
+    });
+
+    const disconnected = battleFlowReducer(ended, { type: "socketDisconnected" });
+
+    expect(disconnected.screen).toBe("result");
+    expect(disconnected.queueStatus).toBe("IDLE");
+    expect(disconnected.socketStatus).toBe("DISCONNECTED");
+  });
+
   it("keeps rematch queue-ready handling while avoiding duplicate battle-ended application", () => {
     const matched = createMatchedBattle();
     const endedBattle = {
