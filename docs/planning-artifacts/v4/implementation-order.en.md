@@ -43,6 +43,6 @@
 
 ## Commit Unit
 
-- Suggested commit: `feat(frontend): 일본어 음성 시동 명령 추가`
+- Suggested commit: `feat(frontend): 일본어 음성 시작 명령 추가`
 - Scope: docs, frontend model, home UI, and tests.
 - Reason: track one coherent feature while keeping push count low.

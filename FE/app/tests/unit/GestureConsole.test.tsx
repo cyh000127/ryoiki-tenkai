@@ -9,7 +9,7 @@ describe("GestureConsole", () => {
 
     render(<GestureConsole />);
 
-    await user.click(screen.getByRole("button", { name: "Pinch" }));
+    await user.click(screen.getByRole("button", { name: "핀치 입력" }));
 
     expect(screen.getByText("pinch")).toBeInTheDocument();
     expect(screen.getByText("skill.confirm")).toBeInTheDocument();

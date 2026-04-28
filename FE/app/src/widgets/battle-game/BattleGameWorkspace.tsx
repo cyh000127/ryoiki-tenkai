@@ -1239,6 +1239,9 @@ export function BattleGameWorkspace() {
                     {copy.startGuest}
                   </Button>
                   <Button onClick={handleOpenLoadout}>{copy.editLoadout}</Button>
+                  <Button onClick={() => handleNavigate("practice")}>
+                    {copy.startPracticeMode}
+                  </Button>
                   <Button
                     disabled={startQueueMutation.isPending}
                     variant="primary"

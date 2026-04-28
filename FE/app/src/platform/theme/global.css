@@ -79,7 +79,13 @@ textarea {
   font-size: 24px;
   font-weight: 800;
   line-height: 1.2;
-  text-transform: uppercase;
+}
+
+.app-shell__eyebrow {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .gesture-console {

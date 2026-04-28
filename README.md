@@ -1,4 +1,4 @@
-# Gesture Skill Workspace
+# 손동작 술식 전투 워크스페이스
 
 이 저장소는 브라우저 기반 손동작 배틀 MVP를 위한 프론트엔드/백엔드 워크스페이스입니다.
 
@@ -30,8 +30,8 @@
 - v3 runtime health summary가 backend health response에 반영되었습니다.
 - v3 smoke checklist가 작성되었습니다.
 - v3 release readiness checkpoint가 작성되었습니다.
-- v4 일본어 음성 시동 명령 계획과 구현 기록이 작성되었습니다.
-- v4 일본어 음성 시동 명령이 홈 화면에 연결되었습니다.
+- v4 일본어 음성 시작 명령 계획과 구현 기록이 작성되었습니다.
+- v4 일본어 음성 시작 명령이 홈 화면에 연결되었습니다.
 - v4 STT 모듈 경계가 공용 transcript recognizer port로 분리되었습니다.
 - v4 캐릭터/스킬/STT 후보 카탈로그가 작성되었습니다.
 - v4 Phase 1 주술회전 캐릭터/술식/STT 카탈로그가 작성되었습니다.
@@ -46,7 +46,7 @@
 - v3 runtime health summary 기록: `docs/implementation-artifacts/v3-2-health-runtime-summary.ko.md`
 - v3 smoke checklist: `docs/implementation-artifacts/v3-smoke-checklist.ko.md`
 - v3 release readiness checkpoint: `docs/implementation-artifacts/v3-release-readiness.ko.md`
-- v4 일본어 음성 시동 명령 기록: `docs/implementation-artifacts/v4-1-japanese-stt-startup-command.ko.md`
+- v4 일본어 음성 시작 명령 기록: `docs/implementation-artifacts/v4-1-japanese-stt-startup-command.ko.md`
 - v4 STT 모듈 경계 기록: `docs/implementation-artifacts/v4-2-stt-module-boundary.ko.md`
 - v4 캐릭터/스킬/STT 정리 기록: `docs/implementation-artifacts/v4-3-character-skill-stt-intake.ko.md`
 - v4 Phase 1 주술회전 카탈로그: `docs/product/jujutsu-character-skill-stt-catalog.ko.md`
@@ -95,8 +95,8 @@
 - v3 handoff check fast/full mode와 plan-only 검증 경로 문서화
 - backend `/healthz` safe runtime summary와 contract/test 반영
 - v3 smoke checklist와 release readiness checkpoint 문서화
-- 일본어 음성 시동 명령의 홈 화면 연결, 상태 표시, 수동 fallback
-- 공용 STT transcript recognizer port와 시동 명령 매칭 모델 분리
+- 일본어 음성 시작 명령의 홈 화면 연결, 상태 표시, 마이크 없이 시작 경로
+- 공용 STT transcript recognizer port와 시작 명령 매칭 모델 분리
 - 오리지널 캐릭터/스킬/STT trigger 후보 카탈로그 문서화
 - Phase 1 주술회전 캐릭터/술식/STT trigger 후보 카탈로그 문서화
 - result/history/rating persistence를 storage adapter 경계 뒤로 전환
@@ -295,8 +295,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check
 - v3 handoff 검증 자동화 fast/full mode와 plan-only 경로
 - backend health response의 safe runtime summary와 contract 회귀 테스트
 - v3 smoke checklist와 release readiness 문서화
-- 일본어 음성 시동 명령 모델, 홈 화면 패널, 수동 fallback 회귀 테스트
-- 공용 STT 모듈과 시동 명령 모델 회귀 테스트
+- 일본어 음성 시작 명령 모델, 홈 화면 패널, 마이크 없이 시작 경로 회귀 테스트
+- 공용 STT 모듈과 시작 명령 모델 회귀 테스트
 - 캐릭터/스킬/STT 후보와 손모양 추후 구현 계획 문서화
 - 주술회전 Phase 1 카탈로그와 손모양 추후 구현 계획 문서화
 
@@ -348,7 +348,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check
 - `docs/implementation-artifacts/v3-2-health-runtime-summary.ko.md`: safe runtime health summary 구현 기록.
 - `docs/implementation-artifacts/v3-smoke-checklist.ko.md`: v3 smoke checklist와 blocked carryover.
 - `docs/implementation-artifacts/v3-release-readiness.ko.md`: v3 checkpoint 판정과 full feature release blocker.
-- `docs/implementation-artifacts/v4-1-japanese-stt-startup-command.ko.md`: 일본어 음성 시동 명령 구현 기록.
+- `docs/implementation-artifacts/v4-1-japanese-stt-startup-command.ko.md`: 일본어 음성 시작 명령 구현 기록.
 - `docs/implementation-artifacts/v4-2-stt-module-boundary.ko.md`: STT 공용 모듈 경계 분리 구현 기록.
 - `docs/implementation-artifacts/v4-3-character-skill-stt-intake.ko.md`: 캐릭터/스킬/STT 후보 정리 기록.
 - `docs/product/jujutsu-character-skill-stt-catalog.ko.md`: Phase 1 주술회전 캐릭터, 술식, STT trigger 후보 카탈로그.
@@ -356,7 +356,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check
 - `docs/product/character-skill-stt-catalog.ko.md`: 오리지널 캐릭터, 스킬, STT trigger 후보 카탈로그.
 - `docs/implementation-artifacts/v4-4-postgres-game-state-storage.ko.md`: PostgreSQL game state storage 전환 기록.
 - `docs/implementation-artifacts/v4-5-technique-skill-catalog.ko.md`: 술식 카탈로그 반영 기록.
-- `docs/planning-artifacts/v4/technology-stack.ko.md`: v4 음성 시동 기술스택 결정.
+- `docs/planning-artifacts/v4/technology-stack.ko.md`: v4 음성 시작 기술스택 결정.
 - `docs/planning-artifacts/v4/epics.ko.md`: v4 에픽, 경계, 수용 신호.
 - `docs/planning-artifacts/v4/stories.ko.md`: v4 스토리 상태와 검증 기준.
 - `docs/planning-artifacts/v4/implementation-order.ko.md`: v4 구현 순서와 커밋 단위.

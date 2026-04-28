@@ -510,7 +510,7 @@ describe("BattleGameWorkspace", () => {
     });
   });
 
-  it("offers manual startup fallback when voice startup is unsupported", async () => {
+  it("offers microphone-free start when voice startup is unsupported", async () => {
     const user = createUser();
     installGameApiMock();
 
@@ -524,10 +524,10 @@ describe("BattleGameWorkspace", () => {
 
     expect(screen.getByText("音声起動未対応")).toBeInTheDocument();
     expect(
-      screen.getByText("이 브라우저에서는 음성 시동을 지원하지 않습니다. 수동 시동을 사용하세요.")
+      screen.getByText("이 브라우저에서는 음성 인식을 사용할 수 없습니다. 마이크 없이 시작하세요.")
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "수동 시동" }));
+    await user.click(screen.getByRole("button", { name: "마이크 없이 시작" }));
 
     expect(await screen.findByRole("button", { name: "로드아웃 저장" })).toBeInTheDocument();
   });
@@ -538,10 +538,10 @@ describe("BattleGameWorkspace", () => {
 
     renderWorkspace();
 
-    await user.click(screen.getByRole("button", { name: "연습장" }));
+    await user.click(screen.getByRole("button", { name: "연습모드" }));
 
-    expect(screen.getByText("계정 생성 후 연습장에 들어갈 수 있습니다.")).toBeInTheDocument();
-    expect(screen.queryByText("술식 연습장")).not.toBeInTheDocument();
+    expect(screen.getByText("계정 생성 후 연습모드에 들어갈 수 있습니다.")).toBeInTheDocument();
+    expect(screen.queryByText("술식 연습모드")).not.toBeInTheDocument();
   });
 
   it("lets a signed-in player practice a skill with the camera preview", async () => {
@@ -552,9 +552,9 @@ describe("BattleGameWorkspace", () => {
 
     await user.click(screen.getByRole("button", { name: "게스트 시작" }));
     await screen.findByRole("button", { name: "로드아웃 저장" });
-    await user.click(screen.getByRole("button", { name: "연습장" }));
+    await user.click(screen.getByRole("button", { name: "연습모드" }));
 
-    expect(screen.getByText("술식 연습장")).toBeInTheDocument();
+    expect(screen.getByText("술식 연습모드")).toBeInTheDocument();
     expect(screen.getByLabelText("캠 프리뷰")).toBeInTheDocument();
     expect(screen.getAllByText(defaultSkill.description).length).toBeGreaterThan(0);
 
@@ -811,7 +811,7 @@ describe("BattleGameWorkspace", () => {
     });
 
     const debugFallbackPanel = screen
-      .getByRole("heading", { name: "디버그 fallback 입력" })
+      .getByRole("heading", { name: "개발용 대체 입력" })
       .closest("section");
     expect(debugFallbackPanel).not.toBeNull();
 
@@ -903,7 +903,7 @@ describe("BattleGameWorkspace", () => {
     await enterActiveBattle(user);
 
     const debugFallbackPanel = screen
-      .getByRole("heading", { name: "디버그 fallback 입력" })
+      .getByRole("heading", { name: "개발용 대체 입력" })
       .closest("section");
     expect(debugFallbackPanel).not.toBeNull();
 
@@ -1041,7 +1041,7 @@ describe("BattleGameWorkspace", () => {
     });
 
     const debugFallbackPanel = screen
-      .getByRole("heading", { name: "디버그 fallback 입력" })
+      .getByRole("heading", { name: "개발용 대체 입력" })
       .closest("section");
     const localFeedback = screen.getByText("로컬 입력 상태").closest("div");
     const serverFeedback = screen.getByText("서버 판정 상태").closest("div");
@@ -1143,7 +1143,7 @@ describe("BattleGameWorkspace", () => {
 
     const inputPanel = screen.getByRole("heading", { name: "입력 콘솔" }).closest("section");
     const debugFallbackPanel = screen
-      .getByRole("heading", { name: "디버그 fallback 입력" })
+      .getByRole("heading", { name: "개발용 대체 입력" })
       .closest("section");
 
     expect(inputPanel).not.toBeNull();
@@ -1169,7 +1169,7 @@ describe("BattleGameWorkspace", () => {
     expect(screen.getByText("음성 승인 필요")).toBeInTheDocument();
 
     const debugFallbackPanel = screen
-      .getByRole("heading", { name: "디버그 fallback 입력" })
+      .getByRole("heading", { name: "개발용 대체 입력" })
       .closest("section");
     expect(debugFallbackPanel).not.toBeNull();
 

@@ -17,11 +17,11 @@
 - Dependencies: 브라우저 speech recognition 지원 여부.
 - Verification: frontend unit test.
 
-### V4-E1-ST02: 홈 화면 시동 패널
+### V4-E1-ST02: 홈 화면 시작 패널
 
 - Status: done
-- Scope: 마이크 버튼, 인식 상태, transcript, 매칭 명령어, 실패/미지원 상태, 수동 시동 버튼.
-- Acceptance criteria: 사용자가 홈 화면에서 음성 시동과 수동 fallback을 모두 실행할 수 있다.
+- Scope: 마이크 버튼, 인식 상태, transcript, 매칭 명령어, 실패/미지원 상태, 마이크 없이 시작 버튼.
+- Acceptance criteria: 사용자가 홈 화면에서 음성 시작과 마이크 없는 시작 경로를 모두 실행할 수 있다.
 - Dependencies: V4-E1-ST01, 기존 게스트/로드아웃/매칭 흐름.
 - Verification: workspace UI regression test.
 
@@ -37,7 +37,7 @@
 
 - Status: done
 - Scope: 브라우저 speech recognition 세부 타입과 lifecycle을 공용 transcript recognizer port로 분리.
-- Acceptance criteria: 시동 명령 모델은 STT 구현 세부를 직접 다루지 않고 transcript와 상태만 받는다.
+- Acceptance criteria: 시작 명령 모델은 STT 구현 세부를 직접 다루지 않고 transcript와 상태만 받는다.
 - Dependencies: V4-E1-ST01.
 - Verification: browser speech module unit test, startup voice command unit test.
 
@@ -89,6 +89,6 @@
 
 - Status: done
 - Scope: 구현 결정, 완료 범위, 제외 범위, 검증 결과를 한국어/영어로 기록.
-- Acceptance criteria: 기능 완료 기준과 fallback 기준이 문서에 남는다.
+- Acceptance criteria: 기능 완료 기준과 마이크 없는 시작 기준이 문서에 남는다.
 - Dependencies: V4-E1 구현.
 - Verification: implementation artifact review.
