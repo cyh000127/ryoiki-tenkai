@@ -183,18 +183,18 @@
 
 ### V2-E5-ST03: release readiness 재점검
 
-- Status: planned
+- Status: done
 - User story: release owner는 v2 완료/보류 범위를 기준으로 릴리스 가능성을 판단할 수 있다.
 - Scope: gate table, verification evidence, known gap, blocker list.
 - Acceptance criteria: blocking item과 follow-up item이 분리된다.
 - Dependencies: current v2 implementation set.
-- Verification: check commands and docs review.
+- Verification: `docs/implementation-artifacts/v2-release-readiness.ko.md`, docs review, text scan.
 
 ### V2-E5-ST04: provider-neutral text scan 유지
 
-- Status: planned
+- Status: done
 - User story: handoff 전에 승인되지 않은 외부 제공자명이나 서비스명이 들어가지 않았는지 확인한다.
 - Scope: docs, source copy, comments, contracts.
 - Acceptance criteria: targeted scan이 lock/generated output을 제외하고 매칭을 반환하지 않는다.
 - Dependencies: repository scan command.
-- Verification: text scan.
+- Verification: `docs/implementation-artifacts/v2-release-readiness.ko.md`, text scan.

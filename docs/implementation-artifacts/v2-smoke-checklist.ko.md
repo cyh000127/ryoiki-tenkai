@@ -120,10 +120,10 @@
   - 근거: `docs/implementation-artifacts/v2-planning-baseline.ko.md`
 - [x] v2 smoke checklist가 한국어/영어 문서로 작성되어 있다.
   - 근거: 이 문서와 `docs/implementation-artifacts/v2-smoke-checklist.en.md`
-- [ ] v2 release readiness 문서가 완료/보류/blocked 범위를 분리한다.
-  - 계획 story: `V2-E5-ST03`
-- [ ] provider-neutral text scan 결과가 handoff note 또는 readiness 문서에 기록되어 있다.
-  - 계획 story: `V2-E5-ST04`
+- [x] v2 release readiness 문서가 완료/보류/blocked 범위를 분리한다.
+  - 근거: `docs/implementation-artifacts/v2-release-readiness.ko.md`
+- [x] provider-neutral text scan 결과가 handoff note 또는 readiness 문서에 기록되어 있다.
+  - 근거: `docs/implementation-artifacts/v2-release-readiness.ko.md`
 
 ## 최소 handoff 명령
 

@@ -12,11 +12,13 @@ Korean documentation is available in `README.md`. `README.ko.md` keeps the same 
 - The v2-2 camera permission smoke automation and v2-3 storage adapter persistence transition are complete.
 - The v2 planning baseline is written.
 - The v2 smoke checklist is written.
+- The v2 release readiness checkpoint is written.
 - Skill names, skill effects, hand-motion resources, and visual assets will proceed only after a separate domain source is approved.
 - Concrete frame recognizer binding remains v2 follow-up scope.
 - Final release readiness document: `docs/implementation-artifacts/v1-release-readiness.en.md`
 - v2-1 implementation record: `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`
 - v2 planning baseline: `docs/implementation-artifacts/v2-planning-baseline.en.md`
+- v2 release readiness checkpoint: `docs/implementation-artifacts/v2-release-readiness.en.md`
 
 ## Current Status
 
@@ -42,6 +44,7 @@ The repository is currently wired through the following playable flow:
 - result/history/rating persistence moved behind the storage adapter boundary
 - v2 epics, stories, implementation order, prerequisites, and technology stack documented
 - v2 camera/runtime/storage/matching smoke checklist documented
+- v2 release readiness checkpoint documented
 
 ## Run Locally
 
@@ -137,12 +140,13 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - battle results, compact action audit, ratings, and history now persist behind the backend storage adapter boundary
 - v2 planning baseline and blocked conditions for skill implementation are documented
 - v2 smoke checklist separates implemented, planned, and blocked items
+- v2 release readiness checkpoint separates full v2 release blockers
 
 ## Remaining Work
 
 - no v1 release blockers
 - v2 or follow-up scope
-  concrete frame recognizer binding and skill/resource implementation after the skill domain source is approved
+  concrete frame recognizer binding, storage operation docs, real two-player match hardening, and skill/resource implementation after the skill domain source is approved
 
 ## MVP Planning and QA
 
@@ -153,6 +157,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`: storage adapter persistence record.
 - `docs/implementation-artifacts/v2-planning-baseline.en.md`: v2 planning baseline record.
 - `docs/implementation-artifacts/v2-smoke-checklist.en.md`: v2 smoke checklist and blocked items.
+- `docs/implementation-artifacts/v2-release-readiness.en.md`: v2 checkpoint decision and full v2 release blockers.
 - `docs/planning-artifacts/v2/technology-stack.en.md`: v2 technology keep/defer decisions.
 - `docs/planning-artifacts/v2/epics.en.md`: v2 epics, boundaries, and acceptance signals.
 - `docs/planning-artifacts/v2/stories.en.md`: v2 story status and blocked conditions.

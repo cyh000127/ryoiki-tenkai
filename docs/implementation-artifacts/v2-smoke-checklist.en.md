@@ -120,10 +120,10 @@ Use this document for local v2 handoff verification. Skill names, skill effects,
   - Evidence: `docs/implementation-artifacts/v2-planning-baseline.en.md`
 - [x] v2 smoke checklist exists in Korean and English.
   - Evidence: this document and `docs/implementation-artifacts/v2-smoke-checklist.ko.md`
-- [ ] v2 release readiness document separates completed, deferred, and blocked scope.
-  - Planned story: `V2-E5-ST03`
-- [ ] Provider-neutral text scan result is recorded in the handoff note or readiness document.
-  - Planned story: `V2-E5-ST04`
+- [x] v2 release readiness document separates completed, deferred, and blocked scope.
+  - Evidence: `docs/implementation-artifacts/v2-release-readiness.en.md`
+- [x] Provider-neutral text scan result is recorded in the handoff note or readiness document.
+  - Evidence: `docs/implementation-artifacts/v2-release-readiness.en.md`
 
 ## Minimum Handoff Commands
 

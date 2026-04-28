@@ -183,18 +183,18 @@ Status values:
 
 ### V2-E5-ST03: Re-check release readiness
 
-- Status: planned
+- Status: done
 - User story: the release owner can judge v2 readiness from completed and deferred scope.
 - Scope: gate table, verification evidence, known gap, blocker list.
 - Acceptance criteria: blocking items and follow-up items are separated.
 - Dependencies: current v2 implementation set.
-- Verification: check commands and docs review.
+- Verification: `docs/implementation-artifacts/v2-release-readiness.en.md`, docs review, text scan.
 
 ### V2-E5-ST04: Maintain provider-neutral text scan
 
-- Status: planned
+- Status: done
 - User story: the team can check that no unapproved external provider or service names entered the repository before handoff.
 - Scope: docs, source copy, comments, contracts.
 - Acceptance criteria: targeted scan returns no matches outside lock/generated output.
 - Dependencies: repository scan command.
-- Verification: text scan.
+- Verification: `docs/implementation-artifacts/v2-release-readiness.en.md`, text scan.

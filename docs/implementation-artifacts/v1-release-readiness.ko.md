@@ -77,3 +77,7 @@
    - 구현 기록: `docs/implementation-artifacts/v2-planning-baseline.ko.md`
 6. [x] v2 smoke checklist를 갱신합니다.
    - 구현 기록: `docs/implementation-artifacts/v2-smoke-checklist.ko.md`
+7. [x] v2 release readiness를 재점검합니다.
+   - 구현 기록: `docs/implementation-artifacts/v2-release-readiness.ko.md`
+8. [x] provider-neutral scan 결과를 readiness 문서에 기록합니다.
+   - 구현 기록: `docs/implementation-artifacts/v2-release-readiness.ko.md`
