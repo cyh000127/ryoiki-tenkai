@@ -83,7 +83,7 @@ export type LeaderboardEntry = {
 
 export const DEFAULT_SKILLSET: Skillset = {
   skillsetId: "skillset_seal_basic",
-  name: "기본 인장술",
+  name: "주술회전 Phase 1 술식",
   skills: [
     {
       skillId: "pulse_strike",
@@ -108,6 +108,46 @@ export const DEFAULT_SKILLSET: Skillset = {
       manaCost: 15,
       damage: 18,
       cooldownTurn: 1
+    },
+    {
+      skillId: "jjk_gojo_red",
+      name: "赫",
+      gestureSequence: ["index_up"],
+      manaCost: 20,
+      damage: 24,
+      cooldownTurn: 1
+    },
+    {
+      skillId: "jjk_gojo_hollow_purple",
+      name: "虚式「茈」",
+      gestureSequence: ["pinch", "blue_orb", "red_orb", "orb_collision"],
+      manaCost: 55,
+      damage: 55,
+      cooldownTurn: 3
+    },
+    {
+      skillId: "jjk_gojo_infinite_void",
+      name: "領域展開「無量空処」",
+      gestureSequence: ["two_finger_cross", "domain_seal"],
+      manaCost: 60,
+      damage: 40,
+      cooldownTurn: 4
+    },
+    {
+      skillId: "jjk_sukuna_malevolent_shrine",
+      name: "領域展開「伏魔御厨子」",
+      gestureSequence: ["flat_prayer", "domain_seal"],
+      manaCost: 60,
+      damage: 50,
+      cooldownTurn: 4
+    },
+    {
+      skillId: "jjk_megumi_chimera_shadow_garden",
+      name: "領域展開「嵌合暗翳庭」",
+      gestureSequence: ["shadow_seal", "domain_seal"],
+      manaCost: 55,
+      damage: 42,
+      cooldownTurn: 4
     }
   ]
 };

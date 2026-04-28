@@ -98,3 +98,17 @@
 | 고죠 사토루 | `蒼`, `赫` | `無量空処` | STT 인식 후보가 명확하고 시각/효과 구분이 쉬움 |
 | 후시구로 메구미 | `玉犬`, `鵺` | `嵌合暗翳庭` | 소환형 스킬 구조를 검증하기 좋음 |
 | 이누마키 토게 | `止まれ`, `爆ぜろ` | 없음 또는 추후 | STT 콘셉트와 직접적으로 맞음 |
+
+## jutsu 자료 반영 결과
+
+`C:/Users/SSAFY/Documents/jutsu` 자료를 확인해 Phase 1 runtime catalog에는 다음 술식을 먼저 반영합니다.
+
+| 반영 ID | 술식 | 참고 자료 | normalized gesture token | 구현 상태 |
+| --- | --- | --- | --- | --- |
+| `jjk_gojo_red` | 赫 | `SAT0RU` index finger trigger | `index_up` | catalog 적용 |
+| `jjk_gojo_hollow_purple` | 虚式「茈」 | Hollow Purple AR orb collision concept / `SAT0RU` pinch trigger | `pinch`, `blue_orb`, `red_orb`, `orb_collision` | catalog 적용 |
+| `jjk_gojo_infinite_void` | 領域展開「無量空処」 | Domain Expansion recognition / SAT0RU cross gesture | `two_finger_cross`, `domain_seal` | catalog 적용 |
+| `jjk_sukuna_malevolent_shrine` | 領域展開「伏魔御厨子」 | Domain Expansion recognition / SAT0RU prayer gesture | `flat_prayer`, `domain_seal` | catalog 적용 |
+| `jjk_megumi_chimera_shadow_garden` | 領域展開「嵌合暗翳庭」 | Domain Expansion recognition dataset | `shadow_seal`, `domain_seal` | catalog 적용 |
+
+외부 데모의 소스 코드, 이미지, 모델 파일은 프로젝트에 복사하지 않습니다. 현재 반영 범위는 술식명, 전투 수치 초안, normalized gesture token 계약입니다. 실제 landmark 판정과 시각 효과는 별도 구현 단위로 진행합니다.

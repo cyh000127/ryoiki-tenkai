@@ -98,3 +98,17 @@ Hand shapes are future work.
 | Satoru Gojo | `蒼`, `赫` | `無量空処` | Clear STT candidates and easy visual/effect separation |
 | Megumi Fushiguro | `玉犬`, `鵺` | `嵌合暗翳庭` | Good summon-skill validation target |
 | Toge Inumaki | `止まれ`, `爆ぜろ` | None or later | Directly matches the STT concept |
+
+## jutsu Source Intake Result
+
+After reviewing `C:/Users/SSAFY/Documents/jutsu`, the Phase 1 runtime catalog now includes the following techniques first.
+
+| Runtime ID | Technique | Reference source | Normalized gesture token | Status |
+| --- | --- | --- | --- | --- |
+| `jjk_gojo_red` | Reversal Red | `SAT0RU` index finger trigger | `index_up` | catalog applied |
+| `jjk_gojo_hollow_purple` | Hollow Purple | Hollow Purple AR orb collision concept / `SAT0RU` pinch trigger | `pinch`, `blue_orb`, `red_orb`, `orb_collision` | catalog applied |
+| `jjk_gojo_infinite_void` | Domain Expansion: Unlimited Void | Domain Expansion recognition / SAT0RU cross gesture | `two_finger_cross`, `domain_seal` | catalog applied |
+| `jjk_sukuna_malevolent_shrine` | Domain Expansion: Malevolent Shrine | Domain Expansion recognition / SAT0RU prayer gesture | `flat_prayer`, `domain_seal` | catalog applied |
+| `jjk_megumi_chimera_shadow_garden` | Domain Expansion: Chimera Shadow Garden | Domain Expansion recognition dataset | `shadow_seal`, `domain_seal` | catalog applied |
+
+The external demo source code, images, and model files are not copied into this project. The current intake scope is technique names, draft battle numbers, and normalized gesture token contracts. Actual landmark classification and visual effects remain separate implementation units.

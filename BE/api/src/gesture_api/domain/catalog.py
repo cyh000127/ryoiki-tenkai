@@ -3,7 +3,7 @@ from gesture_api.domain.game import AnimsetDefinition, SkillDefinition, Skillset
 SKILLSETS = [
     SkillsetDefinition(
         skillset_id="skillset_seal_basic",
-        name="기본 인장술",
+        name="주술회전 Phase 1 술식",
         skills=[
             SkillDefinition(
                 skill_id="pulse_strike",
@@ -28,6 +28,46 @@ SKILLSETS = [
                 mana_cost=15,
                 damage=18,
                 cooldown_turn=1,
+            ),
+            SkillDefinition(
+                skill_id="jjk_gojo_red",
+                name="赫",
+                gesture_sequence=["index_up"],
+                mana_cost=20,
+                damage=24,
+                cooldown_turn=1,
+            ),
+            SkillDefinition(
+                skill_id="jjk_gojo_hollow_purple",
+                name="虚式「茈」",
+                gesture_sequence=["pinch", "blue_orb", "red_orb", "orb_collision"],
+                mana_cost=55,
+                damage=55,
+                cooldown_turn=3,
+            ),
+            SkillDefinition(
+                skill_id="jjk_gojo_infinite_void",
+                name="領域展開「無量空処」",
+                gesture_sequence=["two_finger_cross", "domain_seal"],
+                mana_cost=60,
+                damage=40,
+                cooldown_turn=4,
+            ),
+            SkillDefinition(
+                skill_id="jjk_sukuna_malevolent_shrine",
+                name="領域展開「伏魔御厨子」",
+                gesture_sequence=["flat_prayer", "domain_seal"],
+                mana_cost=60,
+                damage=50,
+                cooldown_turn=4,
+            ),
+            SkillDefinition(
+                skill_id="jjk_megumi_chimera_shadow_garden",
+                name="領域展開「嵌合暗翳庭」",
+                gesture_sequence=["shadow_seal", "domain_seal"],
+                mana_cost=55,
+                damage=42,
+                cooldown_turn=4,
             ),
         ],
     )

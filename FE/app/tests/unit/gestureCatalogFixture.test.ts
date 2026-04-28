@@ -43,7 +43,7 @@ describe("mvp gesture catalog contract", () => {
 
     expect(contract.tokenSetId).toBe("mvp_gesture_tokens_v1");
     expect(contractSkillset).toEqual(DEFAULT_SKILLSET);
-    expect(DEFAULT_SKILLSET.skills).toHaveLength(3);
+    expect(DEFAULT_SKILLSET.skills.length).toBeGreaterThanOrEqual(8);
     expect(
       DEFAULT_SKILLSET.skills.every((skill) =>
         skill.gestureSequence.every((token) => allowedTokens.has(token))
