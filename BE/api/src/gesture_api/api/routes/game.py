@@ -32,8 +32,8 @@ from gesture_api.api.schemas.websocket import (
     extract_battle_request_id,
     serialize_battle_event,
 )
-from gesture_api.domain.game import BattleSession
 from gesture_api.domain.errors import DomainError
+from gesture_api.domain.game import BattleSession
 from gesture_api.repositories.game_state import game_state_repository
 from gesture_api.services.battle_websocket import (
     BattleWebSocketEventHandler,
@@ -41,9 +41,9 @@ from gesture_api.services.battle_websocket import (
     build_ended_event,
     build_match_found_event,
     build_match_ready_event,
-    build_surrendered_event,
-    build_state_updated_event,
     build_started_event,
+    build_state_updated_event,
+    build_surrendered_event,
     build_timeout_event,
 )
 from pydantic import ValidationError
@@ -137,7 +137,12 @@ async def enter_matchmaking_queue(
             )
         )
     if queued_at is None:
-        raise DomainError("QUEUE_STATE_INVALID", "Queue state invalid", "Queue state is invalid.", 500)
+        raise DomainError(
+            "QUEUE_STATE_INVALID",
+            "Queue state invalid",
+            "Queue state is invalid.",
+            500,
+        )
     if battle_connection_manager.is_connected(player_id):
         await battle_connection_manager.send_event(player_id, build_match_ready_event(queued_at))
         battle = game_state_repository.create_match_for_player(player_id)
@@ -267,10 +272,16 @@ async def surrender_battle(
     if battle is None:
         raise DomainError("BATTLE_NOT_FOUND", "Battle not found", "Unknown battle session.", 404)
     if was_active and battle.status == "ENDED":
+        timed_out_player_id = (
+            battle.loser_player_id if battle.ended_reason == "TIMEOUT" else None
+        )
+        surrendered_player_id = (
+            player_id if battle.ended_reason == "SURRENDER" else None
+        )
         await emit_battle_resolution_events(
             battle,
-            timed_out_player_id=battle.loser_player_id if battle.ended_reason == "TIMEOUT" else None,
-            surrendered_player_id=player_id if battle.ended_reason == "SURRENDER" else None,
+            timed_out_player_id=timed_out_player_id,
+            surrendered_player_id=surrendered_player_id,
         )
     return ok(SurrenderResponse.from_session(battle, player_id))
 
@@ -363,8 +374,10 @@ async def battle_websocket(websocket: WebSocket, token: str | None = None) -> No
                 continue
 
             if isinstance(event, BattleSubmitActionEvent):
-                timed_out, timed_out_battle, timed_out_player_id = game_state_repository.resolve_timeout_if_due(
-                    event.payload.battle_session_id
+                timed_out, timed_out_battle, timed_out_player_id = (
+                    game_state_repository.resolve_timeout_if_due(
+                        event.payload.battle_session_id
+                    )
                 )
                 if timed_out and timed_out_battle is not None and timed_out_player_id is not None:
                     await websocket.send_json(
@@ -393,7 +406,10 @@ async def battle_websocket(websocket: WebSocket, token: str | None = None) -> No
 
             response = handler.handle(event)
             await websocket.send_json(serialize_battle_event(response))
-            if isinstance(event, BattleSubmitActionEvent) and isinstance(response, BattleActionResultEvent):
+            if isinstance(event, BattleSubmitActionEvent) and isinstance(
+                response,
+                BattleActionResultEvent,
+            ):
                 battle = game_state_repository.get_battle(event.payload.battle_session_id)
                 if battle is None:
                     continue

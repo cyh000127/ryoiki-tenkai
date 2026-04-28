@@ -7,11 +7,11 @@ from uuid import uuid4
 
 from gesture_api.domain.catalog import ANIMSETS, SKILLSETS, find_animset, find_skillset
 from gesture_api.domain.game import (
+    TURN_SECONDS,
     BattleLogEntry,
     BattleParticipant,
     BattleSession,
     PlayerRecord,
-    TURN_SECONDS,
 )
 from gesture_api.domain.rating import calculate_elo_delta
 
@@ -84,7 +84,10 @@ class InMemoryGameStateRepository:
         self._persist_state()
         return player
 
-    def enter_queue(self, player_id: str) -> tuple[str, datetime | None, BattleSession | None] | None:
+    def enter_queue(
+        self,
+        player_id: str,
+    ) -> tuple[str, datetime | None, BattleSession | None] | None:
         if player_id not in self.players:
             return None
         battle = self.get_player_battle(player_id)

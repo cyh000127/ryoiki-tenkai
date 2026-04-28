@@ -12,18 +12,18 @@ from gesture_api.api.schemas.websocket import (
     BattleMatchFoundPayload,
     BattleMatchReadyEvent,
     BattleMatchReadyPayload,
+    BattleOutboundEvent,
     BattlePingEvent,
     BattlePongEvent,
-    BattleSurrenderedEvent,
-    BattleSurrenderedPayload,
-    BattleStateUpdatedEvent,
-    BattleStateUpdatedPayload,
     BattleStartedEvent,
     BattleStartedPayload,
+    BattleStateUpdatedEvent,
+    BattleStateUpdatedPayload,
+    BattleSubmitActionEvent,
+    BattleSurrenderedEvent,
+    BattleSurrenderedPayload,
     BattleTimeoutEvent,
     BattleTimeoutPayload,
-    BattleOutboundEvent,
-    BattleSubmitActionEvent,
     serialize_battle_event,
 )
 from gesture_api.domain.game import BattleSession
@@ -185,11 +185,19 @@ def build_ended_event(
     battle: BattleSession,
     player_id: str,
 ) -> BattleEndedEvent:
-    if battle.winner_player_id is None or battle.loser_player_id is None or battle.ended_reason is None:
+    if (
+        battle.winner_player_id is None
+        or battle.loser_player_id is None
+        or battle.ended_reason is None
+    ):
         raise ValueError("Ended battle must include winner, loser, and ended reason.")
     rating_change = None
     if battle.rating_delta is not None:
-        rating_change = battle.rating_delta if battle.winner_player_id == player_id else -battle.rating_delta
+        rating_change = (
+            battle.rating_delta
+            if battle.winner_player_id == player_id
+            else -battle.rating_delta
+        )
     return BattleEndedEvent(
         payload=BattleEndedPayload(
             battle_session_id=battle.battle_session_id,

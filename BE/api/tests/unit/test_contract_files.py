@@ -32,7 +32,10 @@ def test_openapi_contract_covers_mvp_rest_surface() -> None:
         contract["paths"]["/api/v1/battles/{battleSessionId}/surrender"]["post"]["operationId"]
         == "surrenderBattle"
     )
-    assert "loadoutConfigured" in contract["components"]["schemas"]["PlayerProfileResponse"]["required"]
+    assert (
+        "loadoutConfigured"
+        in contract["components"]["schemas"]["PlayerProfileResponse"]["required"]
+    )
     assert "loadoutConfigured" in contract["components"]["schemas"]["LoadoutResponse"]["required"]
     assert "/gesture-commands" in contract["paths"]
     assert contract["paths"]["/gesture-commands"]["post"]["operationId"] == "createGestureCommand"
@@ -75,7 +78,9 @@ def test_battle_websocket_contract_contains_core_events() -> None:
     }.issubset(event_types)
 
     started_event = next(
-        option for option in schema["oneOf"] if option["properties"]["type"]["const"] == "battle.started"
+        option
+        for option in schema["oneOf"]
+        if option["properties"]["type"]["const"] == "battle.started"
     )
 
     assert {"battleSessionId", "playerSeat", "battle"} == set(
