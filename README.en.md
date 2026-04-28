@@ -66,6 +66,7 @@ The repository is currently wired through the following playable flow:
 - `pnpm`
 - Python `3.13+`
 - Node.js
+- Docker Compose
 
 ### Install
 
@@ -76,6 +77,24 @@ cp FE/app/.env.example FE/app/.env
 ```
 
 `FE/app/.env` is optional when the default backend URL `http://localhost:8000` is used.
+
+### Local Dependencies
+
+When running the backend and frontend directly on the host, start the SQL database and cache with compose first. This command starts `db` and `cache`, then applies SQL migrations.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\dev-deps.ps1
+```
+
+To start the whole runtime in containers, use this command. `api` starts after the DB health check and migration finish.
+
+```bash
+docker compose up --build
+```
+
+Do not copy `BE/api/.env.example` directly to `BE/api/.env` when running the backend on the host. Its database host is the compose container host `db`. Host-run backend uses the default `localhost:5432` setting or an explicit `DATABASE_URL=postgresql+psycopg://app:app@localhost:5432/gesture_skill`.
+
+Opening a `POST`-only API directly in a browser can return `405 Method Not Allowed`. For example, queue enter is `POST /api/v1/matchmaking/queue`.
 
 ### Backend
 
@@ -105,6 +124,7 @@ Optional PowerShell helper scripts are still available:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\bootstrap.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\dev-deps.ps1 -PlanOnly
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\check-boundaries.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\backend-check.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.ps1

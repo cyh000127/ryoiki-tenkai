@@ -76,6 +76,7 @@
 - `pnpm`
 - Python `3.13+`
 - Node.js
+- Docker Compose
 
 ### 의존성 설치
 
@@ -86,6 +87,24 @@ cp FE/app/.env.example FE/app/.env
 ```
 
 `FE/app/.env`는 선택 사항이며, 기본값은 `http://localhost:8000`입니다.
+
+### 로컬 의존성 실행
+
+백엔드와 프론트엔드를 호스트에서 직접 실행할 때도 SQL database와 cache는 compose로 먼저 띄웁니다. 이 명령은 `db`, `cache`를 시작하고 SQL migration을 적용합니다.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\dev-deps.ps1
+```
+
+전체 런타임을 container로 한번에 띄울 때는 아래 명령을 사용합니다. `api`는 DB health check와 migration 완료 후 시작됩니다.
+
+```bash
+docker compose up --build
+```
+
+호스트에서 백엔드를 직접 실행할 때는 `BE/api/.env.example`을 그대로 `BE/api/.env`로 복사하지 마세요. 해당 파일의 database host는 compose container용 `db`입니다. 직접 실행은 기본 `localhost:5432` 설정을 사용하거나 `DATABASE_URL=postgresql+psycopg://app:app@localhost:5432/gesture_skill`을 지정합니다.
+
+참고로 브라우저에서 `POST` 전용 API를 직접 열면 `405 Method Not Allowed`가 정상적으로 나올 수 있습니다. 예를 들어 queue enter는 `POST /api/v1/matchmaking/queue`입니다.
 
 ### 백엔드 실행
 
@@ -117,6 +136,7 @@ PowerShell 보조 스크립트도 유지하고 있습니다.
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\bootstrap.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\dev-deps.ps1 -PlanOnly
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\check-boundaries.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\backend-check.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.ps1
