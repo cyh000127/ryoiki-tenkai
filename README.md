@@ -113,55 +113,120 @@
 
 ### 준비물
 
-- `uv`
-- `pnpm`
 - Python `3.13+`
 - Node.js
+- `uv`
+- `pnpm`
 - Docker Compose
 
-### 의존성 설치
+### 처음 한 번만 설치
 
-```bash
+저장소 루트에서 실행합니다.
+
+```powershell
 uv sync
 pnpm --dir FE/app install
-cp FE/app/.env.example FE/app/.env
 ```
 
-`FE/app/.env`는 선택 사항이며, 기본값은 `http://localhost:8000`입니다.
+프론트 환경 파일은 선택 사항입니다. 기본 API 주소가 `http://localhost:8000`이라면 없어도 됩니다.
 
-### 로컬 의존성 실행
+```powershell
+Copy-Item FE/app/.env.example FE/app/.env
+```
 
-백엔드와 프론트엔드를 호스트에서 직접 실행할 때도 SQL database와 cache는 compose로 먼저 띄웁니다. 이 명령은 `db`, `cache`를 시작하고 SQL migration을 적용합니다.
+### 빠른 실행: 전체 런타임을 Compose로 실행
+
+프론트, 백엔드, PostgreSQL, cache, migration을 한 번에 띄우는 방식입니다.
+
+```powershell
+docker compose up --build
+```
+
+실행 후 확인합니다.
+
+- Frontend: `http://localhost:5173`
+- Backend health: `http://localhost:8000/healthz`
+- API docs: `http://localhost:8000/docs`
+- PostgreSQL: `localhost:5432`
+- Cache: `localhost:6379`
+
+Compose 실행 순서는 아래와 같습니다.
+
+1. `db`가 PostgreSQL을 시작합니다.
+2. `cache`가 시작됩니다.
+3. `db-migrate`가 SQL migration을 적용합니다.
+4. `api`가 migration 완료 후 시작됩니다.
+5. `web`이 정적 프론트엔드를 제공합니다.
+
+현재 game state persistence 기본 backend는 PostgreSQL입니다. Compose 환경에서는 `BE/api/.env.example`의 `GAME_STATE_STORAGE_BACKEND=sql`과 `DATABASE_URL=postgresql+psycopg://app:app@db:5432/gesture_skill`을 사용합니다.
+
+중지:
+
+```powershell
+docker compose down
+```
+
+DB 데이터까지 초기화:
+
+```powershell
+docker compose down -v
+```
+
+### 개발 실행: DB만 Compose로 켜고 백엔드/프론트는 호스트에서 실행
+
+개발 중 hot reload가 필요하면 이 방식을 권장합니다.
+
+1. PostgreSQL/cache와 migration을 준비합니다.
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\dev-deps.ps1
 ```
 
-전체 런타임을 container로 한번에 띄울 때는 아래 명령을 사용합니다. `api`는 DB health check와 migration 완료 후 시작됩니다.
+2. 백엔드를 실행합니다.
 
-```bash
-docker compose up --build
-```
-
-game state persistence는 기본적으로 PostgreSQL storage adapter를 사용합니다. Docker Compose 실행 시 `api`는 `db-migrate` 완료 후 시작되고 `GAME_STATE_STORAGE_BACKEND=sql`로 동작합니다.
-
-호스트에서 백엔드를 직접 실행할 때는 `BE/api/.env.example`을 그대로 `BE/api/.env`로 복사하지 마세요. 해당 파일의 database host는 compose container용 `db`입니다. 직접 실행은 기본 `localhost:5432` 설정을 사용하거나 `DATABASE_URL=postgresql+psycopg://app:app@localhost:5432/gesture_skill`을 지정합니다. 임시 JSON 저장이 필요할 때만 `GAME_STATE_STORAGE_BACKEND=json`을 명시합니다.
-
-참고로 브라우저에서 `POST` 전용 API를 직접 열면 `405 Method Not Allowed`가 정상적으로 나올 수 있습니다. 예를 들어 queue enter는 `POST /api/v1/matchmaking/queue`입니다.
-
-### 백엔드 실행
-
-```bash
+```powershell
+$env:DATABASE_URL = "postgresql+psycopg://app:app@localhost:5432/gesture_skill"
+$env:GAME_STATE_STORAGE_BACKEND = "sql"
 uv run --package gesture-api uvicorn gesture_api.main:app --app-dir BE/api/src --reload --host 0.0.0.0 --port 8000
 ```
 
-### 프론트엔드 실행
+3. 새 터미널에서 프론트엔드를 실행합니다.
 
-```bash
+```powershell
 pnpm --dir FE/app dev
 ```
 
-브라우저에서 `http://localhost:5173`을 열면 됩니다.
+4. 브라우저에서 접속합니다.
+
+```text
+http://localhost:5173
+```
+
+호스트에서 백엔드를 직접 실행할 때는 `BE/api/.env.example`을 그대로 `BE/api/.env`로 복사하지 마세요. `.env.example`의 database host는 Compose container 내부용 `db`입니다. 호스트 실행에서는 `localhost:5432`를 사용해야 합니다.
+
+### 상태 확인
+
+Compose 서비스 상태:
+
+```powershell
+docker compose ps
+```
+
+백엔드 health:
+
+```powershell
+Invoke-RestMethod http://localhost:8000/healthz
+```
+
+정상이라면 `stateStorage`가 `sql`로 표시됩니다.
+
+### 자주 헷갈리는 점
+
+- 브라우저에서 `POST` 전용 API를 직접 열면 `405 Method Not Allowed`가 정상입니다.
+- 예를 들어 매칭 진입은 `POST /api/v1/matchmaking/queue`라서 주소창으로 열면 안 됩니다.
+- `http://localhost:8000/docs`에서 API를 직접 호출할 수 있습니다.
+- 기존 JSON 저장은 기본 경로가 아닙니다. 임시 JSON 모드가 필요할 때만 `GAME_STATE_STORAGE_BACKEND=json`을 명시합니다.
+- DB를 완전히 초기화하려면 `docker compose down -v` 후 다시 `docker compose up --build`를 실행합니다.
 
 ## 검증 명령
 
