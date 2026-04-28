@@ -1,3 +1,9 @@
+import {
+  createBrowserSpeechTranscriptRecognizer,
+  type BrowserSpeechRecognitionStatus,
+  type BrowserSpeechTranscriptRecognizer
+} from "../../../shared/speech/browserSpeechRecognition";
+
 export const JAPANESE_STARTUP_COMMANDS = [
   "起動して",
   "スタート",
@@ -40,50 +46,7 @@ type StartupVoiceCommandRecognizerOptions = {
   onStatusChange?: (status: StartupVoiceRecognitionStatus) => void;
 };
 
-type StartupSpeechRecognitionAlternative = {
-  transcript: string;
-};
-
-type StartupSpeechRecognitionResult = {
-  length: number;
-  [index: number]: StartupSpeechRecognitionAlternative | undefined;
-};
-
-type StartupSpeechRecognitionResultList = {
-  length: number;
-  [index: number]: StartupSpeechRecognitionResult | undefined;
-};
-
-type StartupSpeechRecognitionResultEvent = {
-  results: StartupSpeechRecognitionResultList;
-};
-
-type StartupSpeechRecognitionErrorEvent = {
-  error?: string;
-};
-
-type StartupSpeechRecognition = {
-  continuous?: boolean;
-  interimResults: boolean;
-  lang: string;
-  maxAlternatives: number;
-  onend: (() => void) | null;
-  onerror: ((event: StartupSpeechRecognitionErrorEvent) => void) | null;
-  onresult: ((event: StartupSpeechRecognitionResultEvent) => void) | null;
-  abort?: () => void;
-  start: () => void;
-  stop: () => void;
-};
-
-export type StartupSpeechRecognitionConstructor = new () => StartupSpeechRecognition;
-
-type StartupSpeechRecognitionWindow = Window & {
-  SpeechRecognition?: StartupSpeechRecognitionConstructor;
-  webkitSpeechRecognition?: StartupSpeechRecognitionConstructor;
-};
-
 const textNoisePattern = /[\s\u3000、。,.!！?？「」『』"“”‘’'・/\\|:：;；()[\]{}【】]/g;
-const permissionErrorNames = new Set(["not-allowed", "service-not-allowed", "permission-denied"]);
 
 export function normalizeJapaneseCommandText(text: string): string {
   return text.trim().toLocaleLowerCase("ja-JP").replace(textNoisePattern, "");
@@ -107,111 +70,60 @@ export function matchJapaneseStartupCommand(
   );
 }
 
-export function getBrowserSpeechRecognitionConstructor(
-  win: Window | undefined = typeof window === "undefined" ? undefined : window
-): StartupSpeechRecognitionConstructor | null {
-  if (!win) {
-    return null;
-  }
-
-  const speechWindow = win as StartupSpeechRecognitionWindow;
-  return speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition ?? null;
-}
-
 export function createJapaneseStartupVoiceCommandRecognizer(
   options: StartupVoiceCommandRecognizerOptions,
   win: Window | undefined = typeof window === "undefined" ? undefined : window
 ): StartupVoiceCommandRecognizer {
-  let recognition: StartupSpeechRecognition | null = null;
-  let settled = false;
-  let stopped = false;
+  let recognizer: BrowserSpeechTranscriptRecognizer | null = null;
 
   return {
     async start() {
-      const RecognitionConstructor = getBrowserSpeechRecognitionConstructor(win);
+      recognizer = createBrowserSpeechTranscriptRecognizer(
+        {
+          lang: "ja-JP",
+          onEndWithoutTranscript: () => {
+            options.onStatusChange?.("rejected");
+          },
+          onStatusChange: (status) => {
+            options.onStatusChange?.(toStartupVoiceRecognitionStatus(status));
+          },
+          onTranscript: (transcript) => {
+            handleTranscript(transcript, options);
+          }
+        },
+        win
+      );
 
-      if (!RecognitionConstructor) {
-        options.onStatusChange?.("unsupported");
-        return false;
-      }
-
-      recognition = new RecognitionConstructor();
-      recognition.lang = "ja-JP";
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-      recognition.continuous = false;
-      settled = false;
-      stopped = false;
-
-      recognition.onresult = (event) => {
-        const transcript = getFirstTranscript(event.results);
-        const matchedCommand = matchJapaneseStartupCommand(
-          transcript,
-          options.commands ?? JAPANESE_STARTUP_COMMANDS
-        );
-        const status = matchedCommand ? "matched" : "rejected";
-
-        settled = true;
-        options.onResult({
-          transcript,
-          matchedCommand,
-          status
-        });
-        options.onStatusChange?.(status);
-      };
-
-      recognition.onerror = (event) => {
-        settled = true;
-        options.onStatusChange?.(getErrorStatus(event.error));
-      };
-
-      recognition.onend = () => {
-        recognition = null;
-
-        if (!settled && !stopped) {
-          options.onStatusChange?.("rejected");
-        }
-      };
-
-      try {
-        options.onStatusChange?.("listening");
-        recognition.start();
-        return true;
-      } catch {
-        settled = true;
-        recognition = null;
-        options.onStatusChange?.("error");
-        return false;
-      }
+      return recognizer.start();
     },
     stop() {
-      stopped = true;
-      recognition?.stop();
-      recognition = null;
+      recognizer?.stop();
+      recognizer = null;
     }
   };
 }
 
-function getFirstTranscript(results: StartupSpeechRecognitionResultList): string {
-  for (let resultIndex = 0; resultIndex < results.length; resultIndex += 1) {
-    const result = results[resultIndex];
+function handleTranscript(transcript: string, options: StartupVoiceCommandRecognizerOptions) {
+  const matchedCommand = matchJapaneseStartupCommand(
+    transcript,
+    options.commands ?? JAPANESE_STARTUP_COMMANDS
+  );
+  const status = matchedCommand ? "matched" : "rejected";
 
-    if (!result) {
-      continue;
-    }
-
-    for (let alternativeIndex = 0; alternativeIndex < result.length; alternativeIndex += 1) {
-      const transcript = result[alternativeIndex]?.transcript.trim();
-
-      if (transcript) {
-        return transcript;
-      }
-    }
-  }
-
-  return "";
+  options.onResult({
+    transcript,
+    matchedCommand,
+    status
+  });
+  options.onStatusChange?.(status);
 }
 
-function getErrorStatus(errorName: string | undefined): StartupVoiceRecognitionStatus {
-  return errorName && permissionErrorNames.has(errorName) ? "blocked" : "error";
+function toStartupVoiceRecognitionStatus(
+  status: BrowserSpeechRecognitionStatus
+): StartupVoiceRecognitionStatus {
+  if (status === "listening") {
+    return "listening";
+  }
+
+  return status;
 }

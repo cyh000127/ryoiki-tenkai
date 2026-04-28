@@ -33,6 +33,14 @@
 - Dependencies: player profile query, loadout configured flag.
 - Verification: workspace UI regression test.
 
+### V4-E1-ST04: STT 모듈 경계 분리
+
+- Status: done
+- Scope: 브라우저 speech recognition 세부 타입과 lifecycle을 공용 transcript recognizer port로 분리.
+- Acceptance criteria: 시동 명령 모델은 STT 구현 세부를 직접 다루지 않고 transcript와 상태만 받는다.
+- Dependencies: V4-E1-ST01.
+- Verification: browser speech module unit test, startup voice command unit test.
+
 ## V4-E2: Command Customization Readiness
 
 ### V4-E2-ST01: 명령어 소스 분리
@@ -50,6 +58,14 @@
 - Acceptance criteria: 사용자가 직접 문구를 등록하고 활성화할 수 있다.
 - Dependencies: 설정 저장 정책과 개인정보 보존 기준.
 - Verification: future settings test.
+
+### V4-E2-ST03: STT 이후 손동작 입력 활성화 플로우
+
+- Status: blocked
+- Scope: STT 명령 인식 후 손동작 입력을 활성화하고, 승인된 스킬 도메인에 따라 skill action 후보를 판정.
+- Acceptance criteria: STT는 trigger만 담당하고, 손동작 sequence와 스킬 효과는 approved skill domain source를 따른다.
+- Dependencies: approved skill domain source.
+- Verification: future gesture-to-skill integration test.
 
 ## V4-E3: Voice Startup Release Evidence
 

@@ -33,6 +33,14 @@ Status values:
 - Dependencies: player profile query and loadout configured flag.
 - Verification: workspace UI regression test.
 
+### V4-E1-ST04: Separate STT Module Boundary
+
+- Status: done
+- Scope: move browser speech recognition types and lifecycle into a shared transcript recognizer port.
+- Acceptance criteria: the startup command model receives only transcript and status without owning STT implementation details.
+- Dependencies: V4-E1-ST01.
+- Verification: browser speech module unit test and startup voice command unit test.
+
 ## V4-E2: Command Customization Readiness
 
 ### V4-E2-ST01: Separate Command Source
@@ -50,6 +58,14 @@ Status values:
 - Acceptance criteria: a user can register and activate custom phrases.
 - Dependencies: settings storage policy and privacy retention rules.
 - Verification: future settings test.
+
+### V4-E2-ST03: Activate Hand-Motion Input After STT
+
+- Status: blocked
+- Scope: after an STT trigger is recognized, activate hand-motion input and validate the skill action candidate against the approved skill domain.
+- Acceptance criteria: STT only acts as a trigger; hand-motion sequences and skill effects follow the approved skill domain source.
+- Dependencies: approved skill domain source.
+- Verification: future gesture-to-skill integration test.
 
 ## V4-E3: Voice Startup Release Evidence
 

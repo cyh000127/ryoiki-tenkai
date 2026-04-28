@@ -2,10 +2,10 @@ import {
   createJapaneseStartupVoiceCommandRecognizer,
   matchJapaneseStartupCommand,
   normalizeJapaneseCommandText,
-  type StartupSpeechRecognitionConstructor,
   type StartupVoiceRecognitionResult,
   type StartupVoiceRecognitionStatus
 } from "../../src/features/gesture-session/model/startupVoiceCommand";
+import type { BrowserSpeechRecognitionConstructor } from "../../src/shared/speech/browserSpeechRecognition";
 
 type MockRecognitionInstance = {
   continuous?: boolean;
@@ -52,7 +52,7 @@ function createMockRecognitionWindow() {
   return {
     instances,
     win: {
-      SpeechRecognition: Constructor as unknown as StartupSpeechRecognitionConstructor
+      SpeechRecognition: Constructor as unknown as BrowserSpeechRecognitionConstructor
     } as unknown as Window
   };
 }

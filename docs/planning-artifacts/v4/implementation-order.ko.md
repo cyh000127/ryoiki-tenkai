@@ -2,7 +2,8 @@
 
 ## 1. 명령어 모델
 
-- `ja-JP` speech recognition wrapper를 feature model로 분리한다.
+- 브라우저 speech recognition wrapper를 공용 transcript recognizer port로 분리한다.
+- `ja-JP` 시동 명령 모델은 공용 STT port를 사용한다.
 - 기본 명령어 배열과 정규화 함수를 작성한다.
 - 키워드 포함 매칭을 단위 테스트로 고정한다.
 
@@ -26,6 +27,12 @@
 - v4 계획 문서와 구현 기록을 한국어/영어로 추가한다.
 - README에 v4 링크와 현재 상태를 추가한다.
 - frontend typecheck, unit test, build를 실행한다.
+
+## 5. 추후 손동작/스킬 연결 기준
+
+- STT는 trigger phrase 인식까지만 담당한다.
+- trigger 성공 후 손동작 입력을 활성화한다.
+- 손동작 sequence와 skill action 판정은 approved skill domain source가 준비된 뒤 구현한다.
 
 ## 커밋 단위
 

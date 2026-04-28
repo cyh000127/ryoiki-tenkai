@@ -3,6 +3,7 @@
 ## Product Conditions
 
 - Japanese startup commands are an app-entry convenience feature, not battle skill activation.
+- Japanese STT success is only a trigger for starting hand-motion input.
 - Work-specific unique phrases are excluded from defaults.
 - Commands are limited to basic Japanese commands and generic concept commands.
 
@@ -21,5 +22,6 @@
 ## Stop Conditions
 
 - If the request shifts to battle skill activation, pause until the skill domain source is approved.
+- If STT success needs to validate skills through hand motion, pause until the approved skill domain source exists.
 - If account-level custom command storage is needed, define privacy retention rules first.
 - If an out-of-browser STT provider becomes necessary, decide cost, key management, and retention policy separately.

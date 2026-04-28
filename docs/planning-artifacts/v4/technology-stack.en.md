@@ -7,6 +7,7 @@ This document records the technology choices for the Japanese voice startup comm
 | Area | Decision | Rationale |
 | --- | --- | --- |
 | Speech recognition | Web Speech API-compatible browser speech recognition | Enables `ja-JP` recognition without a paid external STT service |
+| STT module boundary | Shared browser speech transcript port | Allows future trigger flows to reuse the same STT boundary outside startup commands |
 | Runtime location | Frontend only | Startup routing does not need server-authoritative battle validation, and this avoids server cost and key management |
 | Language | `ja-JP` | Matches Japanese startup commands |
 | Matching | Keyword containment matching | Keeps the MVP deterministic without natural-language intent analysis |
@@ -17,6 +18,8 @@ This document records the technology choices for the Japanese voice startup comm
 
 - The startup command only routes to the next valid step: guest creation, loadout, or queue start.
 - Voice startup is not connected to battle actions, skill effects, or gesture sequence validation.
+- STT only determines whether a trigger phrase was recognized; hand-motion recognition and skill validation stay in separate modules.
+- The intended future flow is `STT command recognized -> hand-motion input activated -> approved skill domain validates the result`.
 - The transcript stays in frontend UI/test state and is not sent to the server.
 - Work-specific unique phrases are excluded from the default command set.
 
