@@ -1,6 +1,6 @@
 # v2-11 recognizer runtime port smoke 구현 기록
 
-이 문서는 concrete frame recognizer runtime 선택 없이, 기존 camera permission smoke가 `LiveGestureFrameRuntime` port를 실제 브라우저 경로에서 통과하도록 보강한 기록입니다.
+이 문서는 concrete frame recognizer runtime 선택 없이, 기존 camera permission smoke가 `LiveGestureFrameRuntime` port를 실제 브라우저 경로에서 통과하도록 보강한 기록입니다. 이후 `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.ko.md`에서 runtime binding이 완료되었습니다.
 
 ## 범위
 
@@ -20,7 +20,7 @@
 
 ## 보류 항목
 
-- `V2-E1-ST02`의 concrete runtime 선택과 package binding은 아직 blocked입니다.
+- `V2-E1-ST02`의 concrete runtime 선택과 binding은 이 단계에서는 blocked였고, 이후 `v2-12`에서 완료되었습니다.
 - 이 smoke는 runtime port lifecycle만 검증하며, 실제 recognizer 품질이나 gesture accuracy를 검증하지 않습니다.
 - 스킬명, 스킬 효과, resource key, visual asset은 구현하지 않았습니다.
 
@@ -33,6 +33,5 @@
 
 ## 다음 단계
 
-1. runtime 선택이 승인되면 fake runtime smoke와 별개로 concrete runtime smoke 또는 unit fixture를 추가합니다.
-2. selected runtime과 선택 근거를 `docs/planning-artifacts/v2/technology-stack.ko.md`에 기록합니다.
-3. `V2-E1-ST02` 상태는 concrete runtime 선택 전까지 blocked로 유지합니다.
+1. 후속 기록은 `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.ko.md`를 확인합니다.
+2. 다른 runtime으로 교체하려면 fake runtime smoke와 별개로 concrete runtime smoke 또는 unit fixture를 추가합니다.

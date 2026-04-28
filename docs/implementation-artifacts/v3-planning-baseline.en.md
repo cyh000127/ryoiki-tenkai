@@ -1,6 +1,6 @@
 # v3 Planning Baseline Implementation Record
 
-v3 starts without unblocking the v2 blocked items. Its scope is to package the current implementation for repeatable verification and handoff.
+v3 started without unblocking the v2 blocked items. Its scope is to package the current implementation for repeatable verification and handoff. Recognizer runtime binding was later completed in v2-12.
 
 ## Documents Added
 
@@ -14,7 +14,7 @@ v3 starts without unblocking the v2 blocked items. Its scope is to package the c
 ## Scope Decision
 
 - Included in v3: handoff verification automation, runtime health summary, smoke/readiness documentation.
-- Excluded from v3: concrete frame recognizer runtime selection, skill/resource implementation, and unapproved asset or provider copy.
+- Excluded from v3: skill/resource implementation and unapproved asset or provider copy.
 
 ## Verification
 

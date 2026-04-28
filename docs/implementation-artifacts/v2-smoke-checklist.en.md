@@ -83,9 +83,10 @@ Use this document for local v2 handoff verification. Skill names, skill effects,
   - Evidence: `docs/implementation-artifacts/v2-10-recognizer-runtime-port.en.md`
 - [x] Camera permission smoke verifies the fake runtime port start/stop path.
   - Evidence: `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.en.md`
-- Blocked: concrete frame recognizer adapter lifecycle smoke.
-  - Blocker: recognizer runtime selection is not approved yet.
-  - Related story: `V2-E1-ST02`
+- [x] The browser frame signal runtime is connected as the default live recognizer runtime.
+  - Evidence: `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.en.md`, `FE/app/tests/unit/liveGestureRecognizer.test.ts`
+- [x] Stability resets when frame signal drops, and raw frames are not sent to the backend.
+  - Evidence: `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.en.md`
 
 ## v2 Persistence
 

@@ -1,6 +1,6 @@
 # v2-10 Recognizer Runtime Port Implementation Record
 
-This document records the internal live camera adapter port split. It does not unblock `V2-E1-ST02`; it only prepares a narrow place where a concrete frame recognizer runtime can be bound later.
+This document records the internal live camera adapter port split. At the time, it did not unblock `V2-E1-ST02`; it only prepared a narrow place where a concrete frame recognizer runtime could be bound later. Runtime binding was later completed in `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.en.md`.
 
 ## Scope
 
@@ -26,7 +26,7 @@ This document records the internal live camera adapter port split. It does not u
 
 ## Deferred
 
-- Concrete runtime selection and package binding for `V2-E1-ST02` remain blocked.
+- Concrete runtime selection and binding for `V2-E1-ST02` were blocked at this stage and were later completed in `v2-12`.
 - Runtime candidate comparison, bundle impact, and browser support validation require separate approval.
 - Skill names, skill effects, resource keys, and visual assets were not implemented.
 
@@ -42,6 +42,5 @@ This document records the internal live camera adapter port split. It does not u
 
 ## Next Step
 
-1. Add a `LiveGestureFrameRuntime` implementation after the runtime choice is approved.
-2. Record the selected runtime and rationale in `docs/planning-artifacts/v2/technology-stack.en.md`.
-3. Add a concrete runtime smoke or unit fixture before reviewing the `V2-E1-ST02` status again.
+1. Check `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.en.md` for the follow-up record.
+2. If replacing the runtime, record the rationale and fallback in `docs/planning-artifacts/v2/technology-stack.en.md` first.

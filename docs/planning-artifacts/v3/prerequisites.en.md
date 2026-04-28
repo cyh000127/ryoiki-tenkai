@@ -3,7 +3,7 @@
 ## Global Prerequisites
 
 - Check blocked items in v2 readiness first.
-- Do not implement actual runtime binding unless the concrete frame recognizer runtime choice is approved.
+- Check recognizer runtime binding against the v2-12 implementation record.
 - Do not start skill/resource implementation without an approved skill domain source.
 - Documentation and product copy must not include unapproved external provider or service names.
 - Do not send or store raw camera frames, raw landmarks, or raw tracking streams in the backend.
@@ -25,7 +25,7 @@
 
 ## Stop Conditions
 
-- A concrete runtime candidate or skill domain source is missing but the work must be marked complete.
+- A skill domain source is missing but skill/resource implementation must be marked complete.
 - The provider-neutral scan finds an unapproved external name or service name.
 - The health response exposes a secret or raw recognition data.
 - Verification commands cannot be reproduced locally.

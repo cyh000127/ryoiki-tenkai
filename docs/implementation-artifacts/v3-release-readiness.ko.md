@@ -11,7 +11,8 @@
 - 이유:
   - v3 범위의 handoff 검증 자동화와 runtime health summary는 구현과 테스트가 완료되었습니다.
   - v3 smoke checklist와 readiness 문서가 blocked carryover를 분리합니다.
-  - concrete recognizer runtime 선택과 skill/resource domain source는 아직 승인되지 않았으므로 full feature release blocker로 남습니다.
+  - recognizer runtime binding은 이후 v2-12에서 완료되었습니다.
+  - skill/resource domain source는 아직 승인되지 않았으므로 full feature release blocker로 남습니다.
 
 ## 완료된 v3 checkpoint
 
@@ -35,7 +36,6 @@
 
 ## full feature release blockers
 
-- `V2-E1-ST02`: concrete frame recognizer runtime 선택 및 adapter binding.
 - `V2-E4-ST01`부터 `V2-E4-ST04`: approved skill domain source 이후의 skill/resource intake.
 
 ## 검증
@@ -52,5 +52,5 @@
 
 V3 범위는 완료되었습니다. 다음 작업은 아래 승인 조건이 충족된 뒤 별도 버전 또는 follow-up으로 진행합니다.
 
-1. concrete recognizer runtime 선택 승인.
-2. approved skill domain source 확정.
+1. approved skill domain source 확정.
+2. approved source를 fixture, contract, frontend rendering에 반영.

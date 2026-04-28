@@ -3,7 +3,7 @@
 ## 전역 선행조건
 
 - v2 readiness의 blocked 항목을 먼저 확인합니다.
-- concrete frame recognizer runtime 선택이 승인되지 않았으면 실제 runtime binding을 구현하지 않습니다.
+- recognizer runtime binding은 v2-12 구현 기록을 기준으로 확인합니다.
 - approved skill domain source가 없으면 skill/resource 구현을 시작하지 않습니다.
 - 문서와 product copy는 승인되지 않은 외부 제공자명 또는 서비스명을 포함하지 않습니다.
 - raw camera frame, raw landmark, raw tracking stream은 backend로 보내거나 저장하지 않습니다.
@@ -25,7 +25,7 @@
 
 ## 구현 중단 조건
 
-- concrete runtime 후보나 skill domain source가 없는데 구현 완료로 표시해야 합니다.
+- skill domain source가 없는데 skill/resource 구현을 완료로 표시해야 합니다.
 - provider-neutral scan에서 승인되지 않은 외부명 또는 서비스명이 발견됩니다.
 - health 응답이 secret 또는 raw recognition data를 노출합니다.
 - 검증 command가 local에서 재현되지 않습니다.

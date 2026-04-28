@@ -1,6 +1,6 @@
 # v3 스모크 체크리스트
 
-이 문서는 v3 handoff 안정화 범위의 로컬 검증 checklist입니다. concrete frame recognizer runtime 선택과 skill/resource 구현은 승인 전까지 blocked로 유지합니다.
+이 문서는 v3 handoff 안정화 범위의 로컬 검증 checklist입니다. skill/resource 구현은 승인 전까지 blocked로 유지합니다. recognizer runtime binding은 이후 v2-12에서 완료되었습니다.
 
 ## 스냅샷
 
@@ -49,13 +49,10 @@
 - [x] boundary check가 통과한다.
 - [x] compose config가 유효하다.
 - [x] provider-neutral targeted text scan이 통과한다.
-- [x] v3 readiness가 blocked domain/runtime 범위를 분리한다.
+- [x] v3 readiness가 blocked domain 범위를 분리한다.
 
 ## Blocked Carryover
 
-- Blocked: concrete frame recognizer runtime 선택 및 binding.
-  - blocker: runtime 선택 승인 필요.
-  - 관련 story: `V2-E1-ST02`.
 - Blocked: skill/resource domain intake.
   - blocker: approved skill domain source 필요.
   - 관련 story: `V2-E4-ST01`부터 `V2-E4-ST04`.

@@ -83,9 +83,10 @@
   - 근거: `docs/implementation-artifacts/v2-10-recognizer-runtime-port.ko.md`
 - [x] camera permission smoke가 fake runtime port start/stop 경로를 검증한다.
   - 근거: `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.ko.md`
-- Blocked: concrete frame recognizer adapter lifecycle smoke.
-  - blocker: recognizer runtime 선택이 아직 확정되지 않음.
-  - 관련 story: `V2-E1-ST02`
+- [x] browser frame signal runtime이 기본 live recognizer runtime으로 연결되어 있다.
+  - 근거: `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.ko.md`, `FE/app/tests/unit/liveGestureRecognizer.test.ts`
+- [x] frame signal drop 시 stability가 reset되고 raw frame은 backend로 전송되지 않는다.
+  - 근거: `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.ko.md`
 
 ## v2 Persistence
 

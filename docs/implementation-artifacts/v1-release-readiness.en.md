@@ -103,11 +103,13 @@ These items are not v1 release blockers and should be handled in v2 or follow-up
    - Implementation record: `docs/implementation-artifacts/v2-10-recognizer-runtime-port.en.md`
 19. [x] Harden the recognizer runtime port smoke.
    - Implementation record: `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.en.md`
-20. [x] Draft the v3 planning baseline.
+20. [x] Connect the browser frame signal runtime as the default live recognizer runtime.
+   - Implementation record: `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.en.md`
+21. [x] Draft the v3 planning baseline.
    - Implementation record: `docs/implementation-artifacts/v3-planning-baseline.en.md`
-21. [x] Write the v3 handoff verification script.
+22. [x] Write the v3 handoff verification script.
    - Implementation record: `docs/implementation-artifacts/v3-1-handoff-check.en.md`
-22. [x] Add a safe runtime summary to the backend health response.
+23. [x] Add a safe runtime summary to the backend health response.
    - Implementation record: `docs/implementation-artifacts/v3-2-health-runtime-summary.en.md`
-23. [x] Write the v3 smoke checklist and release readiness documents.
+24. [x] Write the v3 smoke checklist and release readiness documents.
    - Implementation record: `docs/implementation-artifacts/v3-smoke-checklist.en.md`, `docs/implementation-artifacts/v3-release-readiness.en.md`

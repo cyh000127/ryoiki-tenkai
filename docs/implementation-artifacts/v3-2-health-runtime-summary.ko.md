@@ -8,7 +8,7 @@
   - `HealthRuntimeSummary` schema를 추가했습니다.
   - `HealthResponse`가 `runtime` summary를 포함하도록 확장했습니다.
 - `BE/api/src/gesture_api/api/routes/health.py`
-  - app environment, database configured 여부, state storage mode, persistence policy, recognition data boundary, blocked runtime/domain source 상태를 반환합니다.
+  - app environment, database configured 여부, state storage mode, persistence policy, recognition data boundary, recognizer runtime, blocked domain source 상태를 반환합니다.
   - database URL, credential, raw recognition data는 반환하지 않습니다.
 - `BE/api/contracts/openapi/admin-api.json`
   - `HealthRuntimeSummary` schema와 `HealthResponse.runtime` contract를 추가했습니다.
@@ -21,7 +21,7 @@
 ## 보류 항목
 
 - health endpoint는 readiness check를 대체하지 않습니다. 상세 검증은 `scripts/v3-handoff-check.ps1`이 담당합니다.
-- concrete frame recognizer runtime과 skill/resource 구현은 계속 blocked입니다.
+- skill/resource 구현은 approved domain source 전까지 계속 blocked입니다.
 
 ## 검증
 

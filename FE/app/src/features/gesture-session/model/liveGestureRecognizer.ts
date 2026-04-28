@@ -3,8 +3,8 @@ import {
   type NormalizedGestureInput
 } from "./gestureInput";
 import {
+  createBrowserFrameSignalRuntime,
   createFrameRecognizerRuntime,
-  createNoopLiveGestureFrameRuntime,
   type LiveGestureFrameRecognizer,
   type LiveGestureFrameRuntime,
   type LiveGestureObservation,
@@ -12,11 +12,15 @@ import {
 } from "./liveGestureRuntime";
 
 export {
+  createBrowserFrameSignalRecognizer,
+  createBrowserFrameSignalRuntime,
   createFrameRecognizerRuntime,
   createNoopLiveGestureFrameRecognizer,
   createNoopLiveGestureFrameRuntime,
+  type BrowserFrameSignalRecognizerOptions,
   type LiveGestureFrame,
   type LiveGestureFrameRecognizer,
+  type LiveGestureFrameSignalSample,
   type LiveGestureFrameRuntime,
   type LiveGestureObservation,
   type LiveGestureObservationReason,
@@ -63,7 +67,7 @@ export function createBrowserLiveGestureRecognizer(
     options.runtime ??
     (options.frameRecognizer
       ? createFrameRecognizerRuntime(options.frameRecognizer)
-      : createNoopLiveGestureFrameRuntime());
+      : createBrowserFrameSignalRuntime());
   const pollIntervalMs = options.pollIntervalMs ?? LIVE_GESTURE_POLL_INTERVAL_MS;
   const mediaDevices = options.mediaDevices ?? getBrowserMediaDevices();
   const createVideoElement =

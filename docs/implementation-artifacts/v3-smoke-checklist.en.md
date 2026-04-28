@@ -1,6 +1,6 @@
 # v3 Smoke Checklist
 
-Use this document for local verification of the v3 handoff stabilization scope. Concrete frame recognizer runtime selection and skill/resource implementation remain blocked until approved.
+Use this document for local verification of the v3 handoff stabilization scope. Skill/resource implementation remains blocked until approved. Recognizer runtime binding was later completed in v2-12.
 
 ## Snapshot
 
@@ -49,13 +49,10 @@ Use this document for local verification of the v3 handoff stabilization scope. 
 - [x] Boundary check passes.
 - [x] Compose config is valid.
 - [x] Provider-neutral targeted text scan passes.
-- [x] v3 readiness separates blocked domain/runtime scope.
+- [x] v3 readiness separates blocked domain scope.
 
 ## Blocked Carryover
 
-- Blocked: concrete frame recognizer runtime selection and binding.
-  - Blocker: runtime selection approval is required.
-  - Related story: `V2-E1-ST02`.
 - Blocked: skill/resource domain intake.
   - Blocker: an approved skill domain source is required.
   - Related stories: `V2-E4-ST01` through `V2-E4-ST04`.

@@ -11,7 +11,8 @@ This document records the release decision for the v3 handoff stabilization scop
 - Rationale:
   - v3 handoff verification automation and runtime health summary are implemented and tested.
   - v3 smoke checklist and readiness documents separate blocked carryover.
-  - Concrete recognizer runtime selection and skill/resource domain source are still not approved, so they remain full feature release blockers.
+  - Recognizer runtime binding was later completed in v2-12.
+  - The skill/resource domain source is still not approved, so it remains the full feature release blocker.
 
 ## Completed v3 Checkpoints
 
@@ -35,7 +36,6 @@ This document records the release decision for the v3 handoff stabilization scop
 
 ## Full Feature Release Blockers
 
-- `V2-E1-ST02`: concrete frame recognizer runtime selection and adapter binding.
 - `V2-E4-ST01` through `V2-E4-ST04`: skill/resource intake after an approved skill domain source exists.
 
 ## Verification
@@ -52,5 +52,5 @@ This document records the release decision for the v3 handoff stabilization scop
 
 The v3 scope is complete. Continue in a separate version or follow-up only after these approval conditions are met.
 
-1. Concrete recognizer runtime selection approval.
-2. Approved skill domain source.
+1. Approved skill domain source.
+2. Move the approved source into fixtures, contracts, and frontend rendering.

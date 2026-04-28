@@ -45,11 +45,11 @@ Lock v2 epics, stories, implementation order, prerequisites, and technology stac
 
 ### Purpose
 
-Bind the live recognizer adapter to a concrete frame recognizer runtime.
+Bind the live recognizer adapter to the browser frame signal runtime.
 
 ### Tasks
 
-1. Select the runtime using browser support, bundle size, lifecycle, and testing strategy.
+1. Select a provider-neutral runtime using browser support, bundle size, lifecycle, and testing strategy.
 2. Make the adapter return token, confidence, stability, and reason in the normalized shape.
 3. Implement stop/start/unmount cleanup.
 4. Verify that raw frames and raw tracking data are not sent to the backend.

@@ -1,11 +1,11 @@
 # v3 Implementation Order
 
-v3 packages the current implementation for easier verification and handoff without unblocking blocked domain/runtime work.
+v3 packages the current implementation for easier verification and handoff without unblocking blocked domain work. Recognizer runtime binding was later completed in v2-12.
 
 ## Phase 0: Scope Guard
 
 1. Check blocked items in v2 readiness.
-2. Do not invent a concrete frame recognizer runtime or skill/resource implementation.
+2. Do not invent skill/resource implementation.
 3. Record the rationale in the technology-stack documents before adding a new dependency.
 4. Keep the provider-neutral scan.
 

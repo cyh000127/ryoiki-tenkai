@@ -36,4 +36,4 @@ As the first post-v1 follow-up, the browser-camera live recognizer adapter is no
 
 - Camera permission allowed/denied smoke automation is complete in `docs/implementation-artifacts/v2-2-camera-permission-smoke.en.md`.
 - Storage adapter persistence is complete in `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`.
-- Remaining prerequisites are concrete frame recognizer binding and final skill/resource replacement.
+- Concrete frame recognizer binding is complete in `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.en.md`. The remaining prerequisite is final skill/resource replacement.

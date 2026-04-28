@@ -8,7 +8,7 @@ This document records `V3-E2-ST01` and `V3-E2-ST02`. The backend health response
   - Added the `HealthRuntimeSummary` schema.
   - Extended `HealthResponse` with a `runtime` summary.
 - `BE/api/src/gesture_api/api/routes/health.py`
-  - Returns app environment, database configured state, state storage mode, persistence policy, recognition data boundary, and blocked runtime/domain source states.
+  - Returns app environment, database configured state, state storage mode, persistence policy, recognition data boundary, recognizer runtime, and blocked domain source state.
   - Does not return database URLs, credentials, or raw recognition data.
 - `BE/api/contracts/openapi/admin-api.json`
   - Added the `HealthRuntimeSummary` schema and `HealthResponse.runtime` contract.
@@ -21,7 +21,7 @@ This document records `V3-E2-ST01` and `V3-E2-ST02`. The backend health response
 ## Deferred
 
 - The health endpoint does not replace readiness checks. Detailed verification stays in `scripts/v3-handoff-check.ps1`.
-- Concrete frame recognizer runtime and skill/resource implementation remain blocked.
+- Skill/resource implementation remains blocked until an approved domain source exists.
 
 ## Verification
 

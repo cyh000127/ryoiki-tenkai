@@ -13,7 +13,7 @@
 ## 범위 제외
 
 - 새 package나 외부 검증 서비스를 추가하지 않았습니다.
-- concrete frame recognizer runtime 또는 skill/resource 구현을 시작하지 않았습니다.
+- skill/resource 구현을 시작하지 않았습니다. recognizer runtime binding은 이후 v2-12에서 완료되었습니다.
 - raw recognition data 수집 또는 backend 전송을 추가하지 않았습니다.
 
 ## 검증

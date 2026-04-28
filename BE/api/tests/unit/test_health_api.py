@@ -19,7 +19,7 @@ def test_health_response_returns_safe_runtime_summary() -> None:
             "stateStorage": "json",
             "persistencePolicy": "adapter_required",
             "recognitionDataBoundary": "raw_recognition_data_not_persisted",
-            "recognizerRuntime": "blocked_until_selected",
+            "recognizerRuntime": "browser_frame_signal",
             "skillDomainSource": "blocked_until_approved",
         },
     }

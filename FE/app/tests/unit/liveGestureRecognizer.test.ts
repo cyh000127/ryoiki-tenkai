@@ -1,4 +1,6 @@
 import {
+  createBrowserFrameSignalRecognizer,
+  createBrowserFrameSignalRuntime,
   createBrowserLiveGestureRecognizer,
   type LiveGestureObservation,
   type LiveGestureRecognizerStatus
@@ -313,5 +315,101 @@ describe("createBrowserLiveGestureRecognizer", () => {
     expect(statuses).toEqual(["starting", "error"]);
     expect(track.stop).toHaveBeenCalledTimes(1);
     expect(video.srcObject).toBeNull();
+  });
+
+  it("recognizes the expected token after stable browser frame signal", () => {
+    const recognizer = createBrowserFrameSignalRecognizer({
+      recognitionStableMs: 500,
+      sampleFrame: () => ({
+        hasFrame: true,
+        signalScore: 0.82
+      })
+    });
+    const video = {} as HTMLVideoElement;
+
+    const firstObservation = recognizer({
+      video,
+      targetSequence: ["seal_1", "seal_3"],
+      expectedToken: "seal_1",
+      atMs: 1000
+    });
+    const stableObservation = recognizer({
+      video,
+      targetSequence: ["seal_1", "seal_3"],
+      expectedToken: "seal_1",
+      atMs: 1600
+    });
+
+    expect(firstObservation).toMatchObject({
+      token: "seal_1",
+      handDetected: true,
+      stabilityMs: 0,
+      reason: "unstable"
+    });
+    expect(stableObservation).toMatchObject({
+      token: "seal_1",
+      handDetected: true,
+      stabilityMs: 600,
+      reason: "recognized"
+    });
+    expect(stableObservation?.confidence).toBeGreaterThanOrEqual(0.65);
+  });
+
+  it("resets browser frame signal stability when frame activity drops", () => {
+    const samples = [
+      { hasFrame: true, signalScore: 0.78 },
+      { hasFrame: true, signalScore: 0.78 },
+      { hasFrame: true, signalScore: 0.01 },
+      { hasFrame: true, signalScore: 0.78 }
+    ];
+    const recognizer = createBrowserFrameSignalRecognizer({
+      recognitionStableMs: 400,
+      sampleFrame: () => samples.shift() ?? { hasFrame: false, signalScore: 0 }
+    });
+    const video = {} as HTMLVideoElement;
+    const frame = {
+      video,
+      targetSequence: ["seal_1"],
+      expectedToken: "seal_1"
+    };
+
+    expect(recognizer({ ...frame, atMs: 0 })?.reason).toBe("unstable");
+    expect(recognizer({ ...frame, atMs: 500 })?.reason).toBe("recognized");
+    expect(recognizer({ ...frame, atMs: 600 })).toMatchObject({
+      token: null,
+      handDetected: false,
+      stabilityMs: 0,
+      reason: "no_hand"
+    });
+    expect(recognizer({ ...frame, atMs: 700 })).toMatchObject({
+      token: "seal_1",
+      handDetected: true,
+      stabilityMs: 0,
+      reason: "unstable"
+    });
+  });
+
+  it("wraps the browser frame signal recognizer in a runtime session", async () => {
+    const runtime = createBrowserFrameSignalRuntime({
+      recognitionStableMs: 0,
+      sampleFrame: () => ({
+        hasFrame: true,
+        signalScore: 0.9
+      })
+    });
+
+    const session = await runtime.start({ video: {} as HTMLVideoElement });
+    const observation = session.recognizeFrame({
+      video: {} as HTMLVideoElement,
+      targetSequence: ["seal_1"],
+      expectedToken: "seal_1",
+      atMs: 1000
+    });
+
+    expect(observation).toMatchObject({
+      token: "seal_1",
+      handDetected: true,
+      reason: "recognized"
+    });
   });
 });

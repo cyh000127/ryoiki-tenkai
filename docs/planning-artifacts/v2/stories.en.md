@@ -22,13 +22,13 @@ Status values:
 
 ### V2-E1-ST02: Select and bind the concrete frame recognizer adapter
 
-- Status: blocked
+- Status: done
 - User story: the system can connect the selected browser-compatible recognizer runtime behind the adapter.
-- Scope: package/runtime selection, adapter implementation, confidence/stability normalization, resource cleanup.
+- Scope: provider-neutral browser frame signal runtime selection, adapter implementation, confidence/stability normalization, resource cleanup.
 - Acceptance criteria: the selection rationale is reflected in the technology-stack docs. The adapter does not send raw frames to the backend. A local unit or smoke test covers the recognizer lifecycle.
-- Dependencies: runtime selection, browser support criteria.
-- Preparation: the runtime port is split in `docs/implementation-artifacts/v2-10-recognizer-runtime-port.en.md`, and the fake runtime port smoke is verified in `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.en.md`. Keep the status blocked until the concrete runtime is selected.
-- Verification: adapter unit test, smoke test.
+- Dependencies: runtime port, browser support criteria.
+- Implementation: the runtime port is split in `docs/implementation-artifacts/v2-10-recognizer-runtime-port.en.md`, the fake runtime port smoke is verified in `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.en.md`, and the default browser frame signal runtime is connected in `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.en.md`.
+- Verification: `FE/app/tests/unit/liveGestureRecognizer.test.ts`, camera smoke test.
 
 ### V2-E1-ST03: Separate no-hand, unstable-hand, and recognized-token UI states
 

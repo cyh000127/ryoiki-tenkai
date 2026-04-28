@@ -23,7 +23,7 @@ def get_health() -> HealthResponse:
             state_storage=_get_state_storage_mode(),
             persistence_policy="adapter_required",
             recognition_data_boundary="raw_recognition_data_not_persisted",
-            recognizer_runtime="blocked_until_selected",
+            recognizer_runtime="browser_frame_signal",
             skill_domain_source="blocked_until_approved",
         ),
     )

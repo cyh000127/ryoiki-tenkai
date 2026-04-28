@@ -103,11 +103,13 @@
    - 구현 기록: `docs/implementation-artifacts/v2-10-recognizer-runtime-port.ko.md`
 19. [x] recognizer runtime port smoke를 강화합니다.
    - 구현 기록: `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.ko.md`
-20. [x] v3 planning baseline을 작성합니다.
+20. [x] browser frame signal runtime을 기본 live recognizer runtime으로 연결합니다.
+   - 구현 기록: `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.ko.md`
+21. [x] v3 planning baseline을 작성합니다.
    - 구현 기록: `docs/implementation-artifacts/v3-planning-baseline.ko.md`
-21. [x] v3 handoff 검증 스크립트를 작성합니다.
+22. [x] v3 handoff 검증 스크립트를 작성합니다.
    - 구현 기록: `docs/implementation-artifacts/v3-1-handoff-check.ko.md`
-22. [x] backend health response에 safe runtime summary를 추가합니다.
+23. [x] backend health response에 safe runtime summary를 추가합니다.
    - 구현 기록: `docs/implementation-artifacts/v3-2-health-runtime-summary.ko.md`
-23. [x] v3 smoke checklist와 release readiness를 작성합니다.
+24. [x] v3 smoke checklist와 release readiness를 작성합니다.
    - 구현 기록: `docs/implementation-artifacts/v3-smoke-checklist.ko.md`, `docs/implementation-artifacts/v3-release-readiness.ko.md`

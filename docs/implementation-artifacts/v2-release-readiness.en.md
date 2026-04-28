@@ -7,10 +7,11 @@ This document records the current v2 readiness decision. The current branch is r
 - Decision date: `2026-04-28`
 - Baseline branch: `main`
 - v2 checkpoint decision: documentation/QA checkpoint is handoff-ready
-- Full v2 feature release decision: not ready
+- Full v2 feature release decision: not ready until the skill domain source is approved
 - Decision basis:
   - Completed v2 hardening items are linked to implementation records and the smoke checklist.
-  - Planned and blocked items are separated in v2 stories and the smoke checklist.
+  - Recognizer runtime binding is complete with the browser frame signal runtime.
+  - Blocked items are separated in v2 stories and the smoke checklist.
   - Skill implementation is explicitly blocked until a separate domain source is approved.
 
 ## Completed v2 Checkpoint
@@ -23,6 +24,7 @@ This document records the current v2 readiness decision. The current branch is r
 | Recognizer lifecycle hardening | PASS | `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.en.md` |
 | Recognizer runtime port boundary | PASS | `docs/implementation-artifacts/v2-10-recognizer-runtime-port.en.md` |
 | Recognizer runtime port smoke | PASS | `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.en.md` |
+| Browser frame signal runtime binding | PASS | `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.en.md` |
 | Two-player queue pairing | PASS | `docs/implementation-artifacts/v2-5-two-player-queue-pairing.en.md` |
 | Socket reconnect latest snapshot resync | PASS | `docs/implementation-artifacts/v2-6-socket-reconnect-resync.en.md` |
 | Delayed/duplicate event reconciliation | PASS | `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.en.md` |
@@ -38,7 +40,7 @@ This document records the current v2 readiness decision. The current branch is r
 
 ## v3 Follow-Up Checkpoint
 
-The blocked v2 items were not implemented without approval and were carried into the v3 handoff stabilization scope.
+The skill-domain blocked v2 items were not implemented without approval and were carried into the v3 handoff stabilization scope. Recognizer runtime binding was later completed in `v2-12`.
 
 | Item | Status | Evidence |
 | --- | --- | --- |
@@ -52,7 +54,7 @@ The blocked v2 items were not implemented without approval and were carried into
 
 | Epic | Current Status | Notes |
 | --- | --- | --- |
-| V2-E1 Live Recognition Runtime Hardening | partial | Adapter boundary, camera smoke, no-hand/unstable/recognized UI separation, restart/cleanup hardening, runtime port boundary, and fake runtime port smoke are complete; concrete runtime selection remains. |
+| V2-E1 Live Recognition Runtime Hardening | done | Adapter boundary, camera smoke, no-hand/unstable/recognized UI separation, restart/cleanup hardening, runtime port boundary, fake runtime port smoke, and browser frame signal runtime binding are complete. |
 | V2-E2 Persistence and Runtime Operation Readiness | done | Storage adapter transition, migration smoke, failure policy, and audit retention boundary are complete. |
 | V2-E3 Real Match Flow and Session Robustness | done | Two-player queue pairing, reconnect latest snapshot recovery, delayed/duplicate reconciliation, and timeout/surrender fanout hardening are complete. |
 | V2-E4 Skill and Resource Domain Intake | blocked | An approved skill domain source is required. |
@@ -62,7 +64,6 @@ The blocked v2 items were not implemented without approval and were carried into
 
 The full v2 feature release should not be considered ready until the following items are complete.
 
-- `V2-E1-ST02`: concrete frame recognizer runtime selection and adapter binding.
 - `V2-E4-ST01` through `V2-E4-ST04`: skill/resource intake after an approved skill domain source exists.
 
 ## Deferral Rule
@@ -71,26 +72,26 @@ Skill names, skill effects, gesture sequence changes, hand-motion resources, vis
 
 ## Verification
 
-This readiness review reflects recognizer runtime port smoke and documentation updates.
+This readiness review reflects browser frame signal runtime binding and documentation updates.
 
 | Check | Status | Notes |
 | --- | --- | --- |
 | `pnpm --dir FE/app typecheck` | PASS | frontend type check |
-| `pnpm --dir FE/app test` | PASS | 44 tests |
+| `pnpm --dir FE/app test` | PASS | 47 tests |
 | `pnpm --dir FE/app smoke:camera` | PASS | 2 tests |
 | `pnpm --dir FE/app build` | PASS | production build |
 | `uv run ruff check BE` | PASS | backend lint |
-| `uv run pytest BE` | PASS | 38 tests |
+| `uv run pytest BE` | PASS | 40 tests |
 | `uv run pytest BE/api/tests/unit/test_battle_websocket_events.py` | PASS | 12 tests |
 | `pnpm --dir FE/app exec vitest run tests/unit/liveGestureRecognizer.test.ts` | PASS | 6 tests |
 | `git diff --check` | PASS | whitespace/error check |
 | Provider-neutral targeted text scan | PASS | no matches outside ignored files |
 | README link review | PASS | Korean and English links include the v2 readiness document |
-| Story status review | PASS | `V2-E1-ST02` remains blocked; only runtime port preparation and fake smoke are recorded |
+| Story status review | PASS | `V2-E1-ST02` is done; `V2-E4` remains blocked |
 
 ## Next Implementation Order
 
-Because the skill domain source and concrete runtime selection are not available yet, the next implementation units require approval first.
+Because the skill domain source is not available yet, the next implementation units require approval first.
 
-1. `V2-E1-ST02`: select and bind the concrete frame recognizer runtime after the runtime choice is approved.
-2. `V2-E4-ST01`: define the skill domain source format after an approved source exists.
+1. `V2-E4-ST01`: define the skill domain source format after an approved source exists.
+2. `V2-E4-ST02` through `V2-E4-ST04`: move the approved source into fixtures, contracts, and frontend rendering.

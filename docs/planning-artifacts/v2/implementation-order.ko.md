@@ -45,11 +45,11 @@ v2 에픽, 스토리, 구현 순서, 선행조건, 기술스택을 한국어/영
 
 ### 목적
 
-live recognizer adapter를 concrete frame recognizer runtime과 결합합니다.
+live recognizer adapter를 browser frame signal runtime과 결합합니다.
 
 ### 작업
 
-1. browser support, bundle size, lifecycle, testing strategy를 기준으로 runtime을 선택합니다.
+1. browser support, bundle size, lifecycle, testing strategy를 기준으로 provider-neutral runtime을 선택합니다.
 2. adapter가 token, confidence, stability, reason을 normalized shape로 반환하게 합니다.
 3. stop/start/unmount cleanup을 구현합니다.
 4. raw frame과 raw tracking data를 backend로 보내지 않는지 검증합니다.

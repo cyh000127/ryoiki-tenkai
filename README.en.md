@@ -24,15 +24,16 @@ Korean documentation is available in `README.md`. `README.ko.md` keeps the same 
 - The v2 recognizer lifecycle hardening is complete.
 - The v2 recognizer runtime port boundary is separated.
 - The v2 recognizer runtime port smoke is hardened.
+- The v2 browser frame signal runtime binding is complete.
 - The v3 planning baseline is written.
 - The v3 handoff verification script is written.
 - The v3 runtime health summary is reflected in the backend health response.
 - The v3 smoke checklist is written.
 - The v3 release readiness checkpoint is written.
 - Skill names, skill effects, hand-motion resources, and visual assets will proceed only after a separate domain source is approved.
-- Concrete frame recognizer binding remains v2 follow-up scope.
 - Final release readiness document: `docs/implementation-artifacts/v1-release-readiness.en.md`
 - v2-1 implementation record: `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`
+- v2-12 implementation record: `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.en.md`
 - v2 planning baseline: `docs/implementation-artifacts/v2-planning-baseline.en.md`
 - v2 release readiness checkpoint: `docs/implementation-artifacts/v2-release-readiness.en.md`
 - v3 handoff verification record: `docs/implementation-artifacts/v3-1-handoff-check.en.md`
@@ -66,6 +67,7 @@ The repository is currently wired through the following playable flow:
 - timeout/surrender final-state fanout and disconnected participant replay
 - live camera adapter start/stop/status display and recognized-token dispatch through the normalized input boundary
 - live camera adapter runtime session port separated
+- default browser frame signal runtime connected to the live camera adapter
 - camera permission smoke verifies runtime port start/stop
 - no-hand, unstable-hand, and recognized-token live camera UI states separated
 - v3 epics, stories, implementation order, prerequisites, and technology stack documented
@@ -209,7 +211,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check
 - recognizer stop/start, permission recovery, and unmount cleanup are covered by regression tests
 - recognizer runtime session start/stop and startup failure cleanup are covered by regression tests
 - camera permission smoke verifies the fake runtime port lifecycle
-- v3 planning baseline is written while blocked domain/runtime scope is preserved
+- browser frame signal runtime stability and recognition reset are covered by regression tests
+- v3 planning baseline is written while blocked domain scope is preserved
 - v3 handoff verification automation has fast/full modes and a plan-only path
 - backend health response has a safe runtime summary with contract regression coverage
 - v3 smoke checklist and release readiness are documented
@@ -219,7 +222,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check
 - no v1 release blockers
 - no v3 release blockers
 - v2 or follow-up scope
-  concrete frame recognizer binding and skill/resource implementation after the skill domain source is approved
+  skill/resource implementation after the skill domain source is approved
 
 ## MVP Planning and QA
 
@@ -235,6 +238,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check
 - `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.en.md`: recognizer lifecycle hardening record.
 - `docs/implementation-artifacts/v2-10-recognizer-runtime-port.en.md`: recognizer runtime port record.
 - `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.en.md`: recognizer runtime port smoke record.
+- `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.en.md`: browser frame signal runtime record.
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`: storage adapter persistence record.
 - `docs/implementation-artifacts/v3-planning-baseline.en.md`: v3 planning baseline record.
 - `docs/implementation-artifacts/v3-1-handoff-check.en.md`: v3 handoff verification script record.

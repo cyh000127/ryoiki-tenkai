@@ -1,6 +1,6 @@
 # v2-11 Recognizer Runtime Port Smoke Implementation Record
 
-This document records the camera permission smoke hardening that routes the browser path through the `LiveGestureFrameRuntime` port without selecting a concrete frame recognizer runtime.
+This document records the camera permission smoke hardening that routes the browser path through the `LiveGestureFrameRuntime` port without selecting a concrete frame recognizer runtime. Runtime binding was later completed in `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.en.md`.
 
 ## Scope
 
@@ -20,7 +20,7 @@ This document records the camera permission smoke hardening that routes the brow
 
 ## Deferred
 
-- Concrete runtime selection and package binding for `V2-E1-ST02` remain blocked.
+- Concrete runtime selection and binding for `V2-E1-ST02` were blocked at this stage and were later completed in `v2-12`.
 - This smoke only verifies runtime port lifecycle; it does not verify recognizer quality or gesture accuracy.
 - Skill names, skill effects, resource keys, and visual assets were not implemented.
 
@@ -33,6 +33,5 @@ This document records the camera permission smoke hardening that routes the brow
 
 ## Next Step
 
-1. Add a concrete runtime smoke or unit fixture separately after the runtime choice is approved.
-2. Record the selected runtime and rationale in `docs/planning-artifacts/v2/technology-stack.en.md`.
-3. Keep `V2-E1-ST02` blocked until concrete runtime selection is available.
+1. Check `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.en.md` for the follow-up record.
+2. If replacing the runtime, add a concrete runtime smoke or unit fixture separate from the fake runtime smoke.

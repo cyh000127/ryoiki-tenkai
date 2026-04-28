@@ -1,6 +1,6 @@
 # v2-10 recognizer runtime port 구현 기록
 
-이 문서는 `V2-E1-ST02`의 blocker를 해제하지 않고, concrete frame recognizer runtime을 나중에 붙일 수 있도록 현재 live camera adapter 내부 port를 분리한 기록입니다.
+이 문서는 당시 `V2-E1-ST02`의 blocker를 해제하지 않고, concrete frame recognizer runtime을 나중에 붙일 수 있도록 현재 live camera adapter 내부 port를 분리한 기록입니다. 이후 `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.ko.md`에서 runtime binding이 완료되었습니다.
 
 ## 범위
 
@@ -26,7 +26,7 @@
 
 ## 보류 항목
 
-- `V2-E1-ST02`의 concrete runtime 선택과 package binding은 아직 blocked입니다.
+- `V2-E1-ST02`의 concrete runtime 선택과 binding은 이 단계에서는 blocked였고, 이후 `v2-12`에서 완료되었습니다.
 - runtime 후보 비교, bundle 영향, browser support 검증은 별도 승인 후 진행합니다.
 - 스킬명, 스킬 효과, resource key, visual asset은 구현하지 않았습니다.
 
@@ -42,6 +42,5 @@
 
 ## 다음 단계
 
-1. runtime 선택이 승인되면 `LiveGestureFrameRuntime` 구현체를 추가합니다.
-2. selected runtime과 선택 근거를 `docs/planning-artifacts/v2/technology-stack.ko.md`에 기록합니다.
-3. concrete runtime smoke 또는 unit fixture를 추가한 뒤 `V2-E1-ST02` 상태를 재검토합니다.
+1. 후속 기록은 `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.ko.md`를 확인합니다.
+2. 다른 runtime으로 교체하려면 `docs/planning-artifacts/v2/technology-stack.ko.md`에 선택 근거와 fallback을 먼저 기록합니다.

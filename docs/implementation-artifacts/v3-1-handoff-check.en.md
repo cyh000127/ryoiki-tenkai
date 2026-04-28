@@ -13,7 +13,7 @@ This document records the implementation of `V3-E1-ST01`. A single PowerShell en
 ## Out Of Scope
 
 - No new package or external verification service was added.
-- Concrete frame recognizer runtime or skill/resource implementation was not started.
+- Skill/resource implementation was not started. Recognizer runtime binding was later completed in v2-12.
 - No raw recognition data collection or backend transfer was added.
 
 ## Verification

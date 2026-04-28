@@ -17,7 +17,7 @@ v3 does not select a new product runtime. It adds verification automation and sa
 
 | Area | Status | Reason |
 | --- | --- | --- |
-| Concrete frame recognizer runtime | blocked | Browser support review and runtime selection approval are required. |
+| Concrete frame recognizer runtime | done | Connected through the browser frame signal runtime in v2-12. |
 | Skill/resource implementation | blocked | An approved skill domain source is required. |
 | New external verification service | deferred | Local reproducibility is the v3 goal. |
 

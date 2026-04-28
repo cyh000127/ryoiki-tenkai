@@ -1,6 +1,6 @@
 # v3 Epics
 
-This document defines v3 as release and handoff stabilization scope. The concrete frame recognizer runtime choice and skill/resource implementation that remain blocked in v2 are not part of v3.
+This document defines v3 as release and handoff stabilization scope. Skill/resource implementation stays outside v3 until a separate domain source is approved. Recognizer runtime binding was later completed in v2-12.
 
 ## Epic V3-E1: Handoff Verification Automation
 
@@ -51,11 +51,10 @@ Separate the completed v3 scope from still-blocked scope so the next worker does
 
 ## Epic V3-E4: Blocker Carryover Guard
 
-Keep unapproved domain/runtime decisions from being mistaken for implementation scope.
+Keep unapproved domain decisions from being mistaken for implementation scope.
 
 ### Acceptance Signals
 
-- Recognizer runtime binding remains blocked until the concrete runtime is selected.
 - Skill/resource implementation remains blocked until an approved skill domain source exists.
 - Documentation and product copy contain no unapproved external provider or service names.
 

@@ -1,11 +1,11 @@
 # v3 구현 순서
 
-v3는 blocked domain/runtime 구현을 해제하지 않고, 현재 구현을 검증과 인수인계가 쉬운 형태로 묶습니다.
+v3는 blocked domain 구현을 해제하지 않고, 현재 구현을 검증과 인수인계가 쉬운 형태로 묶습니다. recognizer runtime binding은 이후 v2-12에서 완료되었습니다.
 
 ## Phase 0: Scope Guard
 
 1. v2 readiness의 blocked 항목을 확인합니다.
-2. concrete frame recognizer runtime이나 skill/resource를 임의 구현하지 않습니다.
+2. skill/resource를 임의 구현하지 않습니다.
 3. 새 dependency를 추가하기 전에 technology-stack 문서에 선택 근거를 남깁니다.
 4. provider-neutral scan을 유지합니다.
 
