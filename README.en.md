@@ -30,6 +30,8 @@ Korean documentation is available in `README.md`. `README.ko.md` keeps the same 
 - The v3 runtime health summary is reflected in the backend health response.
 - The v3 smoke checklist is written.
 - The v3 release readiness checkpoint is written.
+- The v4 Japanese voice startup command plan and implementation record are written.
+- The v4 Japanese voice startup command is connected to the home screen.
 - Skill names, skill effects, hand-motion resources, and visual assets will proceed only after a separate domain source is approved.
 - Final release readiness document: `docs/implementation-artifacts/v1-release-readiness.en.md`
 - v2-1 implementation record: `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`
@@ -40,6 +42,7 @@ Korean documentation is available in `README.md`. `README.ko.md` keeps the same 
 - v3 runtime health summary record: `docs/implementation-artifacts/v3-2-health-runtime-summary.en.md`
 - v3 smoke checklist: `docs/implementation-artifacts/v3-smoke-checklist.en.md`
 - v3 release readiness checkpoint: `docs/implementation-artifacts/v3-release-readiness.en.md`
+- v4 Japanese voice startup command record: `docs/implementation-artifacts/v4-1-japanese-stt-startup-command.en.md`
 
 ## Current Status
 
@@ -74,6 +77,7 @@ The repository is currently wired through the following playable flow:
 - v3 handoff check fast/full modes and plan-only verification path documented
 - backend `/healthz` safe runtime summary reflected in contract/tests
 - v3 smoke checklist and release readiness checkpoint documented
+- Japanese voice startup command home-screen panel, status rendering, and manual fallback
 - result/history/rating persistence moved behind the storage adapter boundary
 - v2 epics, stories, implementation order, prerequisites, and technology stack documented
 - v2 camera/runtime/storage/matching smoke checklist documented
@@ -216,6 +220,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check
 - v3 handoff verification automation has fast/full modes and a plan-only path
 - backend health response has a safe runtime summary with contract regression coverage
 - v3 smoke checklist and release readiness are documented
+- Japanese voice startup command model, home-screen panel, and manual fallback regression tests
 
 ## Remaining Work
 
@@ -245,6 +250,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check
 - `docs/implementation-artifacts/v3-2-health-runtime-summary.en.md`: safe runtime health summary record.
 - `docs/implementation-artifacts/v3-smoke-checklist.en.md`: v3 smoke checklist and blocked carryover.
 - `docs/implementation-artifacts/v3-release-readiness.en.md`: v3 checkpoint decision and full feature release blockers.
+- `docs/implementation-artifacts/v4-1-japanese-stt-startup-command.en.md`: Japanese voice startup command implementation record.
+- `docs/planning-artifacts/v4/technology-stack.en.md`: v4 voice startup technology decision.
+- `docs/planning-artifacts/v4/epics.en.md`: v4 epics, boundaries, and acceptance signals.
+- `docs/planning-artifacts/v4/stories.en.md`: v4 story status and verification criteria.
+- `docs/planning-artifacts/v4/implementation-order.en.md`: v4 implementation order and commit unit.
+- `docs/planning-artifacts/v4/prerequisites.en.md`: v4 prerequisites and stop conditions.
 - `docs/implementation-artifacts/v2-planning-baseline.en.md`: v2 planning baseline record.
 - `docs/implementation-artifacts/v2-smoke-checklist.en.md`: v2 smoke checklist and blocked items.
 - `docs/implementation-artifacts/v2-release-readiness.en.md`: v2 checkpoint decision and full v2 release blockers.

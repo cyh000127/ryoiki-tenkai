@@ -57,6 +57,31 @@ const liveRecognizerMock = vi.hoisted(() => {
 
   return control;
 });
+const startupVoiceMock = vi.hoisted(() => {
+  type MockStartupVoiceOptions = {
+    onResult: (result: {
+      transcript: string;
+      matchedCommand: string | null;
+      status: "matched" | "rejected";
+    }) => void;
+    onStatusChange?: (status: string) => void;
+  };
+
+  const control = {
+    options: null as null | MockStartupVoiceOptions,
+    start: vi.fn(async () => true),
+    stop: vi.fn(),
+    createJapaneseStartupVoiceCommandRecognizer: vi.fn((options: MockStartupVoiceOptions) => {
+      control.options = options;
+      return {
+        start: control.start,
+        stop: control.stop
+      };
+    })
+  };
+
+  return control;
+});
 
 function createUser() {
   return userEvent.setup();
@@ -103,6 +128,18 @@ vi.mock("../../src/features/gesture-session/model/liveGestureRecognizer", async 
   return {
     ...actual,
     createBrowserLiveGestureRecognizer: liveRecognizerMock.createBrowserLiveGestureRecognizer
+  };
+});
+
+vi.mock("../../src/features/gesture-session/model/startupVoiceCommand", async () => {
+  const actual = await vi.importActual<
+    typeof import("../../src/features/gesture-session/model/startupVoiceCommand")
+  >("../../src/features/gesture-session/model/startupVoiceCommand");
+
+  return {
+    ...actual,
+    createJapaneseStartupVoiceCommandRecognizer:
+      startupVoiceMock.createJapaneseStartupVoiceCommandRecognizer
   };
 });
 
@@ -392,6 +429,10 @@ describe("BattleGameWorkspace", () => {
     liveRecognizerMock.start.mockClear();
     liveRecognizerMock.stop.mockClear();
     liveRecognizerMock.createBrowserLiveGestureRecognizer.mockClear();
+    startupVoiceMock.options = null;
+    startupVoiceMock.start.mockClear();
+    startupVoiceMock.stop.mockClear();
+    startupVoiceMock.createJapaneseStartupVoiceCommandRecognizer.mockClear();
   });
 
   afterEach(() => {
@@ -424,6 +465,66 @@ describe("BattleGameWorkspace", () => {
     await user.click(screen.getByRole("button", { name: "랭크 1대1 매칭" }));
 
     expect(screen.getByText("저장된 로드아웃이 있어야 매칭을 시작할 수 있습니다.")).toBeInTheDocument();
+  });
+
+  it("starts matchmaking from a matched Japanese voice startup command", async () => {
+    const user = createUser();
+    storedSession = {
+      playerId: "pl_saved",
+      guestToken: "gt_saved"
+    };
+    installGameApiMock({
+      playerId: "pl_saved",
+      nickname: "saved_player",
+      rating: 1040,
+      wins: 4,
+      losses: 1,
+      equippedSkillsetId: DEFAULT_SKILLSET.skillsetId,
+      equippedAnimsetId: DEFAULT_ANIMSETS[0].animsetId,
+      loadoutConfigured: true
+    });
+
+    renderWorkspace();
+
+    expect(await screen.findByText("saved_player")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "詠唱 시작" }));
+
+    expect(startupVoiceMock.start).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      startupVoiceMock.options?.onResult({
+        matchedCommand: "起動して",
+        status: "matched",
+        transcript: "術式を起動して"
+      });
+    });
+
+    expect(screen.getByText("SEARCHING")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(socketConnectCount).toBe(1);
+    });
+  });
+
+  it("offers manual startup fallback when voice startup is unsupported", async () => {
+    const user = createUser();
+    installGameApiMock();
+
+    renderWorkspace();
+
+    await user.click(screen.getByRole("button", { name: "詠唱 시작" }));
+
+    act(() => {
+      startupVoiceMock.options?.onStatusChange?.("unsupported");
+    });
+
+    expect(screen.getByText("音声起動未対応")).toBeInTheDocument();
+    expect(
+      screen.getByText("이 브라우저에서는 음성 시동을 지원하지 않습니다. 수동 시동을 사용하세요.")
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "수동 시동" }));
+
+    expect(await screen.findByRole("button", { name: "로드아웃 저장" })).toBeInTheDocument();
   });
 
   it("renders server-backed history and leaderboard on the history screen", async () => {

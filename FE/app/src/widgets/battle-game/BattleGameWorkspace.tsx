@@ -32,6 +32,12 @@ import {
   type LiveGestureRecognizerStatus
 } from "../../features/gesture-session/model/liveGestureRecognizer";
 import {
+  JAPANESE_STARTUP_COMMANDS,
+  createJapaneseStartupVoiceCommandRecognizer,
+  type StartupVoiceCommandRecognizer,
+  type StartupVoiceRecognitionStatus
+} from "../../features/gesture-session/model/startupVoiceCommand";
+import {
   connectBattleSocket,
   toBattleState,
   type BattleSocketConnection,
@@ -77,6 +83,7 @@ export function BattleGameWorkspace() {
   const stateRef = useRef(state);
   const socketConnectionRef = useRef<BattleSocketConnection | null>(null);
   const liveRecognizerRef = useRef<LiveGestureRecognizer | null>(null);
+  const startupVoiceRecognizerRef = useRef<StartupVoiceCommandRecognizer | null>(null);
   const pendingActionRef = useRef<PendingAction | null>(null);
   const reconnectInFlightRef = useRef(false);
   const ignoreSocketCloseRef = useRef(false);
@@ -89,6 +96,10 @@ export function BattleGameWorkspace() {
   const [liveRecognizerStatus, setLiveRecognizerStatus] =
     useState<LiveGestureRecognizerStatus>("idle");
   const [liveObservation, setLiveObservation] = useState<LiveGestureObservation | null>(null);
+  const [startupVoiceStatus, setStartupVoiceStatus] =
+    useState<StartupVoiceRecognitionStatus>("idle");
+  const [startupVoiceTranscript, setStartupVoiceTranscript] = useState("");
+  const [startupVoiceMatchedCommand, setStartupVoiceMatchedCommand] = useState<string | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   const skillsetsQuery = useQuery({
@@ -222,6 +233,8 @@ export function BattleGameWorkspace() {
       closeBattleSocket(true);
       liveRecognizerRef.current?.stop();
       liveRecognizerRef.current = null;
+      startupVoiceRecognizerRef.current?.stop();
+      startupVoiceRecognizerRef.current = null;
     };
   }, []);
 
@@ -443,6 +456,85 @@ export function BattleGameWorkspace() {
 
     setStatusMessage(null);
     createGuestMutation.mutate(nickname);
+  }
+
+  function handleStartupFlow() {
+    if (!session) {
+      handleCreateGuest();
+      return;
+    }
+
+    if (!hasPlayerSession) {
+      setStatusMessage(copy.sessionRestoring);
+      return;
+    }
+
+    if (!hasConfiguredLoadout) {
+      handleOpenLoadout();
+      return;
+    }
+
+    handleStartQueue();
+  }
+
+  function handleStartVoiceStartup() {
+    if (startupVoiceStatus === "listening") {
+      return;
+    }
+
+    startupVoiceRecognizerRef.current?.stop();
+    setStartupVoiceTranscript("");
+    setStartupVoiceMatchedCommand(null);
+    setStatusMessage(null);
+
+    const recognizer = createJapaneseStartupVoiceCommandRecognizer({
+      onResult: (result) => {
+        setStartupVoiceTranscript(result.transcript);
+        setStartupVoiceMatchedCommand(result.matchedCommand);
+
+        if (result.status === "matched") {
+          setStatusMessage(copy.startupVoiceSuccess);
+          handleStartupFlow();
+          return;
+        }
+
+        setStatusMessage(copy.startupVoiceFailure);
+      },
+      onStatusChange: (status) => {
+        setStartupVoiceStatus(status);
+
+        if (status === "unsupported") {
+          setStatusMessage(copy.startupVoiceUnsupported);
+          return;
+        }
+
+        if (status === "blocked") {
+          setStatusMessage(copy.startupVoiceBlocked);
+          return;
+        }
+
+        if (status === "error") {
+          setStatusMessage(copy.startupVoiceError);
+          return;
+        }
+
+        if (status === "rejected") {
+          setStatusMessage(copy.startupVoiceFailure);
+        }
+      }
+    });
+
+    startupVoiceRecognizerRef.current = recognizer;
+    void recognizer.start();
+  }
+
+  function handleManualStartupFallback() {
+    startupVoiceRecognizerRef.current?.stop();
+    startupVoiceRecognizerRef.current = null;
+    setStartupVoiceStatus("idle");
+    setStartupVoiceTranscript("");
+    setStartupVoiceMatchedCommand(null);
+    handleStartupFlow();
   }
 
   function handleCancelQueue() {
@@ -798,6 +890,7 @@ export function BattleGameWorkspace() {
         ? copy.loadoutPending
       : copy.playerMissing;
   const playerStatusTone = hasConfiguredLoadout ? "success" : "warning";
+  const isStartupActionPending = createGuestMutation.isPending || startQueueMutation.isPending;
 
   return (
     <section className="play-workspace" aria-label={copy.appTitle}>
@@ -857,6 +950,15 @@ export function BattleGameWorkspace() {
                 </div>
               </div>
             </Panel>
+            <StartupVoicePanel
+              commands={JAPANESE_STARTUP_COMMANDS}
+              disabled={isStartupActionPending}
+              matchedCommand={startupVoiceMatchedCommand}
+              onManualStart={handleManualStartupFallback}
+              onStart={handleStartVoiceStartup}
+              status={startupVoiceStatus}
+              transcript={startupVoiceTranscript}
+            />
             <DebugPanel events={state.recentEvents} latency={state.input.networkLatencyMs} />
           </div>
         ) : null}
@@ -1309,6 +1411,76 @@ function Metric({ label, value }: { label: string; value: string | number }) {
       <strong>{value}</strong>
     </div>
   );
+}
+
+type StartupVoicePanelProps = {
+  commands: readonly string[];
+  disabled: boolean;
+  matchedCommand: string | null;
+  onManualStart: () => void;
+  onStart: () => void;
+  status: StartupVoiceRecognitionStatus;
+  transcript: string;
+};
+
+function StartupVoicePanel({
+  commands,
+  disabled,
+  matchedCommand,
+  onManualStart,
+  onStart,
+  status,
+  transcript
+}: StartupVoicePanelProps) {
+  return (
+    <Panel title={copy.startupVoicePanel}>
+      <div className="startup-voice">
+        <div className="startup-voice__header">
+          <StatusBadge tone={getStartupVoiceStatusTone(status)}>
+            {copy.startupVoiceStatusText[status]}
+          </StatusBadge>
+          <p className="helper-text">{copy.startupVoiceStatusHelp[status]}</p>
+        </div>
+        <div className="action-row">
+          <Button disabled={disabled || status === "listening"} onClick={onStart} variant="primary">
+            {status === "listening" ? copy.startupVoiceListeningAction : copy.startupVoiceStart}
+          </Button>
+          <Button disabled={disabled} onClick={onManualStart}>
+            {copy.startupVoiceManualFallback}
+          </Button>
+        </div>
+        <Metric
+          label={copy.startupVoiceTranscript}
+          value={transcript || copy.startupVoiceTranscriptEmpty}
+        />
+        <Metric
+          label={copy.startupVoiceMatchedCommand}
+          value={matchedCommand ?? copy.startupVoiceNoMatch}
+        />
+        <div className="startup-voice__commands" aria-label={copy.startupVoiceCommandExamples}>
+          {commands.map((command) => (
+            <span className="startup-voice__command" key={command}>
+              {command}
+            </span>
+          ))}
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+function getStartupVoiceStatusTone(
+  status: StartupVoiceRecognitionStatus
+): "neutral" | "success" | "warning" {
+  if (status === "matched") {
+    return "success";
+  }
+
+  if (status === "idle" || status === "listening") {
+    return "neutral";
+  }
+
+  return "warning";
 }
 
 function FighterPanel({
