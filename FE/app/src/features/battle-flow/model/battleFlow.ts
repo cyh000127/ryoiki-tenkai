@@ -446,7 +446,7 @@ function applyQueueReady(state: BattleFlowState): BattleFlowState {
 
   return {
     ...state,
-    screen: "matchmaking",
+    screen: state.screen === "matchmaking" ? "matchmaking" : state.screen,
     queueStatus: "SEARCHING",
     socketStatus: "CONNECTED",
     recentEvents: prependEvent(state, "battle.match_ready")
@@ -454,9 +454,7 @@ function applyQueueReady(state: BattleFlowState): BattleFlowState {
 }
 
 function applyMatchFound(state: BattleFlowState, battleSessionId: string): BattleFlowState {
-  const preserveScreen =
-    state.battle?.battleSessionId === battleSessionId &&
-    (state.screen === "battle" || state.screen === "result");
+  const preserveScreen = state.screen !== "matchmaking";
 
   return {
     ...state,
@@ -512,8 +510,8 @@ function applyBattleStateUpdated(
     input: {
       ...state.input,
       targetSequence: findSkill(state.selectedSkillId).gestureSequence,
-      currentStep: 0,
-      currentGesture: null,
+      currentStep: state.input.currentStep,
+      currentGesture: state.input.currentGesture,
       localFailureReason: null,
       serverRejectionReason: null,
       networkLatencyMs: latencyMs,

@@ -57,6 +57,7 @@ SKILLSETS = [
 ANIMSETS = [
     AnimsetDefinition(animset_id="animset_basic_2d", name="기본 2D 연출"),
     AnimsetDefinition(animset_id="animset_impact_2d", name="타격 강조 연출"),
+    AnimsetDefinition(animset_id="animset_unity_jjk", name="Unity WebGL 프로토타입"),
 ]
 
 

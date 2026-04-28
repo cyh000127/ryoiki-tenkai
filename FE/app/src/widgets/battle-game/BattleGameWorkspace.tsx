@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useReducer, useRef, useState } from "react";
 import {
   DEFAULT_ANIMSETS,
   DEFAULT_SKILLSET,
+  type Animset,
   type BattleState,
   type Skill,
   type Skillset
@@ -19,6 +20,8 @@ import {
   type ServerConfirmationStatus,
   type ScreenKey
 } from "../../features/battle-flow/model/battleFlow";
+import type { RendererEventEnvelope } from "../../features/animset-renderer/model/rendererPort";
+import { AnimsetRendererSurface } from "../../features/animset-renderer/ui/AnimsetRendererSurface";
 import {
   DEBUG_FALLBACK_ENABLED,
   createDebugFallbackInput,
@@ -37,9 +40,13 @@ import {
 import {
   JAPANESE_STARTUP_COMMANDS,
   createJapaneseStartupVoiceCommandRecognizer,
+  getJapaneseVoiceCommandLabel,
+  type JapaneseStartupCommand,
+  type JapaneseVoiceCommandDefinition,
   type StartupVoiceCommandRecognizer,
   type StartupVoiceRecognitionStatus
 } from "../../features/gesture-session/model/startupVoiceCommand";
+import { resolveSkillPresentationEntry } from "../../features/skill-presentation/model/skillPresentationManifest";
 import {
   connectBattleSocket,
   toBattleState,
@@ -72,16 +79,56 @@ import { Button } from "../../platform/ui/Button";
 import { StatusBadge } from "../../platform/ui/StatusBadge";
 import { formatLatency } from "../../shared/time/formatLatency";
 
-const screenOrder: ScreenKey[] = [
-  "home",
-  "loadout",
-  "practice",
-  "matchmaking",
-  "battle",
-  "result",
-  "history"
-];
+const navigationScreenOrder: ScreenKey[] = ["home", "loadout", "practice", "history"];
 const PRACTICE_AUTO_ADVANCE_DELAY_MS = 650;
+const DOMAIN_EXPANSION_VOICE_COMMAND: JapaneseVoiceCommandDefinition = {
+  label: "領域展開(영역전개)",
+  aliases: ["領域展開", "りょういきてんかい"]
+};
+
+const SKILL_SPEECH_METADATA: Record<
+  string,
+  {
+    japaneseReading: string;
+    voiceAliases: readonly string[];
+  }
+> = {
+  jjk_gojo_red: {
+    japaneseReading: "あか",
+    voiceAliases: ["赫", "あか"]
+  },
+  jjk_gojo_hollow_purple: {
+    japaneseReading: "きょしきむらさき",
+    voiceAliases: ["虚式「茈」", "茈", "むらさき", "きょしきむらさき", "虚式むらさき"]
+  },
+  jjk_gojo_infinite_void: {
+    japaneseReading: "むりょうくうしょ",
+    voiceAliases: [
+      "領域展開「無量空処」",
+      "無量空処",
+      "むりょうくうしょ",
+      "りょういきてんかいむりょうくうしょ"
+    ]
+  },
+  jjk_sukuna_malevolent_shrine: {
+    japaneseReading: "ふくまみづし",
+    voiceAliases: [
+      "領域展開「伏魔御厨子」",
+      "伏魔御厨子",
+      "ふくまみづし",
+      "りょういきてんかいふくまみづし"
+    ]
+  },
+  jjk_megumi_chimera_shadow_garden: {
+    japaneseReading: "かんごうあんえいてい",
+    voiceAliases: [
+      "領域展開「嵌合暗翳庭」",
+      "嵌合暗翳庭",
+      "かんごうあんえいてい",
+      "りょういきてんかいかんごうあんえいてい"
+    ]
+  }
+};
 
 type SkillInputMode = "gesture_only" | "voice_then_gesture";
 
@@ -98,6 +145,27 @@ type PendingAction = {
   actionId: string;
   requestId: string;
   submittedAtMs: number;
+};
+
+type HomeAction = {
+  actionLabel: string;
+  actionVariant: "default" | "primary";
+  description: string;
+  onClick: () => void;
+};
+
+type MatchProgressStep = {
+  label: string;
+  state: "done" | "active" | "pending";
+};
+
+type RendererActionProjection = {
+  actionId: string;
+  actorPlayerId: string;
+  reason: string | null;
+  result: "accepted" | "pending" | "rejected";
+  skillId: string | null;
+  skillName: string | null;
 };
 
 export function BattleGameWorkspace() {
@@ -117,8 +185,10 @@ export function BattleGameWorkspace() {
     key: string;
     timeoutId: number | null;
   } | null>(null);
+  const practiceHeldGestureRef = useRef<string | null>(null);
   const startupVoiceRecognizerRef = useRef<StartupVoiceCommandRecognizer | null>(null);
   const skillVoiceRecognizerRef = useRef<StartupVoiceCommandRecognizer | null>(null);
+  const liveInputHoldTokenRef = useRef<string | null>(null);
   const practiceProgressRef = useRef<PracticeProgress>({
     targetSequence: DEFAULT_SKILLSET.skills[0].gestureSequence,
     currentStep: 0,
@@ -146,6 +216,9 @@ export function BattleGameWorkspace() {
   const [practiceProgress, setPracticeProgress] = useState<PracticeProgress>(
     practiceProgressRef.current
   );
+  const [practiceCompletedAtMs, setPracticeCompletedAtMs] = useState<number | null>(null);
+  const [battleRendererAction, setBattleRendererAction] =
+    useState<RendererActionProjection | null>(null);
   const [startupVoiceStatus, setStartupVoiceStatus] =
     useState<StartupVoiceRecognitionStatus>("idle");
   const [startupVoiceTranscript, setStartupVoiceTranscript] = useState("");
@@ -318,6 +391,26 @@ export function BattleGameWorkspace() {
   }, [state.screen]);
 
   useEffect(() => {
+    if (state.screen !== "practice" || !session) {
+      return;
+    }
+
+    if (practiceRecognizerRef.current || practiceRecognizerStatus === "starting" || practiceRecognizerStatus === "ready") {
+      return;
+    }
+
+    if (
+      practiceRecognizerStatus === "blocked" ||
+      practiceRecognizerStatus === "unsupported" ||
+      practiceRecognizerStatus === "error"
+    ) {
+      return;
+    }
+
+    void handleStartPractice();
+  }, [practiceRecognizerStatus, session, state.screen]);
+
+  useEffect(() => {
     drawHandMeshOverlay(
       practiceMeshCanvasRef.current,
       practiceRecognizerStatus === "ready"
@@ -333,6 +426,87 @@ export function BattleGameWorkspace() {
 
     stopLiveRecognizer();
   }, [state.battle?.status, state.screen]);
+
+  useEffect(() => {
+    if (state.screen !== "battle" || state.battle?.status !== "ACTIVE") {
+      return;
+    }
+
+    if (!isVoiceActivatedSkill(findSkill(state.selectedSkillId))) {
+      return;
+    }
+
+    setSkillInputMode("voice_then_gesture");
+    setSkillVoiceArmed(false);
+    setSkillVoiceStatus("idle");
+    setSkillVoiceTranscript("");
+    setSkillVoiceMatchedCommand(null);
+  }, [state.battle?.status, state.screen, state.selectedSkillId]);
+
+  useEffect(() => {
+    const activeBattle =
+      state.screen === "battle" && state.battle?.status === "ACTIVE" ? state.battle : null;
+    const isActionWindowOpen =
+      activeBattle !== null &&
+      activeBattle.turnOwnerPlayerId === state.player.playerId &&
+      state.input.serverConfirmationStatus !== "PENDING";
+
+    if (
+      !isActionWindowOpen ||
+      skillInputMode !== "voice_then_gesture" ||
+      skillVoiceArmed
+    ) {
+      stopSkillVoiceRecognizer();
+      return;
+    }
+
+    if (skillVoiceRecognizerRef.current || skillVoiceStatus === "listening") {
+      return;
+    }
+
+    if (
+      skillVoiceStatus === "blocked" ||
+      skillVoiceStatus === "unsupported" ||
+      skillVoiceStatus === "error"
+    ) {
+      return;
+    }
+
+    void handleStartSkillVoiceGate(true);
+  }, [
+    skillInputMode,
+    skillVoiceArmed,
+    skillVoiceStatus,
+    state.battle?.status,
+    state.battle?.turnOwnerPlayerId,
+    state.input.serverConfirmationStatus,
+    state.player.playerId,
+    state.screen
+  ]);
+
+  useEffect(() => {
+    if (state.screen !== "battle" || state.battle?.status !== "ACTIVE") {
+      return;
+    }
+
+    if (skillInputMode !== "voice_then_gesture") {
+      return;
+    }
+
+    if (liveRecognizerRef.current || liveRecognizerStatus === "starting" || liveRecognizerStatus === "ready") {
+      return;
+    }
+
+    if (
+      liveRecognizerStatus === "blocked" ||
+      liveRecognizerStatus === "unsupported" ||
+      liveRecognizerStatus === "error"
+    ) {
+      return;
+    }
+
+    void handleStartLiveRecognizer();
+  }, [liveRecognizerStatus, skillInputMode, state.battle?.status, state.screen]);
 
   useEffect(() => {
     if (state.socketStatus === "DISCONNECTED" && socketConnectionRef.current) {
@@ -366,7 +540,12 @@ export function BattleGameWorkspace() {
     const restoredSkillset =
       skillsets.find((skillset) => skillset.skillsetId === profileQuery.data.equippedSkillsetId) ??
       skillsets[0];
-    const restoredSkill = restoredSkillset?.skills[0] ?? DEFAULT_SKILLSET.skills[0];
+    const restoredSkill =
+      restoredSkillset?.skills.find(
+        (skill) => skill.skillId === stateRef.current.selectedSkillId
+      ) ??
+      restoredSkillset?.skills[0] ??
+      DEFAULT_SKILLSET.skills[0];
 
     dispatch({
       type: "hydrateLoadout",
@@ -453,7 +632,7 @@ export function BattleGameWorkspace() {
     !isServerConfirming &&
     isSkillGestureInputUnlocked;
   const canStartLiveRecognizer =
-    state.screen === "battle" && state.battle?.status === "ACTIVE" && isSkillGestureInputUnlocked;
+    state.screen === "battle" && state.battle?.status === "ACTIVE";
   const completedStepCount = Math.min(state.input.currentStep, state.input.targetSequence.length);
   const remainingStepCount = Math.max(0, state.input.targetSequence.length - completedStepCount);
   const progressPercent = getSequenceProgress(
@@ -489,6 +668,9 @@ export function BattleGameWorkspace() {
     practiceProgress.currentStep,
     practiceProgress.targetSequence.length
   );
+  const practiceCompleted =
+    practiceProgress.targetSequence.length > 0 &&
+    practiceProgress.currentStep >= practiceProgress.targetSequence.length;
   const practiceProgressPercent = getSequenceProgress(
     practiceCompletedStepCount,
     practiceProgress.targetSequence.length
@@ -498,20 +680,71 @@ export function BattleGameWorkspace() {
     practiceCompletedStepCount,
     practiceProgress.targetSequence.length
   );
-  const canStartPractice =
-    session !== null &&
-    state.screen === "practice" &&
-    practiceRecognizerStatus !== "starting" &&
-    practiceRecognizerStatus !== "ready";
   const practiceExpectedGesture =
-    practiceProgress.targetSequence[practiceProgress.currentStep] ??
-    practiceProgress.targetSequence[0] ??
-    null;
+    practiceCompleted
+      ? null
+      : practiceProgress.targetSequence[practiceProgress.currentStep] ??
+        practiceProgress.targetSequence[0] ??
+        null;
+  const practicePreviewAnimsetId = resolvePracticePreviewAnimsetId({
+    animsets,
+    selectedAnimsetId,
+    selectedSkillId: selectedSkill.skillId
+  });
   const isPracticeGestureRecognized =
+    !practiceCompleted &&
     practiceObservation?.reason === "recognized" &&
     practiceProgress.handDetected &&
     practiceProgress.currentGesture === practiceExpectedGesture &&
     practiceProgress.confidence >= LIVE_GESTURE_MIN_CONFIDENCE;
+  const hasActiveBattle = state.battle?.status === "ACTIVE";
+  const hasResultAvailable = state.battle?.status === "ENDED";
+  const isMatchSearching = state.queueStatus === "SEARCHING";
+  const isMatchFoundWaiting = state.queueStatus === "MATCHED" && !hasActiveBattle;
+  const isPracticeLoadoutSynced =
+    draftSkillsetId === state.equippedSkillsetId && draftSkillId === state.selectedSkillId;
+  const savedLoadoutLabel = hasConfiguredLoadout ? getSkillDisplayName(equippedSkill) : copy.loadoutPending;
+  const battleSelectedSkill = findSkill(state.selectedSkillId);
+  const matchProgressSteps = getMatchProgressSteps({
+    hasPlayerSession,
+    hasConfiguredLoadout,
+    socketStatus: state.socketStatus,
+    queueStatus: state.queueStatus,
+    hasActiveBattle
+  });
+  const practiceRendererEvents = session
+    ? buildPracticeRendererEvents({
+        animsetId: practicePreviewAnimsetId,
+        completedAtMs: practiceCompletedAtMs,
+        playerId: state.player.playerId,
+        practiceExpectedGesture,
+        practiceProgress,
+        practiceState,
+        selectedSkill
+      })
+    : [];
+  const battleRendererEvents = state.battle
+    ? buildBattleRendererEvents({
+        action: battleRendererAction,
+        animsetId: state.equippedAnimsetId,
+        battle: state.battle,
+        playerId: state.player.playerId,
+        ratingChange: state.history[0]?.ratingChange ?? null,
+        scene: "battle",
+        selectedSkill: battleSelectedSkill
+      })
+    : [];
+  const resultRendererEvents = state.battle
+    ? buildBattleRendererEvents({
+        action: battleRendererAction,
+        animsetId: state.equippedAnimsetId,
+        battle: state.battle,
+        playerId: state.player.playerId,
+        ratingChange: state.history[0]?.ratingChange ?? null,
+        scene: "result",
+        selectedSkill: battleSelectedSkill
+      })
+    : [];
 
   function handleOpenLoadout() {
     if (!session) {
@@ -667,24 +900,30 @@ export function BattleGameWorkspace() {
     setSkillVoiceStatus("idle");
     setSkillVoiceTranscript("");
     setSkillVoiceMatchedCommand(null);
-    skillVoiceRecognizerRef.current?.stop();
-    skillVoiceRecognizerRef.current = null;
+    stopSkillVoiceRecognizer();
     stopLiveRecognizer();
+
+    if (mode === "voice_then_gesture" && stateRef.current.screen === "battle" && stateRef.current.battle?.status === "ACTIVE") {
+      void handleStartLiveRecognizer();
+    }
   }
 
-  function handleStartSkillVoiceGate() {
+  function handleStartSkillVoiceGate(autoStart = false) {
     if (skillVoiceStatus === "listening") {
       return;
     }
 
-    skillVoiceRecognizerRef.current?.stop();
+    stopSkillVoiceRecognizer();
     setSkillVoiceTranscript("");
     setSkillVoiceMatchedCommand(null);
     setSkillVoiceArmed(false);
-    setStatusMessage(null);
+    if (!autoStart) {
+      setStatusMessage(null);
+    }
 
     const recognizer = createJapaneseStartupVoiceCommandRecognizer({
-      commands: getSkillVoiceGateCommands(selectedSkill.name),
+      commands: getSkillVoiceGateCommands(selectedSkill),
+      lang: getSkillVoiceGateLanguage(),
       onResult: (result) => {
         setSkillVoiceTranscript(result.transcript);
         setSkillVoiceMatchedCommand(result.matchedCommand);
@@ -692,32 +931,43 @@ export function BattleGameWorkspace() {
         if (result.status === "matched") {
           setSkillVoiceArmed(true);
           setStatusMessage(copy.skillVoiceGateUnlocked);
+          stopSkillVoiceRecognizer();
+          void handleStartLiveRecognizer();
           return;
         }
 
         setSkillVoiceArmed(false);
-        setStatusMessage(copy.startupVoiceFailure);
+        stopSkillVoiceRecognizer();
+        if (!autoStart) {
+          setStatusMessage(copy.startupVoiceFailure);
+        }
       },
       onStatusChange: (status) => {
-        setSkillVoiceStatus(status);
+        setSkillVoiceStatus(autoStart && status === "rejected" ? "idle" : status);
 
         if (status === "unsupported") {
+          stopSkillVoiceRecognizer();
           setStatusMessage(copy.startupVoiceUnsupported);
           return;
         }
 
         if (status === "blocked") {
+          stopSkillVoiceRecognizer();
           setStatusMessage(copy.startupVoiceBlocked);
           return;
         }
 
         if (status === "error") {
+          stopSkillVoiceRecognizer();
           setStatusMessage(copy.startupVoiceError);
           return;
         }
 
         if (status === "rejected") {
-          setStatusMessage(copy.startupVoiceFailure);
+          stopSkillVoiceRecognizer();
+          if (!autoStart) {
+            setStatusMessage(copy.startupVoiceFailure);
+          }
         }
       }
     });
@@ -738,6 +988,39 @@ export function BattleGameWorkspace() {
   function handleOpenHistory() {
     setStatusMessage(null);
     dispatch({ type: "go", screen: "history" });
+  }
+
+  function handleOpenMatchmaking() {
+    if (state.queueStatus === "IDLE") {
+      handleStartQueue();
+      return;
+    }
+
+    setStatusMessage(null);
+    dispatch({ type: "go", screen: "matchmaking" });
+  }
+
+  function handleOpenBattle() {
+    if (!hasActiveBattle) {
+      return;
+    }
+
+    setStatusMessage(null);
+    dispatch({ type: "go", screen: "battle" });
+  }
+
+  function handleOpenResult() {
+    if (!hasResultAvailable) {
+      return;
+    }
+
+    setStatusMessage(null);
+    dispatch({ type: "go", screen: "result" });
+  }
+
+  function handleGoHome() {
+    setStatusMessage(null);
+    dispatch({ type: "go", screen: "home" });
   }
 
   function handleNavigate(screen: ScreenKey) {
@@ -779,6 +1062,14 @@ export function BattleGameWorkspace() {
       requestId,
       submittedAtMs: Date.now()
     };
+    setBattleRendererAction({
+      actionId,
+      actorPlayerId: session.playerId,
+      reason: null,
+      result: "pending",
+      skillId: state.selectedSkillId,
+      skillName: findSkill(state.selectedSkillId).name
+    });
 
     try {
       connection.sendSubmitAction({
@@ -799,6 +1090,15 @@ export function BattleGameWorkspace() {
       setStatusMessage(null);
     } catch {
       pendingActionRef.current = null;
+      setBattleRendererAction((current) =>
+        current
+          ? {
+              ...current,
+              reason: copy.actionSubmitFailed,
+              result: "rejected"
+            }
+          : null
+      );
       dispatch({ type: "actionRejected", reason: null, latencyMs: 0 });
       setStatusMessage(copy.actionSubmitFailed);
     }
@@ -827,10 +1127,6 @@ export function BattleGameWorkspace() {
     if (liveRecognizerRef.current) {
       return;
     }
-    if (!isSkillInputUnlockedNow()) {
-      setStatusMessage(copy.skillVoiceGateRequired);
-      return;
-    }
 
     setStatusMessage(null);
     const recognizer = createBrowserLiveGestureRecognizer({
@@ -852,6 +1148,7 @@ export function BattleGameWorkspace() {
 
     if (status === "blocked" || status === "unsupported" || status === "error") {
       liveRecognizerRef.current = null;
+      liveInputHoldTokenRef.current = null;
     }
   }
 
@@ -860,6 +1157,7 @@ export function BattleGameWorkspace() {
     input: ReturnType<typeof createLiveCameraInput> | null
   ) {
     setLiveObservation(observation);
+    syncHeldLiveCameraGesture(observation, liveInputHoldTokenRef);
 
     if (input && canAcceptLiveGestureInput(stateRef.current)) {
       if (!isSkillInputUnlockedNow()) {
@@ -874,11 +1172,24 @@ export function BattleGameWorkspace() {
         return;
       }
 
+      const consumableInput = consumeHeldLiveCameraInput(input, liveInputHoldTokenRef);
+      if (!consumableInput) {
+        dispatch({
+          type: "receiveGestureObservation",
+          cameraReady: isCameraReadyObservation(observation),
+          handDetected: observation.handDetected,
+          gesture: observation.token,
+          confidence: observation.confidence,
+          source: "live_camera"
+        });
+        return;
+      }
+
       dispatch({
         type: "receiveGestureInput",
-        gesture: input.gesture,
-        confidence: input.confidence,
-        source: input.source
+        gesture: consumableInput.gesture,
+        confidence: consumableInput.confidence,
+        source: consumableInput.source
       });
       return;
     }
@@ -901,7 +1212,13 @@ export function BattleGameWorkspace() {
 
     recognizer.stop();
     liveRecognizerRef.current = null;
+    liveInputHoldTokenRef.current = null;
     setLiveObservation(null);
+  }
+
+  function stopSkillVoiceRecognizer() {
+    skillVoiceRecognizerRef.current?.stop();
+    skillVoiceRecognizerRef.current = null;
   }
 
   function handleRunDeterministicFallback() {
@@ -923,6 +1240,8 @@ export function BattleGameWorkspace() {
 
   function resetPracticeProgress(skill = selectedSkill) {
     clearPracticeAutoAdvance();
+    practiceHeldGestureRef.current = null;
+    setPracticeCompletedAtMs(null);
     const nextProgress = {
       targetSequence: [...skill.gestureSequence],
       currentStep: 0,
@@ -970,6 +1289,7 @@ export function BattleGameWorkspace() {
 
     if (status === "blocked" || status === "unsupported" || status === "error" || status === "stopped") {
       practiceRecognizerRef.current = null;
+      practiceHeldGestureRef.current = null;
     }
   }
 
@@ -984,6 +1304,7 @@ export function BattleGameWorkspace() {
       currentGesture: observation.token
     };
 
+    syncHeldPracticeGesture(observation, practiceHeldGestureRef);
     practiceProgressRef.current = nextProgress;
     setPracticeProgress(nextProgress);
     schedulePracticeAutoAdvance(observation);
@@ -1004,7 +1325,11 @@ export function BattleGameWorkspace() {
       return;
     }
 
-    const key = `${progress.completedRounds}:${progress.currentStep}:${expectedGesture}`;
+    if (practiceHeldGestureRef.current === expectedGesture) {
+      return;
+    }
+
+    const key = `${progress.currentStep}:${expectedGesture}`;
     if (practiceAutoAdvanceRef.current?.key === key) {
       return;
     }
@@ -1042,25 +1367,31 @@ export function BattleGameWorkspace() {
       return;
     }
 
+    practiceHeldGestureRef.current = expectedGesture;
     const nextStep = progress.currentStep + 1;
     const didCompleteRound = nextStep >= progress.targetSequence.length;
+    if (didCompleteRound) {
+      setPracticeCompletedAtMs(Date.now());
+    }
     const nextProgress = {
       ...progress,
-      currentStep: didCompleteRound ? 0 : nextStep,
-      completedRounds: didCompleteRound
-        ? progress.completedRounds + 1
-        : progress.completedRounds,
-      confidence: 0,
-      handDetected: false,
-      currentGesture: null
+      currentStep: didCompleteRound ? progress.targetSequence.length : nextStep,
+      completedRounds: didCompleteRound ? 1 : progress.completedRounds,
+      confidence: didCompleteRound ? observation.confidence : 0,
+      handDetected: didCompleteRound ? observation.handDetected : false,
+      currentGesture: didCompleteRound ? observation.token : null
     };
 
     practiceProgressRef.current = nextProgress;
     setPracticeProgress(nextProgress);
-    setPracticeObservation(null);
+    if (didCompleteRound) {
+      setPracticeObservation(observation);
+    } else {
+      setPracticeObservation(null);
+    }
     setStatusMessage(
       didCompleteRound
-        ? `${copy.practiceRoundComplete} ${nextProgress.completedRounds}${copy.practiceRoundUnit}`
+        ? copy.practiceActivationTriggered
         : null
     );
   }
@@ -1081,6 +1412,7 @@ export function BattleGameWorkspace() {
 
     recognizer.stop();
     practiceRecognizerRef.current = null;
+    practiceHeldGestureRef.current = null;
     clearPracticeAutoAdvance();
   }
 
@@ -1113,6 +1445,7 @@ export function BattleGameWorkspace() {
           return;
         }
         pendingActionRef.current = null;
+        setBattleRendererAction(null);
         dispatch({
           type: "battleStarted",
           battle
@@ -1136,6 +1469,14 @@ export function BattleGameWorkspace() {
           reason: event.payload.reason,
           latencyMs
         });
+        setBattleRendererAction({
+          actionId: event.payload.actionId,
+          actorPlayerId: stateRef.current.player.playerId,
+          reason: event.payload.reason,
+          result: "rejected",
+          skillId: stateRef.current.selectedSkillId,
+          skillName: findSkill(stateRef.current.selectedSkillId).name
+        });
         return;
       }
       case "battle.state_updated": {
@@ -1150,6 +1491,14 @@ export function BattleGameWorkspace() {
           type: "battleStateUpdated",
           battle,
           latencyMs
+        });
+        setBattleRendererAction({
+          actionId: event.payload.sourceActionId ?? `state_${battle.battleSessionId}_${battle.turnNumber}`,
+          actorPlayerId: stateRef.current.player.playerId,
+          reason: null,
+          result: "accepted",
+          skillId: stateRef.current.selectedSkillId,
+          skillName: findSkill(stateRef.current.selectedSkillId).name
         });
         setStatusMessage(null);
         return;
@@ -1168,6 +1517,15 @@ export function BattleGameWorkspace() {
           battle,
           ratingChange: event.payload.ratingChange ?? 0
         });
+        setBattleRendererAction((current) =>
+          current?.result === "pending"
+            ? {
+                ...current,
+                reason: null,
+                result: "accepted"
+              }
+            : current
+        );
         if (session) {
           void queryClient.invalidateQueries({
             queryKey: ["matchHistory", session.playerId]
@@ -1187,6 +1545,15 @@ export function BattleGameWorkspace() {
           requestId: event.requestId
         });
         dispatch({ type: "actionRejected", reason: null, latencyMs });
+        setBattleRendererAction((current) =>
+          current
+            ? {
+                ...current,
+                reason: event.payload.message || null,
+                result: "rejected"
+              }
+            : null
+        );
         setStatusMessage(event.payload.message || copy.actionSubmitFailed);
         return;
       }
@@ -1292,11 +1659,124 @@ export function BattleGameWorkspace() {
       : copy.playerMissing;
   const playerStatusTone = hasConfiguredLoadout ? "success" : "warning";
   const isStartupActionPending = createGuestMutation.isPending || startQueueMutation.isPending;
+  const practiceLoadoutNotice = isPracticeLoadoutSynced
+    ? copy.practiceLoadoutSynced
+    : copy.practiceLoadoutUnsynced;
+  const matchStatusHelp =
+    state.socketStatus === "DISCONNECTED" && state.queueStatus !== "IDLE"
+      ? copy.matchmakingDisconnectedHelp
+      : state.queueStatus === "MATCHED"
+        ? copy.matchmakingMatchedHelp
+        : copy.matchmakingSearchingHelp;
+
+  let homePrimaryAction: HomeAction;
+  let homePrimaryDisabled = false;
+  let homeLockedActionReason: string | null = null;
+  const homeSecondaryActions: HomeAction[] = [];
+
+  if (isRestoringPlayer) {
+    homePrimaryAction = {
+      actionLabel: copy.sessionRestoring,
+      actionVariant: "primary",
+      description: copy.sessionRestoring,
+      onClick: () => undefined
+    };
+    homePrimaryDisabled = true;
+  } else if (!session) {
+    homePrimaryAction = {
+      actionLabel: copy.startGuest,
+      actionVariant: "primary",
+      description: copy.homeActionHelpNoSession,
+      onClick: handleCreateGuest
+    };
+  } else if (hasResultAvailable) {
+    homePrimaryAction = {
+      actionLabel: copy.viewResult,
+      actionVariant: "primary",
+      description: copy.homeActionHelpResult,
+      onClick: handleOpenResult
+    };
+    homeSecondaryActions.push({
+      actionLabel: copy.viewHistory,
+      actionVariant: "default",
+      description: copy.resultNextActionHelp,
+      onClick: handleOpenHistory
+    });
+  } else if (hasActiveBattle) {
+    homePrimaryAction = {
+      actionLabel: copy.returnToBattle,
+      actionVariant: "primary",
+      description: copy.homeActionHelpBattle,
+      onClick: handleOpenBattle
+    };
+  } else if (isMatchSearching) {
+    homePrimaryAction = {
+      actionLabel: copy.cancelQueue,
+      actionVariant: "primary",
+      description: copy.homeActionHelpQueue,
+      onClick: handleCancelQueue
+    };
+    homePrimaryDisabled = cancelQueueMutation.isPending;
+  } else if (isMatchFoundWaiting) {
+    homePrimaryAction = {
+      actionLabel: copy.viewMatchmaking,
+      actionVariant: "primary",
+      description: copy.homeActionHelpMatched,
+      onClick: handleOpenMatchmaking
+    };
+  } else if (!hasConfiguredLoadout) {
+    homePrimaryAction = {
+      actionLabel: copy.openLoadoutSetup,
+      actionVariant: "primary",
+      description: copy.homeActionHelpLoadout,
+      onClick: handleOpenLoadout
+    };
+    homeSecondaryActions.push({
+      actionLabel: copy.startPracticeMode,
+      actionVariant: "default",
+      description: copy.practiceHelp,
+      onClick: () => handleNavigate("practice")
+    });
+    homeLockedActionReason = copy.loadoutRequired;
+  } else {
+    homePrimaryAction = {
+      actionLabel: copy.startMatch,
+      actionVariant: "primary",
+      description: copy.homeActionHelpReady,
+      onClick: handleStartQueue
+    };
+    homeSecondaryActions.push(
+      {
+        actionLabel: copy.startPracticeMode,
+        actionVariant: "default",
+        description: copy.practiceHelp,
+        onClick: () => handleNavigate("practice")
+      },
+      {
+        actionLabel: copy.editLoadout,
+        actionVariant: "default",
+        description: copy.loadout,
+        onClick: handleOpenLoadout
+      }
+    );
+  }
+
+  const progressBanner = getProgressBannerState({
+    activeScreen: state.screen,
+    hasActiveBattle,
+    hasResultAvailable,
+    isMatchFoundWaiting,
+    isMatchSearching,
+    onCancelQueue: handleCancelQueue,
+    onOpenBattle: handleOpenBattle,
+    onOpenMatchmaking: handleOpenMatchmaking,
+    onOpenResult: handleOpenResult
+  });
 
   return (
     <section className="play-workspace" aria-label={copy.appTitle}>
       <nav className="play-nav" aria-label="playflow">
-        {screenOrder.map((screen) => (
+        {navigationScreenOrder.map((screen) => (
           <button
             aria-current={state.screen === screen ? "page" : undefined}
             className="play-nav__button"
@@ -1310,6 +1790,24 @@ export function BattleGameWorkspace() {
       </nav>
 
       <div className="play-main">
+        {progressBanner ? (
+          <div className="progress-banner" data-state={progressBanner.state}>
+            <div className="progress-banner__content">
+              <StatusBadge tone={getProgressBannerTone(progressBanner.state)}>
+                {progressBanner.label}
+              </StatusBadge>
+              <p className="helper-text">{progressBanner.description}</p>
+            </div>
+            <Button
+              disabled={progressBanner.disabled}
+              onClick={progressBanner.onClick}
+              variant={progressBanner.variant}
+            >
+              {progressBanner.actionLabel}
+            </Button>
+          </div>
+        ) : null}
+
         {state.screen === "home" ? (
           <div className="surface-grid">
             <Panel title={copy.playerRating}>
@@ -1319,39 +1817,52 @@ export function BattleGameWorkspace() {
               <Metric label={copy.record} value={`${state.player.wins}W / ${state.player.losses}L`} />
               <Metric label={copy.skillDetail} value={getSkillDisplayName(equippedSkill)} />
             </Panel>
-            <Panel title={copy.matchmaking}>
+            <Panel title={copy.nextAction}>
               <div className="field-stack">
-                <label className="field">
-                  <span className="field__label">{copy.nickname}</span>
-                  <input
-                    className="text-input"
-                    name="nickname"
-                    onChange={(event) => setNicknameDraft(event.target.value)}
-                    placeholder={copy.nicknamePlaceholder}
-                    value={nicknameDraft}
-                  />
-                </label>
-                <p className="helper-text">{copy.createGuestHelp}</p>
+                {!session ? (
+                  <label className="field">
+                    <span className="field__label">{copy.nickname}</span>
+                    <input
+                      className="text-input"
+                      name="nickname"
+                      onChange={(event) => setNicknameDraft(event.target.value)}
+                      placeholder={copy.nicknamePlaceholder}
+                      value={nicknameDraft}
+                    />
+                  </label>
+                ) : null}
+                <div className="home-action-card">
+                  <strong>{homePrimaryAction.actionLabel}</strong>
+                  <p className="helper-text">{homePrimaryAction.description}</p>
+                </div>
                 {statusMessage ? <p className="status-text">{statusMessage}</p> : null}
                 <div className="action-row">
                   <Button
-                    disabled={createGuestMutation.isPending}
-                    onClick={handleCreateGuest}
+                    disabled={
+                      homePrimaryDisabled ||
+                      (homePrimaryAction.actionLabel === copy.startGuest && createGuestMutation.isPending) ||
+                      (homePrimaryAction.actionLabel === copy.startMatch && startQueueMutation.isPending)
+                    }
+                    onClick={homePrimaryAction.onClick}
+                    variant={homePrimaryAction.actionVariant}
                   >
-                    {copy.startGuest}
+                    {homePrimaryAction.actionLabel}
                   </Button>
-                  <Button onClick={handleOpenLoadout}>{copy.editLoadout}</Button>
-                  <Button onClick={() => handleNavigate("practice")}>
-                    {copy.startPracticeMode}
-                  </Button>
-                  <Button
-                    disabled={startQueueMutation.isPending}
-                    variant="primary"
-                    onClick={handleStartQueue}
-                  >
-                    {copy.startMatch}
-                  </Button>
+                  {homeSecondaryActions.map((action) => (
+                    <Button key={action.actionLabel} onClick={action.onClick} variant={action.actionVariant}>
+                      {action.actionLabel}
+                    </Button>
+                  ))}
                 </div>
+                {homeLockedActionReason ? (
+                  <div className="locked-action">
+                    <span className="field__label">{copy.lockedAction}</span>
+                    <div className="action-row">
+                      <Button disabled>{copy.startMatch}</Button>
+                    </div>
+                    <p className="helper-text">{homeLockedActionReason}</p>
+                  </div>
+                ) : null}
               </div>
             </Panel>
             <StartupVoicePanel
@@ -1454,6 +1965,14 @@ export function BattleGameWorkspace() {
                       playsInline
                       ref={practiceVideoRef}
                     />
+                    <div className="practice-camera__renderer">
+                      <AnimsetRendererSurface
+                        animsetId={practicePreviewAnimsetId}
+                        events={practiceRendererEvents}
+                        layout="overlay"
+                        scene="practice"
+                      />
+                    </div>
                     <canvas
                       aria-hidden="true"
                       className="practice-camera__mesh"
@@ -1465,20 +1984,35 @@ export function BattleGameWorkspace() {
                       </StatusBadge>
                     </div>
                   </div>
-                  <p className="helper-text">{copy.practiceHelp}</p>
+                  <div className="field-stack">
+                    <p className="helper-text">{copy.practiceHelp}</p>
+                    <p className="helper-text">{copy.practiceLoadoutSeparation}</p>
+                  </div>
                   <div className="practice-guide">
-                    <StatusBadge tone={isPracticeGestureRecognized ? "success" : "neutral"}>
-                      {isPracticeGestureRecognized
+                    <StatusBadge tone={practiceCompleted || isPracticeGestureRecognized ? "success" : "neutral"}>
+                      {practiceCompleted
+                        ? copy.practiceActivationTriggeredBadge
+                        : isPracticeGestureRecognized
                         ? copy.practiceGestureReady
                         : copy.practiceGestureWaiting}
                     </StatusBadge>
                     <div>
-                      <strong>{copy.practiceExpectedGesture}</strong>
-                      <span>{practiceExpectedGesture ?? copy.noGesture}</span>
+                      <strong>{practiceCompleted ? copy.practiceActivationState : copy.practiceExpectedGesture}</strong>
+                      <span>
+                        {practiceCompleted
+                          ? copy.practiceSkillComplete
+                          : practiceExpectedGesture ?? copy.noGesture}
+                      </span>
                     </div>
-                    <p>{getPracticeGestureGuide(practiceExpectedGesture)}</p>
+                    <p>
+                      {practiceCompleted
+                        ? copy.practiceActivationGuide
+                        : getPracticeGestureGuide(practiceExpectedGesture)}
+                    </p>
                     <p className="helper-text">
-                      {getPracticeRuntimeHelp(practiceRecognizerStatus, practiceObservation)}
+                      {practiceCompleted
+                        ? copy.practiceActivationHoldHelp
+                        : getPracticeRuntimeHelp(practiceRecognizerStatus, practiceObservation)}
                     </p>
                   </div>
                   <ProgressMeter
@@ -1501,7 +2035,10 @@ export function BattleGameWorkspace() {
                   <div className="metric-list">
                     <Metric label={copy.skillDetail} value={getSkillDisplayName(selectedSkill)} />
                     <Metric label={copy.skillDescription} value={getSkillPresentation(selectedSkill).summary} />
-                    <Metric label={copy.practiceRounds} value={practiceProgress.completedRounds} />
+                    <Metric
+                      label={copy.practiceActivationState}
+                      value={practiceCompleted ? copy.practiceSkillComplete : copy.practiceSkillRunning}
+                    />
                     <Metric label={copy.liveCameraStatus} value={getLiveRecognizerStatusLabel(practiceRecognizerStatus)} />
                     <Metric
                       label={copy.handStatus}
@@ -1520,23 +2057,20 @@ export function BattleGameWorkspace() {
                   </div>
                   {statusMessage ? <p className="status-text">{statusMessage}</p> : null}
                   <div className="action-row">
-                    <Button disabled={!canStartPractice} onClick={handleStartPractice} variant="primary">
-                      {practiceRecognizerStatus === "starting"
-                        ? getLiveRecognizerStatusLabel(practiceRecognizerStatus)
-                        : copy.practiceStart}
-                    </Button>
-                    <Button
-                      disabled={practiceRecognizerStatus !== "ready"}
-                      onClick={stopPracticeRecognizer}
-                    >
-                      {copy.practiceStop}
-                    </Button>
                     <Button onClick={() => resetPracticeProgress()}>{copy.practiceReset}</Button>
                   </div>
                 </div>
               )}
             </Panel>
             <Panel title={copy.practiceSelectSkill}>
+              <div className="practice-loadout-summary">
+                <Metric label={copy.practiceCurrentSkill} value={getSkillDisplayName(selectedSkill)} />
+                <Metric label={copy.practiceSavedLoadout} value={savedLoadoutLabel} />
+                <StatusBadge tone={isPracticeLoadoutSynced ? "success" : "warning"}>
+                  {isPracticeLoadoutSynced ? copy.ready : copy.checkRequired}
+                </StatusBadge>
+                <p className="helper-text">{practiceLoadoutNotice}</p>
+              </div>
               <div className="skill-list">
                 {activeSkillset.skills.map((skill) => (
                   <button
@@ -1550,6 +2084,29 @@ export function BattleGameWorkspace() {
                   </button>
                 ))}
               </div>
+              {practiceCompleted ? (
+                <div className="practice-completion-actions">
+                  <strong>{copy.practiceActivationTriggeredBadge}</strong>
+                  <p className="helper-text">{copy.practiceCompletionHelp}</p>
+                  <div className="action-row">
+                    <Button onClick={() => resetPracticeProgress()}>{copy.practiceReset}</Button>
+                    <Button
+                      disabled={!session || saveLoadoutMutation.isPending || isCatalogLoading || catalogFailed}
+                      onClick={handleSaveLoadout}
+                    >
+                      {copy.saveLoadout}
+                    </Button>
+                    <Button
+                      disabled={!hasConfiguredLoadout || startQueueMutation.isPending}
+                      onClick={handleStartQueue}
+                      variant="primary"
+                    >
+                      {copy.practiceContinueMatch}
+                    </Button>
+                  </div>
+                  {!hasConfiguredLoadout ? <p className="helper-text">{copy.loadoutRequired}</p> : null}
+                </div>
+              ) : null}
             </Panel>
           </div>
         ) : null}
@@ -1557,12 +2114,25 @@ export function BattleGameWorkspace() {
         {state.screen === "matchmaking" ? (
           <div className="surface-grid surface-grid--two">
             <Panel title={copy.matchingStatus}>
-              <Metric label={copy.matchingStatus} value={state.queueStatus} />
-              <Metric label={copy.socketStatus} value={state.socketStatus} />
-              <Metric
-                label={copy.cameraStatus}
-                value={state.input.cameraReady ? copy.ready : copy.checkRequired}
-              />
+              <div className="match-progress">
+                {matchProgressSteps.map((step) => (
+                  <div className="match-progress__step" data-state={step.state} key={step.label}>
+                    <strong>{step.label}</strong>
+                    <StatusBadge tone={getStepTone(step.state)}>
+                      {getStepLabel(step.state)}
+                    </StatusBadge>
+                  </div>
+                ))}
+              </div>
+              <div className="metric-list">
+                <Metric label={copy.matchingStatus} value={state.queueStatus} />
+                <Metric label={copy.socketStatus} value={state.socketStatus} />
+                <Metric
+                  label={copy.cameraStatus}
+                  value={state.input.cameraReady ? copy.ready : copy.checkRequired}
+                />
+              </div>
+              <p className="helper-text">{matchStatusHelp}</p>
               {statusMessage ? <p className="status-text">{statusMessage}</p> : null}
               <div className="action-row">
                 <Button
@@ -1611,9 +2181,16 @@ export function BattleGameWorkspace() {
               />
             </div>
             <div className="surface-grid">
+              <Panel title={copy.rendererPanelBattle}>
+                <AnimsetRendererSurface
+                  animsetId={state.equippedAnimsetId}
+                  events={battleRendererEvents}
+                  scene="battle"
+                />
+              </Panel>
               <Panel title={copy.selectedSkillStatus}>
                 <SkillDetailContent
-                  skill={selectedSkill}
+                  skill={battleSelectedSkill}
                   selectedCooldownTurns={selectedSkillCooldownTurns}
                 />
                 {deadlinePresentation ? (
@@ -1647,7 +2224,7 @@ export function BattleGameWorkspace() {
                       <div className="action-row">
                         <Button
                           disabled={skillVoiceStatus === "listening" || isServerConfirming}
-                          onClick={handleStartSkillVoiceGate}
+                          onClick={() => handleStartSkillVoiceGate()}
                           variant="primary"
                         >
                           {skillVoiceStatus === "listening"
@@ -1834,6 +2411,16 @@ export function BattleGameWorkspace() {
                 />
                 <Metric label={copy.playerRating} value={state.player.rating} />
               </div>
+              {state.battle ? (
+                <div className="renderer-section">
+                  <span className="field__label">{copy.rendererPanelResult}</span>
+                  <AnimsetRendererSurface
+                    animsetId={state.equippedAnimsetId}
+                    events={resultRendererEvents}
+                    scene="result"
+                  />
+                </div>
+              ) : null}
             </Panel>
             <Panel title={copy.nextAction}>
               <p className="helper-text">{copy.resultNextActionHelp}</p>
@@ -1841,8 +2428,9 @@ export function BattleGameWorkspace() {
                 <Button onClick={handleStartQueue} variant="primary">
                   {copy.rematch}
                 </Button>
+                <Button onClick={() => handleNavigate("practice")}>{copy.startPracticeMode}</Button>
                 <Button onClick={handleOpenHistory}>{copy.viewHistory}</Button>
-                <Button onClick={() => dispatch({ type: "resetBattle" })}>{copy.home}</Button>
+                <Button onClick={handleGoHome}>{copy.home}</Button>
               </div>
               {state.history[0] ? (
                 <div className="result-summary">
@@ -1907,6 +2495,167 @@ export function BattleGameWorkspace() {
   );
 }
 
+type ProgressBannerState = {
+  actionLabel: string;
+  description: string;
+  disabled?: boolean;
+  label: string;
+  onClick: () => void;
+  state: "battle" | "matched" | "result" | "searching";
+  variant: "default" | "primary";
+};
+
+function getProgressBannerState({
+  activeScreen,
+  hasActiveBattle,
+  hasResultAvailable,
+  isMatchFoundWaiting,
+  isMatchSearching,
+  onCancelQueue,
+  onOpenBattle,
+  onOpenMatchmaking,
+  onOpenResult
+}: {
+  activeScreen: ScreenKey;
+  hasActiveBattle: boolean;
+  hasResultAvailable: boolean;
+  isMatchFoundWaiting: boolean;
+  isMatchSearching: boolean;
+  onCancelQueue: () => void;
+  onOpenBattle: () => void;
+  onOpenMatchmaking: () => void;
+  onOpenResult: () => void;
+}): ProgressBannerState | null {
+  if (hasActiveBattle && activeScreen !== "battle") {
+    return {
+      actionLabel: copy.returnToBattle,
+      description: copy.homeActionHelpBattle,
+      label: copy.battleBannerActive,
+      onClick: onOpenBattle,
+      state: "battle",
+      variant: "primary"
+    };
+  }
+
+  if (isMatchFoundWaiting && activeScreen !== "matchmaking") {
+    return {
+      actionLabel: copy.viewMatchmaking,
+      description: copy.homeActionHelpMatched,
+      label: copy.matchingBannerMatched,
+      onClick: onOpenMatchmaking,
+      state: "matched",
+      variant: "primary"
+    };
+  }
+
+  if (isMatchSearching && activeScreen !== "matchmaking") {
+    return {
+      actionLabel: copy.cancelQueue,
+      description: copy.homeActionHelpQueue,
+      label: copy.matchingBannerSearching,
+      onClick: onCancelQueue,
+      state: "searching",
+      variant: "default"
+    };
+  }
+
+  if (hasResultAvailable && activeScreen !== "result") {
+    return {
+      actionLabel: copy.viewResult,
+      description: copy.homeActionHelpResult,
+      label: copy.resultBannerReady,
+      onClick: onOpenResult,
+      state: "result",
+      variant: "default"
+    };
+  }
+
+  return null;
+}
+
+function getProgressBannerTone(
+  state: ProgressBannerState["state"]
+): "neutral" | "success" | "warning" {
+  if (state === "battle") {
+    return "warning";
+  }
+  if (state === "result") {
+    return "success";
+  }
+  return "neutral";
+}
+
+function getMatchProgressSteps({
+  hasPlayerSession,
+  hasConfiguredLoadout,
+  socketStatus,
+  queueStatus,
+  hasActiveBattle
+}: {
+  hasPlayerSession: boolean;
+  hasConfiguredLoadout: boolean;
+  socketStatus: BattleFlowState["socketStatus"];
+  queueStatus: BattleFlowState["queueStatus"];
+  hasActiveBattle: boolean;
+}): MatchProgressStep[] {
+  return [
+    {
+      label: copy.matchmakingStepPlayer,
+      state: hasPlayerSession ? "done" : "active"
+    },
+    {
+      label: copy.matchmakingStepLoadout,
+      state: hasConfiguredLoadout ? "done" : hasPlayerSession ? "active" : "pending"
+    },
+    {
+      label: copy.matchmakingStepSocket,
+      state:
+        socketStatus === "CONNECTED"
+          ? "done"
+          : socketStatus === "CONNECTING"
+            ? "active"
+            : "pending"
+    },
+    {
+      label: copy.matchmakingStepQueue,
+      state:
+        queueStatus === "MATCHED"
+          ? "done"
+          : queueStatus === "SEARCHING"
+            ? "active"
+            : "pending"
+    },
+    {
+      label: copy.matchmakingStepFound,
+      state: queueStatus === "MATCHED" ? (hasActiveBattle ? "done" : "active") : "pending"
+    },
+    {
+      label: copy.matchmakingStepBattle,
+      state: hasActiveBattle ? "done" : queueStatus === "MATCHED" ? "active" : "pending"
+    }
+  ];
+}
+
+function getStepTone(state: MatchProgressStep["state"]): "neutral" | "success" | "warning" {
+  if (state === "done") {
+    return "success";
+  }
+  if (state === "active") {
+    return "warning";
+  }
+  return "neutral";
+}
+
+function getStepLabel(state: MatchProgressStep["state"]): string {
+  if (state === "done") {
+    return copy.progressDone;
+  }
+  if (state === "active") {
+    return copy.progressActive;
+  }
+  return copy.progressPending;
+}
+
 function createClientActionId(): string {
   return `act_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -1924,8 +2673,29 @@ function canAcceptLiveGestureInput(state: BattleFlowState): boolean {
   );
 }
 
-function getSkillVoiceGateCommands(skillName: string): readonly string[] {
-  return Array.from(new Set([...JAPANESE_STARTUP_COMMANDS, "領域展開", skillName]));
+function getSkillVoiceGateCommands(skill: Skill): readonly JapaneseStartupCommand[] {
+  const presentation = getSkillPresentation(skill);
+  const speechMetadata = SKILL_SPEECH_METADATA[skill.skillId];
+  const commands: JapaneseStartupCommand[] = [...JAPANESE_STARTUP_COMMANDS];
+
+  if (isVoiceActivatedSkill(skill)) {
+    commands.push(DOMAIN_EXPANSION_VOICE_COMMAND);
+  }
+
+  commands.push({
+    label: presentation.displayName,
+    aliases: speechMetadata?.voiceAliases ?? [skill.name]
+  });
+
+  return dedupeJapaneseVoiceCommands(commands);
+}
+
+function getSkillVoiceGateLanguage(): string {
+  return "ja-JP";
+}
+
+function isVoiceActivatedSkill(skill: Skill): boolean {
+  return skill.gestureSequence.includes("domain_seal") || skill.name.includes("領域展開");
 }
 
 function isCameraReadyObservation(observation: LiveGestureObservation): boolean {
@@ -1957,12 +2727,190 @@ function getSkillPresentation(skill: Skill): SkillPresentation {
   const koreanNameMatch = /^한국어명:\s*([^.]*)\.\s*(.*)$/u.exec(skill.description);
   const koreanName = koreanNameMatch?.[1]?.trim() || skill.name;
   const summary = koreanNameMatch?.[2]?.trim() || skill.description;
+  const speechMetadata = SKILL_SPEECH_METADATA[skill.skillId];
 
   return {
     japaneseName: skill.name,
+    japaneseReading: speechMetadata?.japaneseReading ?? null,
     koreanName,
     summary,
-    displayName: `${skill.name} - ${koreanName}`
+    displayName: `${skill.name}(${koreanName})`
+  };
+}
+
+function buildPracticeRendererEvents({
+  animsetId,
+  completedAtMs,
+  playerId,
+  practiceExpectedGesture,
+  practiceProgress,
+  practiceState,
+  selectedSkill
+}: {
+  animsetId: string;
+  completedAtMs: number | null;
+  playerId: string;
+  practiceExpectedGesture: string | null;
+  practiceProgress: PracticeProgress;
+  practiceState: PracticeState;
+  selectedSkill: Skill;
+}): RendererEventEnvelope[] {
+  const presentation = toRendererSkillPresentation(selectedSkill.skillId, animsetId);
+
+  return [
+    {
+      payload: {
+        animsetId,
+        playerId,
+        scene: "practice"
+      },
+      type: "renderer.bootstrap"
+    },
+    {
+      payload: {
+        gestureSequence: [...selectedSkill.gestureSequence],
+        presentation,
+        skillId: selectedSkill.skillId,
+        skillName: getSkillDisplayName(selectedSkill)
+      },
+      type: "practice.skill_selected"
+    },
+    {
+      payload: {
+        completedRounds: practiceProgress.completedRounds,
+        confidence: practiceProgress.confidence,
+        currentStep: practiceProgress.currentStep,
+        expectedToken: practiceExpectedGesture,
+        handDetected: practiceProgress.handDetected,
+        observedToken: practiceProgress.currentGesture,
+        progressPercent: getSequenceProgress(
+          Math.min(practiceProgress.currentStep, practiceProgress.targetSequence.length),
+          practiceProgress.targetSequence.length
+        ),
+        status: practiceState === "complete" ? "complete" : practiceState === "running" ? "running" : "idle",
+        targetLength: practiceProgress.targetSequence.length
+      },
+      type: "practice.progress_updated"
+    },
+    ...(completedAtMs
+      ? [
+          {
+            payload: {
+              completedAtMs,
+              completedRounds: practiceProgress.completedRounds,
+              skillId: selectedSkill.skillId
+            },
+            type: "practice.completed" as const
+          }
+        ]
+      : [])
+  ];
+}
+
+function buildBattleRendererEvents({
+  action,
+  animsetId,
+  battle,
+  playerId,
+  ratingChange,
+  scene,
+  selectedSkill
+}: {
+  action: RendererActionProjection | null;
+  animsetId: string;
+  battle: BattleState;
+  playerId: string;
+  ratingChange: number | null;
+  scene: "battle" | "result";
+  selectedSkill: Skill;
+}): RendererEventEnvelope[] {
+  const presentation = toRendererSkillPresentation(selectedSkill.skillId, animsetId);
+  const events: RendererEventEnvelope[] = [
+    {
+      payload: {
+        animsetId,
+        opponentId: battle.opponent.playerId,
+        playerId,
+        scene
+      },
+      type: "renderer.bootstrap"
+    },
+    {
+      payload: {
+        actionDeadlineAt: battle.actionDeadlineAt ?? null,
+        battleSessionId: battle.battleSessionId,
+        matchId: battle.matchId,
+        opponent: {
+          cooldowns: { ...battle.opponent.cooldowns },
+          hp: battle.opponent.hp,
+          mana: battle.opponent.mana,
+          playerId: battle.opponent.playerId
+        },
+        presentation,
+        selectedSkillId: selectedSkill.skillId,
+        selectedSkillName: getSkillDisplayName(selectedSkill),
+        self: {
+          cooldowns: { ...battle.self.cooldowns },
+          hp: battle.self.hp,
+          mana: battle.self.mana,
+          playerId: battle.self.playerId
+        },
+        status: battle.status,
+        turnNumber: battle.turnNumber,
+        turnOwnerPlayerId: battle.turnOwnerPlayerId
+      },
+      type: "battle.state_snapshot"
+    }
+  ];
+
+  if (action) {
+    events.push({
+      payload: {
+        actionId: action.actionId,
+        actorPlayerId: action.actorPlayerId,
+        presentation: action.skillId ? presentation : undefined,
+        reason: action.reason,
+        result: action.result,
+        skillId: action.skillId,
+        skillName: action.skillName
+      },
+      type: "battle.action_resolved"
+    });
+  }
+
+  if (battle.status === "ENDED") {
+    events.push({
+      payload: {
+        battleSessionId: battle.battleSessionId,
+        endedReason: battle.endedReason ?? null,
+        loserPlayerId: battle.loserPlayerId ?? null,
+        ratingChange,
+        resultForPlayer: battle.winnerPlayerId
+          ? battle.winnerPlayerId === playerId
+            ? "WIN"
+            : "LOSE"
+          : null,
+        winnerPlayerId: battle.winnerPlayerId
+      },
+      type: "battle.ended"
+    });
+  }
+
+  return events;
+}
+
+function toRendererSkillPresentation(skillId: string, animsetId: string) {
+  const presentation = resolveSkillPresentationEntry(skillId, animsetId);
+
+  return {
+    animsetId: presentation.animsetId,
+    cameraPresetId: presentation.cameraPresetId,
+    clipId: presentation.clipId,
+    fallbackMode: presentation.fallbackMode,
+    impactVfxId: presentation.impactVfxId,
+    skillId: presentation.skillId,
+    tier: presentation.tier,
+    timelineId: presentation.timelineId
   };
 }
 
@@ -1991,6 +2939,7 @@ function Metric({ label, value }: { label: string; value: string | number }) {
 
 type SkillPresentation = {
   japaneseName: string;
+  japaneseReading: string | null;
   koreanName: string;
   summary: string;
   displayName: string;
@@ -2083,7 +3032,7 @@ function SkillDetailContent({
 }
 
 type StartupVoicePanelProps = {
-  commands: readonly string[];
+  commands: readonly JapaneseStartupCommand[];
   disabled: boolean;
   matchedCommand: string | null;
   onManualStart: () => void;
@@ -2128,8 +3077,8 @@ function StartupVoicePanel({
         />
         <div className="startup-voice__commands" aria-label={copy.startupVoiceCommandExamples}>
           {commands.map((command) => (
-            <span className="startup-voice__command" key={command}>
-              {command}
+            <span className="startup-voice__command" key={getJapaneseVoiceCommandLabel(command)}>
+              {getJapaneseVoiceCommandLabel(command)}
             </span>
           ))}
         </div>
@@ -2186,12 +3135,31 @@ function CooldownList({ cooldowns }: { cooldowns: Record<string, number> }) {
       ) : (
         <ul className="cooldown-list__items">
           {activeCooldowns.map(([skillId, turns]) => (
-            <li key={skillId}>{`${findSkill(skillId).name} · ${formatCooldownTurns(turns)}`}</li>
+            <li key={skillId}>{`${getSkillDisplayName(findSkill(skillId))} · ${formatCooldownTurns(turns)}`}</li>
           ))}
         </ul>
       )}
     </div>
   );
+}
+
+function dedupeJapaneseVoiceCommands(
+  commands: readonly JapaneseStartupCommand[]
+): JapaneseStartupCommand[] {
+  const seenLabels = new Set<string>();
+  const dedupedCommands: JapaneseStartupCommand[] = [];
+
+  for (const command of commands) {
+    const label = getJapaneseVoiceCommandLabel(command);
+    if (seenLabels.has(label)) {
+      continue;
+    }
+
+    seenLabels.add(label);
+    dedupedCommands.push(command);
+  }
+
+  return dedupedCommands;
 }
 
 function ProgressMeter({
@@ -2724,6 +3692,33 @@ function getLiveObservationReasonLabel(reason: LiveGestureObservation["reason"])
   return copy.liveObservationReasonText[reason];
 }
 
+function resolvePracticePreviewAnimsetId({
+  animsets,
+  selectedAnimsetId,
+  selectedSkillId
+}: {
+  animsets: readonly Animset[];
+  selectedAnimsetId: string;
+  selectedSkillId: string;
+}): string {
+  const unityPreviewAnimsetId = "animset_unity_jjk";
+  const hasSelectedAnimset = animsets.some((animset) => animset.animsetId === selectedAnimsetId);
+  const fallbackAnimsetId = hasSelectedAnimset
+    ? selectedAnimsetId
+    : animsets[0]?.animsetId ?? selectedAnimsetId;
+
+  if (!animsets.some((animset) => animset.animsetId === unityPreviewAnimsetId)) {
+    return fallbackAnimsetId;
+  }
+
+  const unityPresentation = resolveSkillPresentationEntry(selectedSkillId, unityPreviewAnimsetId);
+  if (unityPresentation.fallbackMode === "unity") {
+    return unityPreviewAnimsetId;
+  }
+
+  return fallbackAnimsetId;
+}
+
 function drawHandMeshOverlay(
   canvas: HTMLCanvasElement | null,
   handLandmarks: LiveGestureLandmark[][]
@@ -2795,6 +3790,47 @@ function drawHandMeshOverlay(
   }
 
   context.restore();
+}
+
+function syncHeldLiveCameraGesture(
+  observation: LiveGestureObservation,
+  holdTokenRef: { current: string | null }
+) {
+  if (
+    observation.reason !== "recognized" ||
+    !observation.handDetected ||
+    observation.token === null
+  ) {
+    holdTokenRef.current = null;
+  }
+}
+
+function consumeHeldLiveCameraInput(
+  input: ReturnType<typeof createLiveCameraInput>,
+  holdTokenRef: { current: string | null }
+): ReturnType<typeof createLiveCameraInput> | null {
+  if (holdTokenRef.current === input.gesture) {
+    return null;
+  }
+
+  holdTokenRef.current = input.gesture;
+  return input;
+}
+
+function syncHeldPracticeGesture(
+  observation: LiveGestureObservation,
+  holdTokenRef: { current: string | null }
+) {
+  if (
+    holdTokenRef.current !== null &&
+    (
+      observation.reason !== "recognized" ||
+      !observation.handDetected ||
+      observation.token !== holdTokenRef.current
+    )
+  ) {
+    holdTokenRef.current = null;
+  }
 }
 
 function getLiveHandState(observation: LiveGestureObservation | null): LiveHandState {

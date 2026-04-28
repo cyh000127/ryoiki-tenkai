@@ -4,21 +4,39 @@ import {
   type BrowserSpeechTranscriptRecognizer
 } from "../../../shared/speech/browserSpeechRecognition";
 
-export const JAPANESE_STARTUP_COMMANDS = [
-  "起動して",
-  "スタート",
-  "始めて",
-  "開始",
-  "エンジンをかけて",
-  "結界展開",
-  "術式起動",
-  "呪力起動",
-  "封印解除",
-  "開門",
-  "解放"
-] as const;
+export type JapaneseVoiceCommandDefinition = {
+  label: string;
+  aliases?: readonly string[];
+};
 
-export type JapaneseStartupCommand = (typeof JAPANESE_STARTUP_COMMANDS)[number] | string;
+export const JAPANESE_STARTUP_COMMANDS = [
+  {
+    label: "術式起動(술식기동)",
+    aliases: ["術式起動", "術式を起動して", "じゅつしききどう"]
+  },
+  {
+    label: "呪力起動(주력기동)",
+    aliases: ["呪力起動", "じゅりょくきどう"]
+  },
+  {
+    label: "結界展開(결계전개)",
+    aliases: ["結界展開", "けっかいてんかい"]
+  },
+  {
+    label: "封印解除(봉인해제)",
+    aliases: ["封印解除", "ふういんかいじょ"]
+  },
+  {
+    label: "開門(개문)",
+    aliases: ["開門", "かいもん"]
+  },
+  {
+    label: "解放(해방)",
+    aliases: ["解放", "かいほう"]
+  }
+] as const satisfies readonly JapaneseVoiceCommandDefinition[];
+
+export type JapaneseStartupCommand = string | JapaneseVoiceCommandDefinition;
 
 export type StartupVoiceRecognitionStatus =
   | "idle"
@@ -31,7 +49,7 @@ export type StartupVoiceRecognitionStatus =
 
 export type StartupVoiceRecognitionResult = {
   transcript: string;
-  matchedCommand: JapaneseStartupCommand | null;
+  matchedCommand: string | null;
   status: "matched" | "rejected";
 };
 
@@ -42,6 +60,7 @@ export type StartupVoiceCommandRecognizer = {
 
 type StartupVoiceCommandRecognizerOptions = {
   commands?: readonly JapaneseStartupCommand[];
+  lang?: string;
   onResult: (result: StartupVoiceRecognitionResult) => void;
   onStatusChange?: (status: StartupVoiceRecognitionStatus) => void;
 };
@@ -52,22 +71,32 @@ export function normalizeJapaneseCommandText(text: string): string {
   return text.trim().toLocaleLowerCase("ja-JP").replace(textNoisePattern, "");
 }
 
+export function getJapaneseVoiceCommandLabel(command: JapaneseStartupCommand): string {
+  return typeof command === "string" ? command : command.label;
+}
+
 export function matchJapaneseStartupCommand(
   transcript: string,
   commands: readonly JapaneseStartupCommand[] = JAPANESE_STARTUP_COMMANDS
-): JapaneseStartupCommand | null {
+): string | null {
   const normalizedTranscript = normalizeJapaneseCommandText(transcript);
 
   if (!normalizedTranscript) {
     return null;
   }
 
-  return (
-    commands.find((command) => {
-      const normalizedCommand = normalizeJapaneseCommandText(command);
-      return normalizedCommand.length > 0 && normalizedTranscript.includes(normalizedCommand);
-    }) ?? null
-  );
+  const matchedCommand = commands.find((command) => {
+    const normalizedAliases = resolveJapaneseVoiceCommandAliases(command).map(
+      normalizeJapaneseCommandText
+    );
+
+    return normalizedAliases.some(
+      (normalizedAlias) =>
+        normalizedAlias.length > 0 && normalizedTranscript.includes(normalizedAlias)
+    );
+  });
+
+  return matchedCommand ? getJapaneseVoiceCommandLabel(matchedCommand) : null;
 }
 
 export function createJapaneseStartupVoiceCommandRecognizer(
@@ -80,7 +109,7 @@ export function createJapaneseStartupVoiceCommandRecognizer(
     async start() {
       recognizer = createBrowserSpeechTranscriptRecognizer(
         {
-          lang: "ja-JP",
+          lang: options.lang ?? "ja-JP",
           onEndWithoutTranscript: () => {
             options.onStatusChange?.("rejected");
           },
@@ -126,4 +155,12 @@ function toStartupVoiceRecognitionStatus(
   }
 
   return status;
+}
+
+function resolveJapaneseVoiceCommandAliases(command: JapaneseStartupCommand): readonly string[] {
+  if (typeof command === "string") {
+    return [command];
+  }
+
+  return [command.label, ...(command.aliases ?? [])];
 }

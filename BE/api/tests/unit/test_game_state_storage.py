@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 
 import pytest
 from gesture_api.db.base import Base
+from gesture_api.domain.catalog import SKILLSETS
 from gesture_api.domain.game import PlayerRecord
 from gesture_api.repositories.game_state import (
     InMemoryGameStateRepository,
@@ -14,9 +15,15 @@ from gesture_api.repositories.game_state_storage import (
     NullGameStateStorageAdapter,
     SqlGameStateStorageAdapter,
 )
+from gesture_api.repositories.runtime_state import (
+    InMemoryBattleRuntimeStore,
+    InMemoryMatchQueueStore,
+)
 from gesture_api.settings import get_settings
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+DEFAULT_SKILL = SKILLSETS[0].skills[0]
 
 
 def test_json_game_state_storage_adapter_round_trips_snapshot(tmp_path) -> None:
@@ -115,6 +122,28 @@ def test_null_game_state_storage_adapter_keeps_runtime_state_ephemeral() -> None
     assert reloaded.get_player(player.player_id) is None
 
 
+def test_game_state_repository_uses_runtime_store_boundaries() -> None:
+    queue_store = InMemoryMatchQueueStore()
+    battle_runtime_store = InMemoryBattleRuntimeStore()
+    repository = InMemoryGameStateRepository(
+        storage_adapter=NullGameStateStorageAdapter(),
+        queue_store=queue_store,
+        battle_runtime_store=battle_runtime_store,
+    )
+    player_one = repository.create_guest_player("queue-one")
+    player_two = repository.create_guest_player("queue-two")
+
+    repository.enter_queue(player_one.player_id)
+    repository.enter_queue(player_two.player_id)
+    battle = repository.create_match_for_player(player_two.player_id, allow_practice=False)
+
+    assert battle is not None
+    assert queue_store.get(player_one.player_id) is None
+    assert queue_store.get(player_two.player_id) is None
+    assert battle_runtime_store.get_active_battle_id(player_one.player_id) == battle.battle_session_id
+    assert battle_runtime_store.get_latest_battle_id(player_two.player_id) == battle.battle_session_id
+
+
 def test_sql_game_state_storage_adapter_round_trips_snapshot() -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:")
     Base.metadata.create_all(engine)
@@ -181,3 +210,67 @@ def test_default_game_state_storage_backend_is_sql(monkeypatch) -> None:
         get_settings.cache_clear()
 
     assert isinstance(adapter, SqlGameStateStorageAdapter)
+
+
+def test_practice_rival_skips_turn_when_it_cannot_afford_its_skill() -> None:
+    repository = InMemoryGameStateRepository(storage_adapter=NullGameStateStorageAdapter())
+    player = repository.create_guest_player("practice-mana")
+    repository.update_loadout(
+        player_id=player.player_id,
+        skillset_id="skillset_seal_basic",
+        animset_id="animset_basic_2d",
+    )
+    repository.enter_queue(player.player_id)
+    battle = repository.create_match_for_player(player.player_id)
+
+    assert battle is not None
+    battle.participants["pl_practice"].mana = max(0, DEFAULT_SKILL.mana_cost - 11)
+
+    status, updated_battle, reason = repository.submit_action(
+        battle_session_id=battle.battle_session_id,
+        player_id=player.player_id,
+        turn_number=1,
+        action_id="act-practice-low-mana",
+        gesture_sequence=DEFAULT_SKILL.gesture_sequence,
+    )
+
+    assert status == "accepted"
+    assert reason is None
+    assert updated_battle is not None
+    assert updated_battle.turn_number == 3
+    assert updated_battle.turn_owner_player_id == player.player_id
+    assert updated_battle.participants[player.player_id].hp == 100
+    assert updated_battle.participants["pl_practice"].mana == DEFAULT_SKILL.mana_cost - 1
+    assert len(updated_battle.battle_log) == 1
+
+
+def test_practice_rival_skips_turn_when_its_skill_is_still_on_cooldown() -> None:
+    repository = InMemoryGameStateRepository(storage_adapter=NullGameStateStorageAdapter())
+    player = repository.create_guest_player("practice-cooldown")
+    repository.update_loadout(
+        player_id=player.player_id,
+        skillset_id="skillset_seal_basic",
+        animset_id="animset_basic_2d",
+    )
+    repository.enter_queue(player.player_id)
+    battle = repository.create_match_for_player(player.player_id)
+
+    assert battle is not None
+    battle.participants["pl_practice"].cooldowns[DEFAULT_SKILL.skill_id] = 2
+
+    status, updated_battle, reason = repository.submit_action(
+        battle_session_id=battle.battle_session_id,
+        player_id=player.player_id,
+        turn_number=1,
+        action_id="act-practice-cooldown",
+        gesture_sequence=DEFAULT_SKILL.gesture_sequence,
+    )
+
+    assert status == "accepted"
+    assert reason is None
+    assert updated_battle is not None
+    assert updated_battle.turn_number == 3
+    assert updated_battle.turn_owner_player_id == player.player_id
+    assert updated_battle.participants[player.player_id].hp == 100
+    assert updated_battle.participants["pl_practice"].cooldowns[DEFAULT_SKILL.skill_id] == 1
+    assert len(updated_battle.battle_log) == 1

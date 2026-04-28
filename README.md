@@ -38,6 +38,7 @@
 - game state persistence 기본 backend가 PostgreSQL storage adapter로 전환되었습니다.
 - v5 연습모드/매칭 플로우 재기획 문서가 작성되었습니다.
 - v5 기본 손동작 런타임이 MediaPipe Hand Landmarker로 전환되었습니다.
+- v6 Unity WebGL renderer scaffold와 practice overlay preview가 연결되었습니다.
 - 스킬명, 스킬 효과, 손동작 리소스, 시각 자산은 별도 domain source 확정 후 진행합니다.
 - 최종 릴리스 점검 문서: `docs/implementation-artifacts/v1-release-readiness.ko.md`
 - v2-1 구현 기록: `docs/implementation-artifacts/v2-1-live-recognizer-adapter.ko.md`
@@ -114,6 +115,9 @@
 - two-player queue pairing과 practice path 분리
 - v5 연습모드와 매칭의 목적지/진행 상태 분리 기획 문서화
 - 기본 live camera recognizer를 MediaPipe Hand Landmarker 기반 손 landmark 판정으로 전환
+- practice 카메라 overlay 안에서 Unity/HTML renderer preview 재생
+- practice 화면 진입 시 카메라 recognizer 자동 시작
+- `赫(혁)`, `虚式「茈」(허식 자)`, `領域展開「無量空処」(무량공처)` placeholder 연출 3종 practice preview
 
 ## 실행 방법
 
@@ -123,7 +127,8 @@
 - Node.js
 - `uv`
 - `pnpm`
-- Docker Compose
+- PostgreSQL `16+` 또는 Docker Compose
+- Homebrew (macOS에서 PostgreSQL을 설치할 때 선택)
 
 ### 처음 한 번만 설치
 
@@ -138,6 +143,60 @@ pnpm --dir FE/app install
 
 ```powershell
 Copy-Item FE/app/.env.example FE/app/.env
+```
+
+### 로컬 macOS 실행: Docker 없이
+
+Docker가 없어도 로컬 PostgreSQL만 준비되어 있으면 백엔드와 프론트를 바로 실행할 수 있습니다.
+
+1. PostgreSQL을 설치하고 시작합니다.
+
+```bash
+brew install postgresql@16
+brew services start postgresql@16
+```
+
+2. 개발용 role과 database를 한 번만 준비합니다.
+
+```bash
+createuser app
+psql postgres -c "ALTER USER app WITH PASSWORD 'app';"
+createdb -O app gesture_skill
+```
+
+3. SQL migration을 적용합니다.
+
+```bash
+export DATABASE_URL="postgresql+psycopg://app:app@localhost:5432/gesture_skill"
+export GAME_STATE_STORAGE_BACKEND="sql"
+cd BE/api
+uv run --package gesture-api alembic upgrade head
+```
+
+주의:
+
+- `alembic.ini`의 `script_location = migrations`는 `BE/api` 기준 상대경로입니다.
+- migration command는 `BE/api` 디렉터리에서 실행하는 것을 권장합니다.
+
+4. 백엔드를 실행합니다.
+
+```bash
+export DATABASE_URL="postgresql+psycopg://app:app@localhost:5432/gesture_skill"
+export GAME_STATE_STORAGE_BACKEND="sql"
+cd BE/api
+uv run --package gesture-api uvicorn gesture_api.main:app --app-dir src --reload --host 0.0.0.0 --port 8000
+```
+
+5. 새 터미널에서 프론트엔드를 실행합니다.
+
+```bash
+pnpm --dir FE/app dev
+```
+
+6. 브라우저에서 접속합니다.
+
+```text
+http://localhost:5173
 ```
 
 ### 빠른 실행: 전체 런타임을 Compose로 실행
@@ -373,6 +432,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check
 - `docs/planning-artifacts/v5/stories.ko.md`: v5 스토리 상태와 검증 기준.
 - `docs/planning-artifacts/v5/implementation-order.ko.md`: v5 구현 순서와 커밋 단위.
 - `docs/planning-artifacts/v5/prerequisites.ko.md`: v5 선행조건과 구현 중단 조건.
+- `docs/implementation-artifacts/v6-1-practice-overlay-preview.ko.md`: practice 카메라 overlay preview와 auto-start 구현 기록.
+- `docs/planning-artifacts/v6/unity-renderer-spec.ko.md`: v6 Unity renderer 명세.
+- `docs/planning-artifacts/v6/implementation-order.ko.md`: v6 구현 순서와 커밋 단위.
+- `docs/planning-artifacts/v6/todo.ko.md`: v6 현재 TODO와 남은 작업.
 - `docs/implementation-artifacts/v2-planning-baseline.ko.md`: v2 planning baseline 구현 기록.
 - `docs/implementation-artifacts/v2-smoke-checklist.ko.md`: v2 smoke checklist와 blocked 항목.
 - `docs/implementation-artifacts/v2-release-readiness.ko.md`: v2 checkpoint 판정과 full v2 release blocker.

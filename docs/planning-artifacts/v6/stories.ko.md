@@ -1,0 +1,177 @@
+# v6 스토리
+
+상태 값:
+
+- `planned`: 구현 예정.
+- `blocked`: 선행조건이 없어 구현하면 안 됨.
+- `deferred`: v6 첫 통합 범위 밖으로 미룸.
+
+## V6-E1: Unity Bridge Foundation
+
+### V6-E1-ST01: Renderer Port와 책임 경계 분리
+
+- Status: planned
+- Scope: React가 사용할 `animset renderer port`를 정의하고, React/FastAPI/Unity 각자의 책임을 명시한다.
+- Acceptance criteria: Unity adapter가 없어도 같은 renderer port 위에서 기존 2D fallback renderer를 계속 사용할 수 있다.
+- Dependencies: 현재 `animsetId` 저장 흐름, battle/practice state model.
+- Verification: renderer port unit test, doc review.
+
+### V6-E1-ST02: Unity WebGL Mount Lifecycle
+
+- Status: planned
+- Scope: practice/battle surface에 Unity WebGL build를 mount/unmount 하고, resize/visibility/error lifecycle을 관리한다.
+- Acceptance criteria: 화면 전환 또는 animset 교체 시 중복 mount 없이 renderer lifecycle이 정리된다.
+- Dependencies: V6-E1-ST01, Unity WebGL build 산출물.
+- Verification: browser smoke check, lifecycle unit test.
+
+### V6-E1-ST03: Animset Registry와 Renderer 선택
+
+- Status: planned
+- Scope: `animsetId` 별로 `unity-webgl` 또는 `html-fallback` renderer를 선택하는 registry를 둔다.
+- Acceptance criteria: 같은 `skillId`라도 `animsetId`가 바뀌면 다른 renderer/연출 세트를 선택할 수 있다.
+- Dependencies: loadout의 `equippedAnimsetId`, V6-E1-ST01.
+- Verification: frontend unit test.
+
+### V6-E1-ST04: Renderer Event Contract v1
+
+- Status: planned
+- Scope: React -> Unity, Unity -> React 메시지 envelope와 필수 event type을 정의한다.
+- Acceptance criteria: Unity는 JSON event를 받아 장면만 갱신하고, React는 gameplay authority를 잃지 않는다.
+- Dependencies: V6-E1-ST01, battle/practice projection 요구사항.
+- Verification: bridge adapter contract test.
+
+## V6-E2: Skill Presentation Model And Authoring Workflow
+
+### V6-E2-ST01: Skill Presentation Manifest Schema
+
+- Status: planned
+- Scope: `skillId`, `animsetId`, `clipId`, `impactVfxId`, `cameraPresetId`, `poster/preview`를 묶는 manifest schema를 정의한다.
+- Acceptance criteria: 새 스킬 연출 추가가 코드 분기 대신 manifest 데이터 추가로 시작된다.
+- Dependencies: V6-E1-ST03.
+- Verification: schema validation test.
+
+### V6-E2-ST02: Hero Skill Starter Set
+
+- Status: planned
+- Scope: v6 첫 통합은 `hero` 등급 스킬 3~4개만 Unity 연출을 제공하고, 나머지는 fallback renderer를 유지한다.
+- Acceptance criteria: 대표 스킬 몇 개만으로도 Unity 통합 가치를 확인할 수 있다.
+- Dependencies: V6-E2-ST01, 초기 Unity asset 제작.
+- Verification: manual smoke check.
+
+### V6-E2-ST03: 신규 스킬 Onboarding Checklist
+
+- Status: planned
+- Scope: 새 스킬 추가 시 `backend rule`, `frontend catalog`, `recognizer token`, `presentation manifest`, `Unity asset`, `smoke test` 순서를 문서화한다.
+- Acceptance criteria: 팀원이 새 스킬 하나를 넣을 때 어디를 수정해야 하는지 문서만 보고 따라갈 수 있다.
+- Dependencies: V6-E2-ST01.
+- Verification: checklist review.
+
+### V6-E2-ST04: 신규 Gesture Token 경계
+
+- Status: planned
+- Scope: 스킬 추가가 새 gesture token을 요구하는 경우 recognizer spec을 먼저 확정하고, token 없는 상태에서 Unity asset만 먼저 merge하지 않도록 규칙을 둔다.
+- Acceptance criteria: `새 스킬 연출`과 `새 손동작 인식`이 서로 다른 작업임을 계획과 리뷰에서 분리한다.
+- Dependencies: MediaPipe token catalog, recognizer owner 합의.
+- Verification: doc review.
+
+## V6-E3: Practice Renderer Integration
+
+### V6-E3-ST01: Practice Surface 에 Unity Renderer 탑재
+
+- Status: planned
+- Scope: 연습 화면 카메라 주변 또는 보조 패널에 Unity renderer surface를 탑재한다.
+- Acceptance criteria: Unity surface가 연습 화면의 주 기능을 가리지 않고, 카메라 중심 레이아웃을 유지한다.
+- Dependencies: V6-E1-ST02, V6-E1-ST03.
+- Verification: responsive smoke check.
+
+### V6-E3-ST02: Practice 진행 상태 투영
+
+- Status: planned
+- Scope: 선택한 술식, 목표 sequence, 현재 단계, 진행률, 완료 상태를 React state에서 Unity event로 보낸다.
+- Acceptance criteria: Unity가 연습 진행을 표시해도 실제 완료 판정은 기존 프론트 상태를 따른다.
+- Dependencies: V6-E1-ST04, practice recognizer state.
+- Verification: frontend unit test, manual camera smoke check.
+
+### V6-E3-ST03: 연습 술식과 저장 로드아웃 분리 유지
+
+- Status: planned
+- Scope: Unity 연출이 들어와도 `연습 중인 술식`과 `저장된 매칭 로드아웃`을 혼동하지 않도록 UI와 renderer 이벤트를 분리한다.
+- Acceptance criteria: 사용자가 보고 있는 멋진 연출이 곧바로 매칭 loadout 저장을 의미하지 않는다.
+- Dependencies: 기존 practice/loadout separation UI.
+- Verification: workspace UI regression test.
+
+### V6-E3-ST04: Practice Fallback Preview
+
+- Status: planned
+- Scope: Unity unavailable, asset missing, unsupported 환경에서는 poster/webm/mp4 또는 기존 HTML UI로 연습 프리뷰를 대체한다.
+- Acceptance criteria: Unity가 없어도 연습은 막히지 않는다.
+- Dependencies: V6-E2-ST01, existing practice UI.
+- Verification: forced fallback smoke check.
+
+## V6-E4: Battle Renderer Integration
+
+### V6-E4-ST01: Battle Surface 에 Unity Renderer 탑재
+
+- Status: planned
+- Scope: 전투 보드에 Unity renderer surface를 배치하되, HP/mana/turn UI와 입력 패널은 기존 웹 UI가 계속 담당한다.
+- Acceptance criteria: Unity surface 추가 후에도 전투 조작과 정보 확인이 웹 UI 기준으로 가능하다.
+- Dependencies: V6-E1-ST02, battle workspace layout.
+- Verification: responsive smoke check.
+
+### V6-E4-ST02: Authoritative Battle Snapshot Projection
+
+- Status: planned
+- Scope: `battle.started`, 최신 battle snapshot, turn owner, HP/mana/cooldown 상태를 React에서 Unity로 투영한다.
+- Acceptance criteria: Unity는 snapshot을 시각화하지만 수치를 직접 계산하지 않는다.
+- Dependencies: battle WebSocket event handling, V6-E1-ST04.
+- Verification: integration test with mocked battle events.
+
+### V6-E4-ST03: Action Accepted/Rejected Timeline
+
+- Status: planned
+- Scope: action accepted 시 skill timeline을, rejected 시 neutral/error timeline을 보여주도록 projection event를 설계한다.
+- Acceptance criteria: Unity 연출이 거짓 성공을 보여주지 않고 authoritative 결과를 따른다.
+- Dependencies: action request correlation data, V6-E2-ST01.
+- Verification: frontend unit test with mocked action results.
+
+### V6-E4-ST04: Reconnect와 Result Replay
+
+- Status: planned
+- Scope: active battle reconnect, ended battle result, 직전 결과 재진입 시 Unity 장면을 snapshot 기준으로 복구 또는 replay 한다.
+- Acceptance criteria: 새로고침 또는 화면 이탈 후에도 battle/result surface가 깨지지 않는다.
+- Dependencies: reconnect resync flow, V6-E4-ST02.
+- Verification: websocket reconnection smoke check.
+
+## V6-E5: Safety, Performance, And Rollout
+
+### V6-E5-ST01: Unity Unavailable Fallback
+
+- Status: planned
+- Scope: Unity build load 실패, WebGL 미지원, bridge timeout 상황에서 기존 HTML/CSS renderer로 자동 복귀한다.
+- Acceptance criteria: 전투 중 Unity가 죽어도 queue, submit, result flow는 계속 동작한다.
+- Dependencies: V6-E1-ST02, fallback renderer.
+- Verification: forced loader failure smoke check.
+
+### V6-E5-ST02: Version Mismatch와 Missing Asset Policy
+
+- Status: planned
+- Scope: React manifest와 Unity build가 서로 다른 버전일 때의 fallback 정책과 로그 메시지를 정의한다.
+- Acceptance criteria: asset이 없는 skill은 기본 timeline으로 대체되고, 앱 전체가 깨지지 않는다.
+- Dependencies: V6-E2-ST01, build versioning.
+- Verification: manifest mismatch unit test.
+
+### V6-E5-ST03: 성능 예산 과 Smoke Checklist
+
+- Status: planned
+- Scope: 초기 bundle budget, first render budget, 메모리 위험 구간, smoke checklist를 고정한다.
+- Acceptance criteria: Unity 추가가 v5 핵심 플레이 흐름을 망치지 않는지 반복 점검할 수 있다.
+- Dependencies: Unity build, target browser range.
+- Verification: smoke checklist document, perf measurement note.
+
+### V6-E5-ST04: Unity Native Client 또는 Unity-Owned Battle Logic
+
+- Status: deferred
+- Scope: Unity가 직접 matchmaking, WebSocket, battle rules, camera recognizer를 가지는 별도 클라이언트 구조.
+- Acceptance criteria: 별도 제품/아키텍처 재승인 없이는 v6 범위에 넣지 않는다.
+- Dependencies: 제품 방향 재결정.
+- Verification: not in v6.

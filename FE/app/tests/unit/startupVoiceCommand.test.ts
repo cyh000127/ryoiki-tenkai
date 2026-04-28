@@ -62,9 +62,10 @@ describe("startupVoiceCommand", () => {
     expect(normalizeJapaneseCommandText("  術式 を 起動して！ ")).toBe("術式を起動して");
   });
 
-  it("matches registered commands contained in a Japanese transcript", () => {
-    expect(matchJapaneseStartupCommand("術式を起動して")).toBe("起動して");
-    expect(matchJapaneseStartupCommand("これから開門します")).toBe("開門");
+  it("matches canonical jujutsu command labels from kanji and hiragana transcripts", () => {
+    expect(matchJapaneseStartupCommand("術式を起動して")).toBe("術式起動(술식기동)");
+    expect(matchJapaneseStartupCommand("じゅつしききどう")).toBe("術式起動(술식기동)");
+    expect(matchJapaneseStartupCommand("これから開門します")).toBe("開門(개문)");
     expect(matchJapaneseStartupCommand("こんにちは")).toBeNull();
   });
 
@@ -115,7 +116,7 @@ describe("startupVoiceCommand", () => {
 
     expect(results).toEqual([
       {
-        matchedCommand: "起動して",
+        matchedCommand: "術式起動(술식기동)",
         status: "matched",
         transcript: "術式を起動して"
       }

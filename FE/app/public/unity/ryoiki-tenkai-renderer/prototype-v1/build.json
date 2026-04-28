@@ -1,0 +1,8 @@
+{
+  "loaderUrl": "Build/mock.loader.js",
+  "companyName": "Codex",
+  "productName": "RyoikiTenkaiRenderer",
+  "productVersion": "prototype-v1",
+  "bridgeTarget": "CodexBridge",
+  "bridgeMethod": "ReceiveEvent"
+}
