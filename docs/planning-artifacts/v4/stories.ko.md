@@ -67,6 +67,14 @@
 - Dependencies: approved skill domain source.
 - Verification: future gesture-to-skill integration test.
 
+### V4-E2-ST04: 캐릭터/스킬/STT 후보 카탈로그 작성
+
+- Status: done
+- Scope: 주술회전 Phase 1 캐릭터/스킬/STT trigger 후보와 오리지널 확장 후보를 분리해 정리.
+- Acceptance criteria: 주술회전 고유명은 Phase 1 카탈로그에 저장하고, 내부 손모양은 추후 구현 계획으로 분리한다.
+- Dependencies: 사용자 제공 참고자료.
+- Verification: `docs/product/jujutsu-character-skill-stt-catalog.ko.md`, `docs/product/character-skill-stt-catalog.ko.md`, `docs/implementation-artifacts/v4-3-character-skill-stt-intake.ko.md`.
+
 ## V4-E3: Voice Startup Release Evidence
 
 ### V4-E3-ST01: v4 계획 문서 작성

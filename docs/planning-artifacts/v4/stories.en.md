@@ -67,6 +67,14 @@ Status values:
 - Dependencies: approved skill domain source.
 - Verification: future gesture-to-skill integration test.
 
+### V4-E2-ST04: Write Character, Skill, and STT Candidate Catalog
+
+- Status: done
+- Scope: document Jujutsu Phase 1 character/skill/STT trigger candidates separately from original expansion candidates.
+- Acceptance criteria: Jujutsu names are stored in the Phase 1 catalog, and internal hand shapes stay in a future implementation plan.
+- Dependencies: user-provided reference.
+- Verification: `docs/product/jujutsu-character-skill-stt-catalog.en.md`, `docs/product/character-skill-stt-catalog.en.md`, `docs/implementation-artifacts/v4-3-character-skill-stt-intake.en.md`.
+
 ## V4-E3: Voice Startup Release Evidence
 
 ### V4-E3-ST01: Write v4 Planning Documents

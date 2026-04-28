@@ -33,6 +33,8 @@ Korean documentation is available in `README.md`. `README.ko.md` keeps the same 
 - The v4 Japanese voice startup command plan and implementation record are written.
 - The v4 Japanese voice startup command is connected to the home screen.
 - The v4 STT module boundary is separated as a shared transcript recognizer port.
+- The v4 character, skill, and STT candidate catalog is written.
+- The v4 Phase 1 Jujutsu character, technique, and STT catalog is written.
 - Skill names, skill effects, hand-motion resources, and visual assets will proceed only after a separate domain source is approved.
 - Final release readiness document: `docs/implementation-artifacts/v1-release-readiness.en.md`
 - v2-1 implementation record: `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`
@@ -45,6 +47,8 @@ Korean documentation is available in `README.md`. `README.ko.md` keeps the same 
 - v3 release readiness checkpoint: `docs/implementation-artifacts/v3-release-readiness.en.md`
 - v4 Japanese voice startup command record: `docs/implementation-artifacts/v4-1-japanese-stt-startup-command.en.md`
 - v4 STT module boundary record: `docs/implementation-artifacts/v4-2-stt-module-boundary.en.md`
+- v4 character, skill, and STT intake record: `docs/implementation-artifacts/v4-3-character-skill-stt-intake.en.md`
+- v4 Phase 1 Jujutsu catalog: `docs/product/jujutsu-character-skill-stt-catalog.en.md`
 
 ## Current Status
 
@@ -81,6 +85,8 @@ The repository is currently wired through the following playable flow:
 - v3 smoke checklist and release readiness checkpoint documented
 - Japanese voice startup command home-screen panel, status rendering, and manual fallback
 - Shared STT transcript recognizer port separated from startup command matching
+- Original character, skill, and STT trigger candidate catalog documented
+- Phase 1 Jujutsu character, technique, and STT trigger candidate catalog documented
 - result/history/rating persistence moved behind the storage adapter boundary
 - v2 epics, stories, implementation order, prerequisites, and technology stack documented
 - v2 camera/runtime/storage/matching smoke checklist documented
@@ -225,6 +231,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check
 - v3 smoke checklist and release readiness are documented
 - Japanese voice startup command model, home-screen panel, and manual fallback regression tests
 - Shared STT module and startup command model regression tests
+- Character/skill/STT candidates and future hand-shape implementation plan documented
+- Jujutsu Phase 1 catalog and future hand-shape implementation plan documented
 
 ## Remaining Work
 
@@ -256,6 +264,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check
 - `docs/implementation-artifacts/v3-release-readiness.en.md`: v3 checkpoint decision and full feature release blockers.
 - `docs/implementation-artifacts/v4-1-japanese-stt-startup-command.en.md`: Japanese voice startup command implementation record.
 - `docs/implementation-artifacts/v4-2-stt-module-boundary.en.md`: shared STT module boundary implementation record.
+- `docs/implementation-artifacts/v4-3-character-skill-stt-intake.en.md`: character, skill, and STT candidate intake record.
+- `docs/product/jujutsu-character-skill-stt-catalog.en.md`: Phase 1 Jujutsu character, technique, and STT trigger candidate catalog.
+- `docs/product/character-skill-stt-catalog.en.md`: original character, skill, and STT trigger candidate catalog.
 - `docs/planning-artifacts/v4/technology-stack.en.md`: v4 voice startup technology decision.
 - `docs/planning-artifacts/v4/epics.en.md`: v4 epics, boundaries, and acceptance signals.
 - `docs/planning-artifacts/v4/stories.en.md`: v4 story status and verification criteria.

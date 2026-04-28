@@ -33,6 +33,8 @@
 - v4 일본어 음성 시동 명령 계획과 구현 기록이 작성되었습니다.
 - v4 일본어 음성 시동 명령이 홈 화면에 연결되었습니다.
 - v4 STT 모듈 경계가 공용 transcript recognizer port로 분리되었습니다.
+- v4 캐릭터/스킬/STT 후보 카탈로그가 작성되었습니다.
+- v4 Phase 1 주술회전 캐릭터/술식/STT 카탈로그가 작성되었습니다.
 - 스킬명, 스킬 효과, 손동작 리소스, 시각 자산은 별도 domain source 확정 후 진행합니다.
 - 최종 릴리스 점검 문서: `docs/implementation-artifacts/v1-release-readiness.ko.md`
 - v2-1 구현 기록: `docs/implementation-artifacts/v2-1-live-recognizer-adapter.ko.md`
@@ -45,6 +47,8 @@
 - v3 release readiness checkpoint: `docs/implementation-artifacts/v3-release-readiness.ko.md`
 - v4 일본어 음성 시동 명령 기록: `docs/implementation-artifacts/v4-1-japanese-stt-startup-command.ko.md`
 - v4 STT 모듈 경계 기록: `docs/implementation-artifacts/v4-2-stt-module-boundary.ko.md`
+- v4 캐릭터/스킬/STT 정리 기록: `docs/implementation-artifacts/v4-3-character-skill-stt-intake.ko.md`
+- v4 Phase 1 주술회전 카탈로그: `docs/product/jujutsu-character-skill-stt-catalog.ko.md`
 
 ## 명세 점검
 
@@ -90,6 +94,8 @@
 - v3 smoke checklist와 release readiness checkpoint 문서화
 - 일본어 음성 시동 명령의 홈 화면 연결, 상태 표시, 수동 fallback
 - 공용 STT transcript recognizer port와 시동 명령 매칭 모델 분리
+- 오리지널 캐릭터/스킬/STT trigger 후보 카탈로그 문서화
+- Phase 1 주술회전 캐릭터/술식/STT trigger 후보 카탈로그 문서화
 - result/history/rating persistence를 storage adapter 경계 뒤로 전환
 - v2 에픽, 스토리, 구현 순서, 선행조건, 기술스택 문서화
 - v2 camera/runtime/storage/matching smoke checklist 문서화
@@ -220,6 +226,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check
 - v3 smoke checklist와 release readiness 문서화
 - 일본어 음성 시동 명령 모델, 홈 화면 패널, 수동 fallback 회귀 테스트
 - 공용 STT 모듈과 시동 명령 모델 회귀 테스트
+- 캐릭터/스킬/STT 후보와 손모양 추후 구현 계획 문서화
+- 주술회전 Phase 1 카탈로그와 손모양 추후 구현 계획 문서화
 
 ## 남은 작업
 
@@ -271,6 +279,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check
 - `docs/implementation-artifacts/v3-release-readiness.ko.md`: v3 checkpoint 판정과 full feature release blocker.
 - `docs/implementation-artifacts/v4-1-japanese-stt-startup-command.ko.md`: 일본어 음성 시동 명령 구현 기록.
 - `docs/implementation-artifacts/v4-2-stt-module-boundary.ko.md`: STT 공용 모듈 경계 분리 구현 기록.
+- `docs/implementation-artifacts/v4-3-character-skill-stt-intake.ko.md`: 캐릭터/스킬/STT 후보 정리 기록.
+- `docs/product/jujutsu-character-skill-stt-catalog.ko.md`: Phase 1 주술회전 캐릭터, 술식, STT trigger 후보 카탈로그.
+- `docs/product/character-skill-stt-catalog.ko.md`: 오리지널 캐릭터, 스킬, STT trigger 후보 카탈로그.
 - `docs/planning-artifacts/v4/technology-stack.ko.md`: v4 음성 시동 기술스택 결정.
 - `docs/planning-artifacts/v4/epics.ko.md`: v4 에픽, 경계, 수용 신호.
 - `docs/planning-artifacts/v4/stories.ko.md`: v4 스토리 상태와 검증 기준.

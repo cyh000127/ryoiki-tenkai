@@ -34,6 +34,13 @@
 - After trigger success, activate hand-motion input.
 - Implement hand-motion sequence and skill action validation only after the approved skill domain source is ready.
 
+## 6. Character and Skill Candidate Catalog
+
+- Phase 1 starts with Jujutsu character and technique names.
+- Document Jujutsu characters, normal skills, domain expansions, and STT trigger candidates in the product catalog.
+- Keep original character candidates separately as later expansion or replacement options.
+- Finalize internal hand-motion tokens and skill numbers in a later approval step.
+
 ## Commit Unit
 
 - Suggested commit: `feat(frontend): 일본어 음성 시동 명령 추가`
