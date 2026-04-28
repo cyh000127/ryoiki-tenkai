@@ -78,12 +78,12 @@
 
 ### V2-E2-ST04: compact audit retention boundary 문서화
 
-- Status: planned
+- Status: done
 - User story: system은 어떤 전투 감사 메타데이터를 얼마나 보존할지 명확히 한다.
 - Scope: retained fields, excluded recognition data, retention horizon, export/debug note.
 - Acceptance criteria: raw frame, raw landmark, tracking stream은 저장 제외로 명시된다.
 - Dependencies: V2-E2-ST01.
-- Verification: docs review.
+- Verification: `docs/implementation-artifacts/v2-audit-retention-boundary.ko.md`.
 
 ## V2-E3: Real Match Flow and Session Robustness
 

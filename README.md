@@ -15,6 +15,7 @@
 - v2 release readiness checkpoint가 작성되었습니다.
 - v2 SQL migration smoke 절차가 작성되었습니다.
 - v2 storage failure/fallback policy가 작성되었습니다.
+- v2 compact audit retention boundary가 작성되었습니다.
 - 스킬명, 스킬 효과, 손동작 리소스, 시각 자산은 별도 domain source 확정 후 진행합니다.
 - 구체 frame recognizer 바인딩은 v2 follow-up 범위입니다.
 - 최종 릴리스 점검 문서: `docs/implementation-artifacts/v1-release-readiness.ko.md`
@@ -59,6 +60,7 @@
 - v2 release readiness checkpoint 문서화
 - SQL migration apply/reset/rollback smoke 절차 문서화
 - storage failure/fallback policy 문서화와 손상된 JSON state 거부
+- compact audit retention boundary 문서화와 raw recognition data 저장 제외 기준
 
 ## 실행 방법
 
@@ -143,12 +145,13 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - v2 release readiness checkpoint 작성과 full v2 release blocker 분리
 - SQL migration smoke script와 절차 문서화
 - storage failure/fallback policy 작성과 JSON 손상 파일 거부 테스트
+- compact audit retention boundary 작성과 retained/excluded field 기준 정리
 
 ## 남은 작업
 
 - v1 릴리스 차단 작업 없음
 - v2 또는 follow-up 범위
-  구체 frame recognizer 바인딩, compact audit retention 문서, real two-player match hardening, 스킬 domain source 확정 후 skill/resource 구현
+  구체 frame recognizer 바인딩, recognition UI state hardening, real two-player match hardening, 스킬 domain source 확정 후 skill/resource 구현
 
 ## 경계
 
@@ -182,6 +185,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v2-release-readiness.ko.md`: v2 checkpoint 판정과 full v2 release blocker.
 - `docs/implementation-artifacts/v2-sql-migration-smoke.ko.md`: SQL migration apply/reset/rollback smoke 절차.
 - `docs/implementation-artifacts/v2-storage-failure-policy.ko.md`: storage failure mode와 fallback policy.
+- `docs/implementation-artifacts/v2-audit-retention-boundary.ko.md`: compact audit retention boundary.
 - `docs/planning-artifacts/v2/technology-stack.ko.md`: v2에서 유지/보류할 기술스택 결정.
 - `docs/planning-artifacts/v2/epics.ko.md`: v2 에픽, 경계, 수용 신호.
 - `docs/planning-artifacts/v2/stories.ko.md`: v2 스토리 상태와 blocked 조건.
@@ -208,6 +212,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v2-release-readiness.en.md`
 - `docs/implementation-artifacts/v2-sql-migration-smoke.en.md`
 - `docs/implementation-artifacts/v2-storage-failure-policy.en.md`
+- `docs/implementation-artifacts/v2-audit-retention-boundary.en.md`
 - `docs/planning-artifacts/v2/technology-stack.en.md`
 - `docs/planning-artifacts/v2/epics.en.md`
 - `docs/planning-artifacts/v2/stories.en.md`

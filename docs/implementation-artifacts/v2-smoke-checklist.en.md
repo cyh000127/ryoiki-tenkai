@@ -45,8 +45,10 @@ Use this document for local v2 handoff verification. Skill names, skill effects,
 
 ### Storage Changes
 
-- [ ] Storage adapter unit tests cover JSON, SQL, and null adapter paths.
-- [ ] Profile, history, rating, and compact audit survive repository reload.
+- [x] Storage adapter unit tests cover JSON, SQL, and null adapter paths.
+  - Evidence: `BE/api/tests/unit/test_game_state_storage.py`
+- [x] Profile, history, rating, and compact audit survive repository reload.
+  - Evidence: `BE/api/tests/unit/test_game_flow_api.py`
 - [x] SQL migration apply/reset or rollback smoke steps are run, or a blocker is recorded.
   - Evidence: `docs/implementation-artifacts/v2-sql-migration-smoke.en.md`, `scripts/storage-migration-smoke.ps1`
 - [x] Storage failure policy does not allow silent data loss.
@@ -85,8 +87,8 @@ Use this document for local v2 handoff verification. Skill names, skill effects,
   - Evidence: `docs/implementation-artifacts/v2-sql-migration-smoke.en.md`
 - [x] Storage adapter failure modes and fallback policy are documented.
   - Evidence: `docs/implementation-artifacts/v2-storage-failure-policy.en.md`
-- [ ] Compact audit retention boundaries are documented.
-  - Planned story: `V2-E2-ST04`
+- [x] Compact audit retention boundaries are documented.
+  - Evidence: `docs/implementation-artifacts/v2-audit-retention-boundary.en.md`
 
 ## v2 Real Match Flow
 

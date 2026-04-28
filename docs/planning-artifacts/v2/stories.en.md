@@ -78,12 +78,12 @@ Status values:
 
 ### V2-E2-ST04: Document compact audit retention boundaries
 
-- Status: planned
+- Status: done
 - User story: the system is clear about which battle audit metadata is retained and for how long.
 - Scope: retained fields, excluded recognition data, retention horizon, export/debug note.
 - Acceptance criteria: raw frames, raw landmarks, and tracking streams are explicitly excluded.
 - Dependencies: V2-E2-ST01.
-- Verification: docs review.
+- Verification: `docs/implementation-artifacts/v2-audit-retention-boundary.en.md`.
 
 ## V2-E3: Real Match Flow and Session Robustness
 

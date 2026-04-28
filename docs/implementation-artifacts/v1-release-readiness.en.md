@@ -85,3 +85,5 @@ These items are not v1 release blockers and should be handled in v2 or follow-up
    - Implementation record: `docs/implementation-artifacts/v2-sql-migration-smoke.en.md`
 10. [x] Define storage failure modes and fallback policy.
    - Implementation record: `docs/implementation-artifacts/v2-storage-failure-policy.en.md`
+11. [x] Document compact audit retention boundaries.
+   - Implementation record: `docs/implementation-artifacts/v2-audit-retention-boundary.en.md`
