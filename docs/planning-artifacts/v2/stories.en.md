@@ -27,6 +27,7 @@ Status values:
 - Scope: package/runtime selection, adapter implementation, confidence/stability normalization, resource cleanup.
 - Acceptance criteria: the selection rationale is reflected in the technology-stack docs. The adapter does not send raw frames to the backend. A local unit or smoke test covers the recognizer lifecycle.
 - Dependencies: runtime selection, browser support criteria.
+- Preparation: the runtime port is split in `docs/implementation-artifacts/v2-10-recognizer-runtime-port.en.md`. Keep the status blocked until the concrete runtime is selected.
 - Verification: adapter unit test, smoke test.
 
 ### V2-E1-ST03: Separate no-hand, unstable-hand, and recognized-token UI states

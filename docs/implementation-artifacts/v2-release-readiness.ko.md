@@ -21,6 +21,7 @@
 | Camera permission smoke automation | PASS | `docs/implementation-artifacts/v2-2-camera-permission-smoke.ko.md` |
 | Recognition UI state separation | PASS | `docs/implementation-artifacts/v2-4-recognition-ui-state.ko.md` |
 | Recognizer lifecycle hardening | PASS | `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.ko.md` |
+| Recognizer runtime port boundary | PASS | `docs/implementation-artifacts/v2-10-recognizer-runtime-port.ko.md` |
 | Two-player queue pairing | PASS | `docs/implementation-artifacts/v2-5-two-player-queue-pairing.ko.md` |
 | Socket reconnect latest snapshot resync | PASS | `docs/implementation-artifacts/v2-6-socket-reconnect-resync.ko.md` |
 | Delayed/duplicate event reconciliation | PASS | `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.ko.md` |
@@ -38,7 +39,7 @@
 
 | Epic | 현재 상태 | 비고 |
 | --- | --- | --- |
-| V2-E1 Live Recognition Runtime Hardening | partial | adapter boundary, camera smoke, no-hand/unstable/recognized UI 분리, restart/cleanup hardening은 완료, concrete runtime 선택은 남아 있음 |
+| V2-E1 Live Recognition Runtime Hardening | partial | adapter boundary, camera smoke, no-hand/unstable/recognized UI 분리, restart/cleanup hardening, runtime port boundary는 완료, concrete runtime 선택은 남아 있음 |
 | V2-E2 Persistence and Runtime Operation Readiness | done | storage adapter 전환, migration smoke, failure policy, audit retention boundary가 완료됨 |
 | V2-E3 Real Match Flow and Session Robustness | done | two-player queue pairing, reconnect latest snapshot 복구, delayed/duplicate reconciliation, timeout/surrender fanout hardening이 완료됨 |
 | V2-E4 Skill and Resource Domain Intake | blocked | approved skill domain source가 필요함 |
@@ -57,26 +58,26 @@
 
 ## 검증
 
-이번 readiness 재점검은 recognizer lifecycle hardening과 docs update를 함께 반영합니다.
+이번 readiness 재점검은 recognizer runtime port boundary와 docs update를 함께 반영합니다.
 
 | 검증 항목 | 상태 | 비고 |
 | --- | --- | --- |
 | `pnpm --dir FE/app typecheck` | PASS | frontend type check |
-| `pnpm --dir FE/app test` | PASS | 42 tests |
+| `pnpm --dir FE/app test` | PASS | 44 tests |
 | `pnpm --dir FE/app smoke:camera` | PASS | 2 tests |
 | `pnpm --dir FE/app build` | PASS | production build |
 | `uv run ruff check BE` | PASS | backend lint |
 | `uv run pytest BE` | PASS | 38 tests |
 | `uv run pytest BE/api/tests/unit/test_battle_websocket_events.py` | PASS | 12 tests |
-| `pnpm --dir FE/app exec vitest run tests/unit/liveGestureRecognizer.test.ts tests/unit/BattleGameWorkspace.test.tsx` | PASS | 20 tests |
+| `pnpm --dir FE/app exec vitest run tests/unit/liveGestureRecognizer.test.ts` | PASS | 6 tests |
 | `git diff --check` | PASS | whitespace/error check |
 | Provider-neutral targeted text scan | PASS | 무시 대상 파일 외 매칭 없음 |
 | README link review | PASS | v2 readiness 문서가 한국어/영어 링크에 포함됨 |
-| Story status review | PASS | `V2-E1-ST04` 완료 상태 반영 |
+| Story status review | PASS | `V2-E1-ST02`는 blocked 유지, runtime port preparation만 반영 |
 
 ## 다음 구현 순서
 
-스킬 domain source가 아직 없으므로 다음 안전한 구현 단위는 승인된 기존 runtime boundary 안에서 진행합니다.
+스킬 domain source와 concrete runtime 선택이 아직 없으므로 다음 구현 단위는 승인 후 진행합니다.
 
 1. `V2-E1-ST02`: concrete frame recognizer runtime 선택 및 adapter 결합은 runtime 선택이 승인된 뒤 진행.
 2. `V2-E4-ST01`: skill domain source format 정의는 approved source가 생긴 뒤 진행.

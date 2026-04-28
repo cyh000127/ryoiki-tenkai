@@ -99,3 +99,5 @@ These items are not v1 release blockers and should be handled in v2 or follow-up
    - Implementation record: `docs/implementation-artifacts/v2-8-timeout-surrender-fanout.en.md`
 17. [x] Harden recognizer stop/start, permission recovery, and unmount cleanup.
    - Implementation record: `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.en.md`
+18. [x] Separate the recognizer runtime session port.
+   - Implementation record: `docs/implementation-artifacts/v2-10-recognizer-runtime-port.en.md`

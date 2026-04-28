@@ -2,26 +2,30 @@ import {
   createLiveCameraInput,
   type NormalizedGestureInput
 } from "./gestureInput";
+import {
+  createFrameRecognizerRuntime,
+  createNoopLiveGestureFrameRuntime,
+  type LiveGestureFrameRecognizer,
+  type LiveGestureFrameRuntime,
+  type LiveGestureObservation,
+  type LiveGestureRuntimeSession
+} from "./liveGestureRuntime";
+
+export {
+  createFrameRecognizerRuntime,
+  createNoopLiveGestureFrameRecognizer,
+  createNoopLiveGestureFrameRuntime,
+  type LiveGestureFrame,
+  type LiveGestureFrameRecognizer,
+  type LiveGestureFrameRuntime,
+  type LiveGestureObservation,
+  type LiveGestureObservationReason,
+  type LiveGestureRuntimeSession,
+  type LiveGestureRuntimeStartContext
+} from "./liveGestureRuntime";
 
 export const LIVE_GESTURE_POLL_INTERVAL_MS = 120;
 export const LIVE_GESTURE_MIN_CONFIDENCE = 0.65;
-
-export type LiveGestureObservationReason =
-  | "camera_ready"
-  | "no_hand"
-  | "unstable"
-  | "recognized"
-  | "permission_denied"
-  | "unsupported"
-  | "camera_error";
-
-export type LiveGestureObservation = {
-  token: string | null;
-  confidence: number;
-  handDetected: boolean;
-  stabilityMs: number;
-  reason: LiveGestureObservationReason;
-};
 
 export type LiveGestureRecognizerStatus =
   | "idle"
@@ -31,17 +35,6 @@ export type LiveGestureRecognizerStatus =
   | "unsupported"
   | "error"
   | "stopped";
-
-export type LiveGestureFrame = {
-  video: HTMLVideoElement;
-  targetSequence: readonly string[];
-  expectedToken: string | null;
-  atMs: number;
-};
-
-export type LiveGestureFrameRecognizer = (
-  frame: LiveGestureFrame
-) => LiveGestureObservation | null;
 
 export type LiveGestureRecognizer = {
   start: () => Promise<void>;
@@ -56,27 +49,21 @@ export type CreateBrowserLiveGestureRecognizerOptions = {
     input: NormalizedGestureInput | null
   ) => void;
   onStatusChange?: (status: LiveGestureRecognizerStatus) => void;
+  runtime?: LiveGestureFrameRuntime;
   frameRecognizer?: LiveGestureFrameRecognizer;
   pollIntervalMs?: number;
   mediaDevices?: Pick<MediaDevices, "getUserMedia">;
   createVideoElement?: () => HTMLVideoElement;
 };
 
-export function createNoopLiveGestureFrameRecognizer(): LiveGestureFrameRecognizer {
-  return ({ expectedToken }) => ({
-    token: null,
-    confidence: 0,
-    handDetected: false,
-    stabilityMs: 0,
-    reason: expectedToken ? "no_hand" : "camera_ready"
-  });
-}
-
 export function createBrowserLiveGestureRecognizer(
   options: CreateBrowserLiveGestureRecognizerOptions
 ): LiveGestureRecognizer {
-  const frameRecognizer =
-    options.frameRecognizer ?? createNoopLiveGestureFrameRecognizer();
+  const runtime =
+    options.runtime ??
+    (options.frameRecognizer
+      ? createFrameRecognizerRuntime(options.frameRecognizer)
+      : createNoopLiveGestureFrameRuntime());
   const pollIntervalMs = options.pollIntervalMs ?? LIVE_GESTURE_POLL_INTERVAL_MS;
   const mediaDevices = options.mediaDevices ?? getBrowserMediaDevices();
   const createVideoElement =
@@ -84,6 +71,7 @@ export function createBrowserLiveGestureRecognizer(
 
   let stream: MediaStream | null = null;
   let video: HTMLVideoElement | null = null;
+  let runtimeSession: LiveGestureRuntimeSession | null = null;
   let intervalId: number | null = null;
   let status: LiveGestureRecognizerStatus = "idle";
   let lastObservationFingerprint: string | null = null;
@@ -103,7 +91,11 @@ export function createBrowserLiveGestureRecognizer(
       return;
     }
 
-    const observation = frameRecognizer({
+    if (!runtimeSession) {
+      return;
+    }
+
+    const observation = runtimeSession.recognizeFrame({
       video,
       targetSequence: options.getTargetSequence(),
       expectedToken: options.getExpectedToken(),
@@ -127,6 +119,11 @@ export function createBrowserLiveGestureRecognizer(
     if (intervalId !== null) {
       window.clearInterval(intervalId);
       intervalId = null;
+    }
+
+    if (runtimeSession) {
+      runtimeSession.stop?.();
+      runtimeSession = null;
     }
 
     if (stream) {
@@ -193,11 +190,17 @@ export function createBrowserLiveGestureRecognizer(
           await nextVideo.play();
         }
 
+        const nextRuntimeSession = await runtime.start({
+          video: nextVideo
+        });
+
         if (!isCurrentStart(startVersion)) {
+          nextRuntimeSession.stop?.();
           cleanup();
           return;
         }
 
+        runtimeSession = nextRuntimeSession;
         setStatus("ready");
         observeFrame();
         intervalId = window.setInterval(observeFrame, pollIntervalMs);

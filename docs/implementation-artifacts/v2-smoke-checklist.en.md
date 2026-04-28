@@ -79,6 +79,8 @@ Use this document for local v2 handoff verification. Skill names, skill effects,
   - Evidence: `docs/implementation-artifacts/v2-4-recognition-ui-state.en.md`
 - [x] Stop/start/unmount cleanup and permission recovery are locked by regression tests.
   - Evidence: `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.en.md`
+- [x] The runtime port lifecycle for later concrete runtime binding is separated.
+  - Evidence: `docs/implementation-artifacts/v2-10-recognizer-runtime-port.en.md`
 - Blocked: concrete frame recognizer adapter lifecycle smoke.
   - Blocker: recognizer runtime selection is not approved yet.
   - Related story: `V2-E1-ST02`

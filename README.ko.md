@@ -22,6 +22,7 @@
 - v2 delayed/duplicate event reconciliation이 강화되었습니다.
 - v2 timeout/surrender fanout hardening이 완료되었습니다.
 - v2 recognizer lifecycle hardening이 완료되었습니다.
+- v2 recognizer runtime port boundary가 분리되었습니다.
 - 스킬명, 스킬 효과, 손동작 리소스, 시각 자산은 별도 domain source 확정 후 진행합니다.
 - 구체 frame recognizer 바인딩은 v2 follow-up 범위입니다.
 - 최종 릴리스 점검 문서: `docs/implementation-artifacts/v1-release-readiness.ko.md`
@@ -63,6 +64,7 @@
 - 전적, 레이팅, leaderboard 조회
 - battle result, compact action audit, rating, history의 storage adapter 영속화
 - live camera adapter의 시작/중지/상태 표시와 recognized token의 normalized input boundary 연결
+- live camera adapter 내부 runtime session port 분리
 - no-hand, unstable-hand, recognized-token live camera UI 상태 분리
 - result/history/rating persistence를 storage adapter 경계 뒤로 전환
 - v2 에픽, 스토리, 구현 순서, 선행조건, 기술스택 문서화
@@ -183,6 +185,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - socket reconnect latest snapshot 복구와 ended replay result 회귀 테스트
 - timeout/surrender fanout과 disconnected participant replay 회귀 테스트
 - recognizer stop/start, permission recovery, unmount cleanup 회귀 테스트
+- recognizer runtime session start/stop과 startup failure cleanup 회귀 테스트
 
 ## 남은 작업
 
@@ -222,6 +225,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.ko.md`: delayed/duplicate event reconciliation 구현 기록.
 - `docs/implementation-artifacts/v2-8-timeout-surrender-fanout.ko.md`: timeout/surrender fanout 구현 기록.
 - `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.ko.md`: recognizer lifecycle hardening 구현 기록.
+- `docs/implementation-artifacts/v2-10-recognizer-runtime-port.ko.md`: recognizer runtime port 구현 기록.
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.ko.md`: storage adapter persistence 구현 기록.
 - `docs/implementation-artifacts/v2-planning-baseline.ko.md`: v2 planning baseline 구현 기록.
 - `docs/implementation-artifacts/v2-smoke-checklist.ko.md`: v2 smoke checklist와 blocked 항목.
@@ -255,6 +259,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.en.md`
 - `docs/implementation-artifacts/v2-8-timeout-surrender-fanout.en.md`
 - `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.en.md`
+- `docs/implementation-artifacts/v2-10-recognizer-runtime-port.en.md`
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`
 - `docs/implementation-artifacts/v2-planning-baseline.en.md`
 - `docs/implementation-artifacts/v2-smoke-checklist.en.md`

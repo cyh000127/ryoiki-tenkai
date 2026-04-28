@@ -79,6 +79,8 @@
   - 근거: `docs/implementation-artifacts/v2-4-recognition-ui-state.ko.md`
 - [x] stop/start/unmount cleanup과 permission recovery가 회귀 테스트로 고정되어 있다.
   - 근거: `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.ko.md`
+- [x] concrete runtime binding을 위한 runtime port lifecycle이 분리되어 있다.
+  - 근거: `docs/implementation-artifacts/v2-10-recognizer-runtime-port.ko.md`
 - Blocked: concrete frame recognizer adapter lifecycle smoke.
   - blocker: recognizer runtime 선택이 아직 확정되지 않음.
   - 관련 story: `V2-E1-ST02`

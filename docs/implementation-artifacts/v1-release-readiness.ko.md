@@ -99,3 +99,5 @@
    - 구현 기록: `docs/implementation-artifacts/v2-8-timeout-surrender-fanout.ko.md`
 17. [x] recognizer stop/start, permission recovery, unmount cleanup을 강화합니다.
    - 구현 기록: `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.ko.md`
+18. [x] recognizer runtime session port를 분리합니다.
+   - 구현 기록: `docs/implementation-artifacts/v2-10-recognizer-runtime-port.ko.md`

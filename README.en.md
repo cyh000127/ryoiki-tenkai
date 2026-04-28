@@ -22,6 +22,7 @@ Korean documentation is available in `README.md`. `README.ko.md` keeps the same 
 - The v2 delayed/duplicate event reconciliation is hardened.
 - The v2 timeout/surrender fanout hardening is complete.
 - The v2 recognizer lifecycle hardening is complete.
+- The v2 recognizer runtime port boundary is separated.
 - Skill names, skill effects, hand-motion resources, and visual assets will proceed only after a separate domain source is approved.
 - Concrete frame recognizer binding remains v2 follow-up scope.
 - Final release readiness document: `docs/implementation-artifacts/v1-release-readiness.en.md`
@@ -54,6 +55,7 @@ The repository is currently wired through the following playable flow:
 - delayed/duplicate socket event reconciliation
 - timeout/surrender final-state fanout and disconnected participant replay
 - live camera adapter start/stop/status display and recognized-token dispatch through the normalized input boundary
+- live camera adapter runtime session port separated
 - no-hand, unstable-hand, and recognized-token live camera UI states separated
 - result/history/rating persistence moved behind the storage adapter boundary
 - v2 epics, stories, implementation order, prerequisites, and technology stack documented
@@ -188,6 +190,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - socket reconnect latest snapshot recovery and ended replay result recovery are covered by regression tests
 - timeout/surrender fanout and disconnected participant replay are covered by regression tests
 - recognizer stop/start, permission recovery, and unmount cleanup are covered by regression tests
+- recognizer runtime session start/stop and startup failure cleanup are covered by regression tests
 
 ## Remaining Work
 
@@ -207,6 +210,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.en.md`: delayed/duplicate event reconciliation record.
 - `docs/implementation-artifacts/v2-8-timeout-surrender-fanout.en.md`: timeout/surrender fanout record.
 - `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.en.md`: recognizer lifecycle hardening record.
+- `docs/implementation-artifacts/v2-10-recognizer-runtime-port.en.md`: recognizer runtime port record.
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`: storage adapter persistence record.
 - `docs/implementation-artifacts/v2-planning-baseline.en.md`: v2 planning baseline record.
 - `docs/implementation-artifacts/v2-smoke-checklist.en.md`: v2 smoke checklist and blocked items.

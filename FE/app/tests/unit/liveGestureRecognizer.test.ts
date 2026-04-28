@@ -212,4 +212,106 @@ describe("createBrowserLiveGestureRecognizer", () => {
     expect(track.stop).toHaveBeenCalledTimes(1);
     expect(statuses.at(-1)).toBe("stopped");
   });
+
+  it("starts and stops the frame runtime session with the camera lifecycle", async () => {
+    const track = {
+      stop: vi.fn()
+    } as unknown as MediaStreamTrack;
+    const stream = {
+      getTracks: () => [track]
+    } as unknown as MediaStream;
+    const mediaDevices = {
+      getUserMedia: vi.fn(async () => stream)
+    };
+    const video = {
+      muted: false,
+      playsInline: false,
+      srcObject: null,
+      play: vi.fn(async () => undefined)
+    } as unknown as HTMLVideoElement;
+    const stopSession = vi.fn();
+    const recognizeFrame = vi.fn(() => ({
+      token: null,
+      confidence: 0,
+      handDetected: false,
+      stabilityMs: 0,
+      reason: "no_hand" as const
+    }));
+    const runtime = {
+      start: vi.fn(async ({ video: contextVideo }) => {
+        expect(contextVideo).toBe(video);
+
+        return {
+          recognizeFrame,
+          stop: stopSession
+        };
+      })
+    };
+    const statuses: LiveGestureRecognizerStatus[] = [];
+
+    const recognizer = createBrowserLiveGestureRecognizer({
+      getTargetSequence: () => ["seal_1"],
+      getExpectedToken: () => "seal_1",
+      mediaDevices,
+      createVideoElement: () => video,
+      runtime,
+      onObservation: vi.fn(),
+      onStatusChange: (status) => {
+        statuses.push(status);
+      }
+    });
+
+    await recognizer.start();
+
+    expect(runtime.start).toHaveBeenCalledTimes(1);
+    expect(recognizeFrame).toHaveBeenCalledTimes(1);
+    expect(statuses).toEqual(["starting", "ready"]);
+
+    recognizer.stop();
+
+    expect(stopSession).toHaveBeenCalledTimes(1);
+    expect(track.stop).toHaveBeenCalledTimes(1);
+    expect(statuses.at(-1)).toBe("stopped");
+  });
+
+  it("cleans up camera resources when runtime startup fails", async () => {
+    const track = {
+      stop: vi.fn()
+    } as unknown as MediaStreamTrack;
+    const stream = {
+      getTracks: () => [track]
+    } as unknown as MediaStream;
+    const mediaDevices = {
+      getUserMedia: vi.fn(async () => stream)
+    };
+    const video = {
+      muted: false,
+      playsInline: false,
+      srcObject: null,
+      play: vi.fn(async () => undefined)
+    } as unknown as HTMLVideoElement;
+    const statuses: LiveGestureRecognizerStatus[] = [];
+
+    const recognizer = createBrowserLiveGestureRecognizer({
+      getTargetSequence: () => ["seal_1"],
+      getExpectedToken: () => "seal_1",
+      mediaDevices,
+      createVideoElement: () => video,
+      runtime: {
+        start: vi.fn(async () => {
+          throw new Error("runtime failed");
+        })
+      },
+      onObservation: vi.fn(),
+      onStatusChange: (status) => {
+        statuses.push(status);
+      }
+    });
+
+    await recognizer.start();
+
+    expect(statuses).toEqual(["starting", "error"]);
+    expect(track.stop).toHaveBeenCalledTimes(1);
+    expect(video.srcObject).toBeNull();
+  });
 });
