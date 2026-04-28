@@ -71,6 +71,8 @@ import { formatLatency } from "../../shared/time/formatLatency";
 
 const screenOrder: ScreenKey[] = ["home", "loadout", "matchmaking", "battle", "result", "history"];
 
+type SkillInputMode = "gesture_only" | "voice_then_gesture";
+
 type PendingAction = {
   actionId: string;
   requestId: string;
@@ -81,9 +83,14 @@ export function BattleGameWorkspace() {
   const queryClient = useQueryClient();
   const [state, dispatch] = useReducer(battleFlowReducer, initialBattleFlowState);
   const stateRef = useRef(state);
+  const skillInputGateRef = useRef<{ armed: boolean; mode: SkillInputMode }>({
+    armed: false,
+    mode: "gesture_only"
+  });
   const socketConnectionRef = useRef<BattleSocketConnection | null>(null);
   const liveRecognizerRef = useRef<LiveGestureRecognizer | null>(null);
   const startupVoiceRecognizerRef = useRef<StartupVoiceCommandRecognizer | null>(null);
+  const skillVoiceRecognizerRef = useRef<StartupVoiceCommandRecognizer | null>(null);
   const pendingActionRef = useRef<PendingAction | null>(null);
   const reconnectInFlightRef = useRef(false);
   const ignoreSocketCloseRef = useRef(false);
@@ -100,7 +107,14 @@ export function BattleGameWorkspace() {
     useState<StartupVoiceRecognitionStatus>("idle");
   const [startupVoiceTranscript, setStartupVoiceTranscript] = useState("");
   const [startupVoiceMatchedCommand, setStartupVoiceMatchedCommand] = useState<string | null>(null);
+  const [skillInputMode, setSkillInputMode] = useState<SkillInputMode>("gesture_only");
+  const [skillVoiceStatus, setSkillVoiceStatus] =
+    useState<StartupVoiceRecognitionStatus>("idle");
+  const [skillVoiceTranscript, setSkillVoiceTranscript] = useState("");
+  const [skillVoiceMatchedCommand, setSkillVoiceMatchedCommand] = useState<string | null>(null);
+  const [skillVoiceArmed, setSkillVoiceArmed] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const debugFallbackEnabled = DEBUG_FALLBACK_ENABLED;
 
   const skillsetsQuery = useQuery({
     queryKey: ["skillsets"],
@@ -229,12 +243,21 @@ export function BattleGameWorkspace() {
   }, [state]);
 
   useEffect(() => {
+    skillInputGateRef.current = {
+      armed: skillVoiceArmed,
+      mode: skillInputMode
+    };
+  }, [skillInputMode, skillVoiceArmed]);
+
+  useEffect(() => {
     return () => {
       closeBattleSocket(true);
       liveRecognizerRef.current?.stop();
       liveRecognizerRef.current = null;
       startupVoiceRecognizerRef.current?.stop();
       startupVoiceRecognizerRef.current = null;
+      skillVoiceRecognizerRef.current?.stop();
+      skillVoiceRecognizerRef.current = null;
     };
   }, []);
 
@@ -357,10 +380,15 @@ export function BattleGameWorkspace() {
 
   const isMyTurn = state.battle?.turnOwnerPlayerId === state.player.playerId;
   const isServerConfirming = state.input.serverConfirmationStatus === "PENDING";
+  const isSkillGestureInputUnlocked = skillInputMode === "gesture_only" || skillVoiceArmed;
   const canUseGestureInput =
-    state.screen === "battle" && Boolean(state.battle) && isMyTurn && !isServerConfirming;
+    state.screen === "battle" &&
+    Boolean(state.battle) &&
+    isMyTurn &&
+    !isServerConfirming &&
+    isSkillGestureInputUnlocked;
   const canStartLiveRecognizer =
-    state.screen === "battle" && state.battle?.status === "ACTIVE";
+    state.screen === "battle" && state.battle?.status === "ACTIVE" && isSkillGestureInputUnlocked;
   const completedStepCount = Math.min(state.input.currentStep, state.input.targetSequence.length);
   const remainingStepCount = Math.max(0, state.input.targetSequence.length - completedStepCount);
   const progressPercent = getSequenceProgress(
@@ -376,7 +404,6 @@ export function BattleGameWorkspace() {
   const leaderboardEntries = leaderboardQuery.data ?? [];
   const playerLeaderboardEntry =
     leaderboardEntries.find((entry) => entry.playerId === state.player.playerId) ?? null;
-  const debugFallbackEnabled = DEBUG_FALLBACK_ENABLED;
   const deadlinePresentation = state.battle
     ? getDeadlinePresentation(state.battle.actionDeadlineAt, nowMs)
     : null;
@@ -477,6 +504,11 @@ export function BattleGameWorkspace() {
     handleStartQueue();
   }
 
+  function isSkillInputUnlockedNow(): boolean {
+    const gate = skillInputGateRef.current;
+    return gate.mode === "gesture_only" || gate.armed;
+  }
+
   function handleStartVoiceStartup() {
     if (startupVoiceStatus === "listening") {
       return;
@@ -537,6 +569,71 @@ export function BattleGameWorkspace() {
     handleStartupFlow();
   }
 
+  function handleSelectSkillInputMode(mode: SkillInputMode) {
+    setSkillInputMode(mode);
+    setSkillVoiceArmed(mode === "gesture_only");
+    setSkillVoiceStatus("idle");
+    setSkillVoiceTranscript("");
+    setSkillVoiceMatchedCommand(null);
+    skillVoiceRecognizerRef.current?.stop();
+    skillVoiceRecognizerRef.current = null;
+    stopLiveRecognizer();
+  }
+
+  function handleStartSkillVoiceGate() {
+    if (skillVoiceStatus === "listening") {
+      return;
+    }
+
+    skillVoiceRecognizerRef.current?.stop();
+    setSkillVoiceTranscript("");
+    setSkillVoiceMatchedCommand(null);
+    setSkillVoiceArmed(false);
+    setStatusMessage(null);
+
+    const recognizer = createJapaneseStartupVoiceCommandRecognizer({
+      commands: getSkillVoiceGateCommands(selectedSkill.name),
+      onResult: (result) => {
+        setSkillVoiceTranscript(result.transcript);
+        setSkillVoiceMatchedCommand(result.matchedCommand);
+
+        if (result.status === "matched") {
+          setSkillVoiceArmed(true);
+          setStatusMessage(copy.skillVoiceGateUnlocked);
+          return;
+        }
+
+        setSkillVoiceArmed(false);
+        setStatusMessage(copy.startupVoiceFailure);
+      },
+      onStatusChange: (status) => {
+        setSkillVoiceStatus(status);
+
+        if (status === "unsupported") {
+          setStatusMessage(copy.startupVoiceUnsupported);
+          return;
+        }
+
+        if (status === "blocked") {
+          setStatusMessage(copy.startupVoiceBlocked);
+          return;
+        }
+
+        if (status === "error") {
+          setStatusMessage(copy.startupVoiceError);
+          return;
+        }
+
+        if (status === "rejected") {
+          setStatusMessage(copy.startupVoiceFailure);
+        }
+      }
+    });
+
+    skillVoiceRecognizerRef.current = recognizer;
+    void recognizer.start();
+  }
+
   function handleCancelQueue() {
     if (!session) {
       return;
@@ -553,6 +650,12 @@ export function BattleGameWorkspace() {
 
   function handleSubmitAction() {
     const failureReason = getSubmitFailureReason(state);
+
+    if (!isSkillInputUnlockedNow()) {
+      setStatusMessage(copy.skillVoiceGateRequired);
+      return;
+    }
+
     dispatch({ type: "submitSkill" });
 
     if (failureReason !== null || !state.battle || !session) {
@@ -584,6 +687,12 @@ export function BattleGameWorkspace() {
         submittedAt: new Date().toISOString(),
         requestId
       });
+      if (skillInputMode === "voice_then_gesture") {
+        setSkillVoiceArmed(false);
+        setSkillVoiceStatus("idle");
+        setSkillVoiceTranscript("");
+        setSkillVoiceMatchedCommand(null);
+      }
       setStatusMessage(null);
     } catch {
       pendingActionRef.current = null;
@@ -593,6 +702,11 @@ export function BattleGameWorkspace() {
   }
 
   function handleGestureInput(gesture: string, source: GestureInputSource) {
+    if (!isSkillInputUnlockedNow()) {
+      setStatusMessage(copy.skillVoiceGateRequired);
+      return;
+    }
+
     const input =
       source === "debug_fallback"
         ? createDebugFallbackInput(gesture)
@@ -608,6 +722,10 @@ export function BattleGameWorkspace() {
 
   async function handleStartLiveRecognizer() {
     if (liveRecognizerRef.current) {
+      return;
+    }
+    if (!isSkillInputUnlockedNow()) {
+      setStatusMessage(copy.skillVoiceGateRequired);
       return;
     }
 
@@ -641,6 +759,18 @@ export function BattleGameWorkspace() {
     setLiveObservation(observation);
 
     if (input && canAcceptLiveGestureInput(stateRef.current)) {
+      if (!isSkillInputUnlockedNow()) {
+        dispatch({
+          type: "receiveGestureObservation",
+          cameraReady: isCameraReadyObservation(observation),
+          handDetected: observation.handDetected,
+          gesture: observation.token,
+          confidence: observation.confidence,
+          source: "live_camera"
+        });
+        return;
+      }
+
       dispatch({
         type: "receiveGestureInput",
         gesture: input.gesture,
@@ -672,6 +802,11 @@ export function BattleGameWorkspace() {
   }
 
   function handleRunDeterministicFallback() {
+    if (!isSkillInputUnlockedNow()) {
+      setStatusMessage(copy.skillVoiceGateRequired);
+      return;
+    }
+
     const sequence = createDeterministicFallbackSequence(state.input.targetSequence);
     for (const input of sequence) {
       dispatch({
@@ -1111,6 +1246,51 @@ export function BattleGameWorkspace() {
                 ) : null}
               </Panel>
               <Panel title={copy.inputConsole}>
+                <div className="skill-input-mode">
+                  <span className="field__label">{copy.skillInputMode}</span>
+                  <div className="action-row">
+                    <Button
+                      aria-pressed={skillInputMode === "gesture_only"}
+                      onClick={() => handleSelectSkillInputMode("gesture_only")}
+                      variant={skillInputMode === "gesture_only" ? "primary" : "default"}
+                    >
+                      {copy.skillInputModeGestureOnly}
+                    </Button>
+                    <Button
+                      aria-pressed={skillInputMode === "voice_then_gesture"}
+                      onClick={() => handleSelectSkillInputMode("voice_then_gesture")}
+                      variant={skillInputMode === "voice_then_gesture" ? "primary" : "default"}
+                    >
+                      {copy.skillInputModeVoiceThenGesture}
+                    </Button>
+                  </div>
+                  {skillInputMode === "voice_then_gesture" ? (
+                    <div className="voice-gate">
+                      <StatusBadge tone={skillVoiceArmed ? "success" : "warning"}>
+                        {skillVoiceArmed ? copy.skillVoiceGateReady : copy.skillVoiceGateLocked}
+                      </StatusBadge>
+                      <div className="action-row">
+                        <Button
+                          disabled={skillVoiceStatus === "listening" || isServerConfirming}
+                          onClick={handleStartSkillVoiceGate}
+                          variant="primary"
+                        >
+                          {skillVoiceStatus === "listening"
+                            ? copy.skillVoiceGateListening
+                            : copy.skillVoiceGateStart}
+                        </Button>
+                      </div>
+                      <Metric
+                        label={copy.startupVoiceTranscript}
+                        value={skillVoiceTranscript || copy.startupVoiceTranscriptEmpty}
+                      />
+                      <Metric
+                        label={copy.startupVoiceMatchedCommand}
+                        value={skillVoiceMatchedCommand ?? copy.startupVoiceNoMatch}
+                      />
+                    </div>
+                  ) : null}
+                </div>
                 <ProgressMeter
                   current={completedStepCount}
                   label={copy.targetProgress}
@@ -1367,6 +1547,10 @@ function canAcceptLiveGestureInput(state: BattleFlowState): boolean {
     state.battle.turnOwnerPlayerId === state.player.playerId &&
     state.input.serverConfirmationStatus !== "PENDING"
   );
+}
+
+function getSkillVoiceGateCommands(skillName: string): readonly string[] {
+  return Array.from(new Set([...JAPANESE_STARTUP_COMMANDS, "領域展開", skillName]));
 }
 
 function isCameraReadyObservation(observation: LiveGestureObservation): boolean {

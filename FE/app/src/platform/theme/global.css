@@ -426,6 +426,19 @@ textarea {
   gap: 8px;
 }
 
+.skill-input-mode,
+.voice-gate {
+  display: grid;
+  gap: 8px;
+}
+
+.voice-gate {
+  padding: 8px;
+  border: 1px dashed rgba(255, 208, 89, 0.34);
+  border-radius: 6px;
+  background: rgba(255, 208, 89, 0.06);
+}
+
 .startup-voice__commands {
   display: flex;
   flex-wrap: wrap;

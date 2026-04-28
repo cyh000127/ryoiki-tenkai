@@ -1103,6 +1103,54 @@ describe("BattleGameWorkspace", () => {
     ).toBeInTheDocument();
   });
 
+  it("requires voice approval before accepting gesture input in voice-then-gesture mode", async () => {
+    const user = createUser();
+    installGameApiMock();
+
+    renderWorkspace();
+    await enterActiveBattle(user);
+
+    await user.click(screen.getByRole("button", { name: "음성 후 손동작" }));
+
+    expect(screen.getByText("음성 승인 필요")).toBeInTheDocument();
+
+    const debugFallbackPanel = screen
+      .getByRole("heading", { name: "디버그 fallback 입력" })
+      .closest("section");
+    expect(debugFallbackPanel).not.toBeNull();
+
+    const replayButton = within(debugFallbackPanel!).getByRole("button", { name: "목표 순서 입력" });
+    expect(replayButton).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "서버 판정 요청" }));
+    expect(screen.getByText("음성 승인 후 손동작을 입력할 수 있습니다.")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "술식 음성 승인" }));
+    expect(startupVoiceMock.start).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      startupVoiceMock.options?.onResult({
+        matchedCommand: "術式起動",
+        status: "matched",
+        transcript: "術式起動"
+      });
+    });
+
+    expect(screen.getByText("손동작 입력 가능")).toBeInTheDocument();
+    expect(replayButton).not.toBeDisabled();
+
+    await user.click(replayButton);
+    expect(screen.getAllByText("2/2").length).toBeGreaterThan(0);
+
+    await user.click(screen.getByRole("button", { name: "서버 판정 요청" }));
+    expect(submittedSocketActions).toHaveLength(1);
+
+    await waitFor(() => {
+      expect(screen.getByText("음성 승인 필요")).toBeInTheDocument();
+    });
+    expect(replayButton).toBeDisabled();
+  });
+
   it("routes live camera observations through the normalized gesture input boundary", async () => {
     const user = createUser();
     installGameApiMock();

@@ -31,6 +31,8 @@ services:
   web:
     build:
       context: ./FE/app
+      args:
+        VITE_ENABLE_DEBUG_FALLBACK: "true"
     env_file:
       - ./FE/app/.env.example
     ports:
