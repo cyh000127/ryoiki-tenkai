@@ -24,7 +24,7 @@ This document records the technology boundaries to keep or choose in v2. The sta
 | Concrete frame recognizer runtime | blocked | Compare browser support, lifecycle cleanup, bundle impact, and local smoke feasibility. |
 | Skill domain source format | blocked | Approve skill id/name/effect/cost/cooldown/gesture/resource/version format. |
 | Production storage topology | planned | Document SQL migration smoke and failure policy. |
-| Real two-player matchmaking policy | partial | Queue pairing and reconnect latest snapshot recovery are complete; broader event reconciliation and fanout hardening remain. |
+| Real two-player matchmaking policy | partial | Queue pairing, reconnect latest snapshot recovery, and delayed/duplicate reconciliation are complete; fanout hardening remains. |
 
 ## Recognition Runtime Selection Criteria
 

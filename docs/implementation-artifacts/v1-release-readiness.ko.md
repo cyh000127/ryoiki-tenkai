@@ -93,3 +93,5 @@
    - 구현 기록: `docs/implementation-artifacts/v2-5-two-player-queue-pairing.ko.md`
 14. [x] socket reconnect latest snapshot 재동기화를 강화합니다.
    - 구현 기록: `docs/implementation-artifacts/v2-6-socket-reconnect-resync.ko.md`
+15. [x] delayed/duplicate event reconciliation 회귀 테스트를 확대합니다.
+   - 구현 기록: `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.ko.md`

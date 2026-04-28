@@ -107,12 +107,12 @@
 
 ### V2-E3-ST03: delayed/duplicate event reconciliation 회귀 테스트 확대
 
-- Status: planned
+- Status: done
 - User story: delayed socket event가 UI를 과거 상태로 되돌리지 않는다.
 - Scope: stale turn check, duplicate action event handling, ended event idempotency.
 - Acceptance criteria: stale snapshot은 무시된다. repeated ended event가 rating/history UI를 중복 반영하지 않는다.
 - Dependencies: v1 event reducer.
-- Verification: frontend unit test.
+- Verification: `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.ko.md`, `FE/app/tests/unit/battleFlow.test.ts`, `FE/app/tests/unit/BattleGameWorkspace.test.tsx`.
 
 ### V2-E3-ST04: timeout watcher와 surrender event fanout 안정화
 

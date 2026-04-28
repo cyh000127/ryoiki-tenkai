@@ -93,3 +93,5 @@ These items are not v1 release blockers and should be handled in v2 or follow-up
    - Implementation record: `docs/implementation-artifacts/v2-5-two-player-queue-pairing.en.md`
 14. [x] Harden socket reconnect latest snapshot resync.
    - Implementation record: `docs/implementation-artifacts/v2-6-socket-reconnect-resync.en.md`
+15. [x] Expand delayed/duplicate event reconciliation regression coverage.
+   - Implementation record: `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.en.md`

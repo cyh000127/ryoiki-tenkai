@@ -107,12 +107,12 @@ Status values:
 
 ### V2-E3-ST03: Expand delayed/duplicate event reconciliation regression tests
 
-- Status: planned
+- Status: done
 - User story: delayed socket events do not roll the UI back into older state.
 - Scope: stale turn check, duplicate action event handling, ended event idempotency.
 - Acceptance criteria: stale snapshots are ignored. Repeated ended events do not duplicate rating/history UI changes.
 - Dependencies: v1 event reducer.
-- Verification: frontend unit test.
+- Verification: `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.en.md`, `FE/app/tests/unit/battleFlow.test.ts`, `FE/app/tests/unit/BattleGameWorkspace.test.tsx`.
 
 ### V2-E3-ST04: Stabilize timeout watcher and surrender event fanout
 

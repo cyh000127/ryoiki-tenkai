@@ -57,5 +57,4 @@
 
 ## 후속 v2 선행조건
 
-- `V2-E3-ST03`: delayed/duplicate event reconciliation 회귀 테스트 확대.
 - `V2-E3-ST04`: timeout watcher와 surrender event fanout 안정화.

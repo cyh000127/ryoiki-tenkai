@@ -19,6 +19,7 @@ Korean documentation is available in `README.md`. `README.ko.md` keeps the same 
 - The v2 recognition UI state hardening is complete.
 - The v2 two-player queue pairing rule is hardened.
 - The v2 socket reconnect latest snapshot resync is hardened.
+- The v2 delayed/duplicate event reconciliation is hardened.
 - Skill names, skill effects, hand-motion resources, and visual assets will proceed only after a separate domain source is approved.
 - Concrete frame recognizer binding remains v2 follow-up scope.
 - Final release readiness document: `docs/implementation-artifacts/v1-release-readiness.en.md`
@@ -48,6 +49,7 @@ The repository is currently wired through the following playable flow:
 - automatic practice rival turns
 - `HP_ZERO`, `TIMEOUT`, and `SURRENDER` resolution with result screen rendering
 - latest turn/hp/mana/cooldown snapshot recovery after two-player reconnect
+- delayed/duplicate socket event reconciliation
 - live camera adapter start/stop/status display and recognized-token dispatch through the normalized input boundary
 - no-hand, unstable-hand, and recognized-token live camera UI states separated
 - result/history/rating persistence moved behind the storage adapter boundary
@@ -186,7 +188,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 
 - no v1 release blockers
 - v2 or follow-up scope
-  concrete frame recognizer binding, recognizer restart/cleanup hardening, expanded delayed/duplicate event reconciliation, timeout/surrender fanout hardening, and skill/resource implementation after the skill domain source is approved
+  concrete frame recognizer binding, recognizer restart/cleanup hardening, timeout/surrender fanout hardening, and skill/resource implementation after the skill domain source is approved
 
 ## MVP Planning and QA
 
@@ -197,6 +199,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v2-4-recognition-ui-state.en.md`: recognition UI state hardening record.
 - `docs/implementation-artifacts/v2-5-two-player-queue-pairing.en.md`: two-player queue pairing record.
 - `docs/implementation-artifacts/v2-6-socket-reconnect-resync.en.md`: socket reconnect resync record.
+- `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.en.md`: delayed/duplicate event reconciliation record.
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`: storage adapter persistence record.
 - `docs/implementation-artifacts/v2-planning-baseline.en.md`: v2 planning baseline record.
 - `docs/implementation-artifacts/v2-smoke-checklist.en.md`: v2 smoke checklist and blocked items.

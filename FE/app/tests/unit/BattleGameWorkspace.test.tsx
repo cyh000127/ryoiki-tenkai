@@ -733,6 +733,93 @@ describe("BattleGameWorkspace", () => {
     expect(screen.getByText("선택 스킬 상태")).toBeInTheDocument();
   });
 
+  it("ignores a delayed duplicate rejected action result after server state confirmation", async () => {
+    const user = createUser();
+    installGameApiMock();
+
+    renderWorkspace();
+
+    await enterActiveBattle(user);
+
+    const debugFallbackPanel = screen
+      .getByRole("heading", { name: "디버그 fallback 입력" })
+      .closest("section");
+    expect(debugFallbackPanel).not.toBeNull();
+
+    await user.click(within(debugFallbackPanel!).getByRole("button", { name: "목표 순서 입력" }));
+    await user.click(screen.getByRole("button", { name: "서버 판정 요청" }));
+
+    expect(submittedSocketActions).toHaveLength(1);
+    const submittedAction = submittedSocketActions[0];
+    expect(screen.getAllByText("서버 확정 대기 중").length).toBeGreaterThan(0);
+
+    emitSocketEvent({
+      type: "battle.state_updated",
+      payload: {
+        battleSessionId: "battle_test",
+        sourceActionId: submittedAction.actionId,
+        battle: {
+          battleSessionId: "battle_test",
+          matchId: "match_test",
+          status: "ACTIVE",
+          turnNumber: 3,
+          turnOwnerPlayerId: "pl_guest",
+          actionDeadlineAt: "2026-04-27T00:01:30Z",
+          self: {
+            playerId: "pl_guest",
+            hp: 75,
+            mana: 90,
+            cooldowns: {
+              pulse_strike: 0
+            }
+          },
+          opponent: {
+            playerId: "pl_practice",
+            hp: 75,
+            mana: 80,
+            cooldowns: {
+              pulse_strike: 1
+            }
+          },
+          battleLog: [
+            {
+              turnNumber: 1,
+              message: "pulse_strike dealt 25"
+            },
+            {
+              turnNumber: 2,
+              message: "pulse_strike dealt 25"
+            }
+          ],
+          winnerPlayerId: null,
+          loserPlayerId: null,
+          endedReason: null
+        }
+      }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("서버 확정 완료")).toBeInTheDocument();
+    });
+
+    emitSocketEvent({
+      type: "battle.action_result",
+      requestId: submittedAction.requestId,
+      payload: {
+        battleSessionId: "battle_test",
+        turnNumber: 1,
+        actionId: submittedAction.actionId,
+        status: "REJECTED",
+        reason: "DUPLICATE_ACTION",
+        battle: null
+      }
+    });
+
+    expect(screen.getByText("서버 확정 완료")).toBeInTheDocument();
+    expect(screen.queryByText("서버 거부")).not.toBeInTheDocument();
+    expect(screen.getAllByText("75")).toHaveLength(2);
+  });
+
   it("separates local sequence progress from server rejection feedback", async () => {
     const user = createUser();
     installGameApiMock();

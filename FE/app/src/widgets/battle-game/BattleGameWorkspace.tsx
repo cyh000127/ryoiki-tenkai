@@ -631,10 +631,13 @@ export function BattleGameWorkspace() {
         if (event.payload.status === "ACCEPTED") {
           return;
         }
-        const latencyMs = consumePendingActionLatency({
+        const latencyMs = consumePendingActionLatencyIfMatched({
           actionId: event.payload.actionId,
           requestId: event.requestId
         });
+        if (latencyMs === null) {
+          return;
+        }
         dispatch({
           type: "actionRejected",
           reason: event.payload.reason,
@@ -761,6 +764,26 @@ export function BattleGameWorkspace() {
       match?.requestId === undefined || match.requestId === pendingAction.requestId;
     if (!matchesActionId || !matchesRequestId) {
       return stateRef.current.input.networkLatencyMs;
+    }
+
+    pendingActionRef.current = null;
+    return Math.max(0, Date.now() - pendingAction.submittedAtMs);
+  }
+
+  function consumePendingActionLatencyIfMatched(match: {
+    actionId?: string;
+    requestId?: string;
+  }): number | null {
+    const pendingAction = pendingActionRef.current;
+    if (!pendingAction) {
+      return null;
+    }
+
+    const matchesActionId = match.actionId === undefined || match.actionId === pendingAction.actionId;
+    const matchesRequestId =
+      match.requestId === undefined || match.requestId === pendingAction.requestId;
+    if (!matchesActionId || !matchesRequestId) {
+      return null;
     }
 
     pendingActionRef.current = null;

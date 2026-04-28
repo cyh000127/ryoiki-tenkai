@@ -19,6 +19,7 @@
 - v2 recognition UI state hardening이 완료되었습니다.
 - v2 two-player queue pairing rule이 강화되었습니다.
 - v2 socket reconnect latest snapshot 재동기화가 강화되었습니다.
+- v2 delayed/duplicate event reconciliation이 강화되었습니다.
 - 스킬명, 스킬 효과, 손동작 리소스, 시각 자산은 별도 domain source 확정 후 진행합니다.
 - 구체 frame recognizer 바인딩은 v2 follow-up 범위입니다.
 - 최종 릴리스 점검 문서: `docs/implementation-artifacts/v1-release-readiness.ko.md`
@@ -182,7 +183,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 
 - v1 릴리스 차단 작업 없음
 - v2 또는 follow-up 범위
-  구체 frame recognizer 바인딩, recognizer restart/cleanup hardening, delayed/duplicate event reconciliation 확대, timeout/surrender fanout hardening, 스킬 domain source 확정 후 skill/resource 구현
+  구체 frame recognizer 바인딩, recognizer restart/cleanup hardening, timeout/surrender fanout hardening, 스킬 domain source 확정 후 skill/resource 구현
 
 ## 경계
 
@@ -213,6 +214,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v2-4-recognition-ui-state.ko.md`: recognition UI state hardening 구현 기록.
 - `docs/implementation-artifacts/v2-5-two-player-queue-pairing.ko.md`: two-player queue pairing 구현 기록.
 - `docs/implementation-artifacts/v2-6-socket-reconnect-resync.ko.md`: socket reconnect 재동기화 구현 기록.
+- `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.ko.md`: delayed/duplicate event reconciliation 구현 기록.
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.ko.md`: storage adapter persistence 구현 기록.
 - `docs/implementation-artifacts/v2-planning-baseline.ko.md`: v2 planning baseline 구현 기록.
 - `docs/implementation-artifacts/v2-smoke-checklist.ko.md`: v2 smoke checklist와 blocked 항목.
@@ -243,6 +245,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v2-4-recognition-ui-state.en.md`
 - `docs/implementation-artifacts/v2-5-two-player-queue-pairing.en.md`
 - `docs/implementation-artifacts/v2-6-socket-reconnect-resync.en.md`
+- `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.en.md`
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`
 - `docs/implementation-artifacts/v2-planning-baseline.en.md`
 - `docs/implementation-artifacts/v2-smoke-checklist.en.md`

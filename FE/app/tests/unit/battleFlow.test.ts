@@ -278,6 +278,77 @@ describe("battleFlowReducer", () => {
     expect(staleStarted.battle?.self.hp).toBe(75);
   });
 
+  it("ignores same-turn snapshots with shorter logs or older deadlines", () => {
+    const matched = createMatchedBattle();
+    const advanced = battleFlowReducer(matched, {
+      type: "battleStateUpdated",
+      latencyMs: 24,
+      battle: {
+        ...matched.battle!,
+        turnNumber: 3,
+        turnOwnerPlayerId: matched.player.playerId,
+        actionDeadlineAt: "2026-04-27T00:01:30Z",
+        self: {
+          ...matched.battle!.self,
+          hp: 75,
+          mana: 90
+        },
+        opponent: {
+          ...matched.battle!.opponent,
+          hp: 75,
+          mana: 80
+        },
+        battleLog: [
+          {
+            turnNumber: 1,
+            message: "pulse_strike dealt 25"
+          },
+          {
+            turnNumber: 2,
+            message: "pulse_strike dealt 25"
+          }
+        ]
+      }
+    });
+
+    const shorterLog = battleFlowReducer(advanced, {
+      type: "battleStateUpdated",
+      latencyMs: 99,
+      battle: {
+        ...advanced.battle!,
+        self: {
+          ...advanced.battle!.self,
+          hp: 50
+        },
+        battleLog: [
+          {
+            turnNumber: 1,
+            message: "pulse_strike dealt 25"
+          }
+        ]
+      }
+    });
+    const olderDeadline = battleFlowReducer(advanced, {
+      type: "battleStateUpdated",
+      latencyMs: 99,
+      battle: {
+        ...advanced.battle!,
+        actionDeadlineAt: "2026-04-27T00:01:00Z",
+        self: {
+          ...advanced.battle!.self,
+          hp: 50
+        }
+      }
+    });
+
+    expect(shorterLog.battle?.self.hp).toBe(75);
+    expect(shorterLog.battle?.battleLog).toHaveLength(2);
+    expect(shorterLog.input.networkLatencyMs).toBe(24);
+    expect(olderDeadline.battle?.self.hp).toBe(75);
+    expect(olderDeadline.battle?.actionDeadlineAt).toBe("2026-04-27T00:01:30Z");
+    expect(olderDeadline.input.networkLatencyMs).toBe(24);
+  });
+
   it("ignores stale ended snapshots after a newer active battle snapshot", () => {
     const matched = createMatchedBattle();
     const advanced = battleFlowReducer(matched, {

@@ -57,5 +57,4 @@ This document is the implementation record for `V2-E3-ST01`. Ranked queue pairin
 
 ## Follow-up v2 Prerequisites
 
-- `V2-E3-ST03`: expand delayed/duplicate event reconciliation regression tests.
 - `V2-E3-ST04`: stabilize timeout watcher and surrender event fanout.
