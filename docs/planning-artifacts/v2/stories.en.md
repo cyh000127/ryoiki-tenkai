@@ -174,12 +174,12 @@ Status values:
 
 ### V2-E5-ST02: Refresh the v2 smoke checklist
 
-- Status: planned
+- Status: done
 - User story: the team can verify v2 camera/runtime/storage/matching risks through a smoke checklist.
 - Scope: runtime smoke, camera states, storage reload, two-player queue, reconnect, result/history.
 - Acceptance criteria: implemented items and blocked items are separated.
 - Dependencies: V2-E5-ST01.
-- Verification: docs review.
+- Verification: `docs/implementation-artifacts/v2-smoke-checklist.en.md`, docs review, text scan.
 
 ### V2-E5-ST03: Re-check release readiness
 

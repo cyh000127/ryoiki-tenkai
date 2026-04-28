@@ -75,3 +75,5 @@
    - 보류 사유: 별도 skill domain source 확정 전까지 임의 구현하지 않습니다.
 5. [x] v2 기획 문서를 작성합니다.
    - 구현 기록: `docs/implementation-artifacts/v2-planning-baseline.ko.md`
+6. [x] v2 smoke checklist를 갱신합니다.
+   - 구현 기록: `docs/implementation-artifacts/v2-smoke-checklist.ko.md`

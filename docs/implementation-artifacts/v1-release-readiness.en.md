@@ -75,3 +75,5 @@ These items are not v1 release blockers and should be handled in v2 or follow-up
    - Deferred reason: do not invent implementation before the separate skill domain source is approved.
 5. [x] Draft the v2 planning documents.
    - Implementation record: `docs/implementation-artifacts/v2-planning-baseline.en.md`
+6. [x] Refresh the v2 smoke checklist.
+   - Implementation record: `docs/implementation-artifacts/v2-smoke-checklist.en.md`
