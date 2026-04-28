@@ -24,7 +24,7 @@
 | Concrete frame recognizer runtime | blocked | browser support, lifecycle cleanup, bundle impact, local smoke 가능 여부를 비교해야 합니다. |
 | Skill domain source format | blocked | skill id/name/effect/cost/cooldown/gesture/resource/version 형식이 승인되어야 합니다. |
 | Production storage topology | planned | SQL migration smoke와 failure policy가 문서화되어야 합니다. |
-| Real two-player matchmaking policy | planned | queue pairing, practice rival fallback, timeout ownership을 결정해야 합니다. |
+| Real two-player matchmaking policy | partial | queue pairing과 practice rival fallback 분리는 완료, timeout ownership hardening은 남아 있습니다. |
 
 ## Recognition Runtime 선택 기준
 

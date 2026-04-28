@@ -17,6 +17,7 @@ Korean documentation is available in `README.md`. `README.ko.md` keeps the same 
 - The v2 storage failure/fallback policy is written.
 - The v2 compact audit retention boundary is written.
 - The v2 recognition UI state hardening is complete.
+- The v2 two-player queue pairing rule is hardened.
 - Skill names, skill effects, hand-motion resources, and visual assets will proceed only after a separate domain source is approved.
 - Concrete frame recognizer binding remains v2 follow-up scope.
 - Final release readiness document: `docs/implementation-artifacts/v1-release-readiness.en.md`
@@ -40,6 +41,7 @@ The repository is currently wired through the following playable flow:
 - guest player create or restore
 - `skillset` / `animset` catalog lookup and `loadout` save
 - ranked 1v1 queue entry, cancel, and status lookup
+- ranked queue pairing for two players with opposite-seat battle handoff
 - WebSocket auth and `battle.match_ready` / `battle.match_found` / `battle.started` handoff
 - server-authoritative battle action validation and state mutation
 - automatic practice rival turns
@@ -54,6 +56,7 @@ The repository is currently wired through the following playable flow:
 - storage failure/fallback policy documented, with corrupted JSON state rejection
 - compact audit retention boundary documented, including raw recognition data exclusion rules
 - no-hand, unstable-hand, and recognized-token UI states separated
+- two-player queue pairing separated from the practice path
 
 ## Run Locally
 
@@ -154,12 +157,13 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - storage failure/fallback policy is documented and corrupted JSON state is tested
 - compact audit retention boundary is documented with retained/excluded field rules
 - recognition UI state hardening is covered by no-hand/unstable/recognized regression tests
+- two-player queue pairing rule and socket handoff are covered by regression tests
 
 ## Remaining Work
 
 - no v1 release blockers
 - v2 or follow-up scope
-  concrete frame recognizer binding, recognizer restart/cleanup hardening, real two-player match hardening, and skill/resource implementation after the skill domain source is approved
+  concrete frame recognizer binding, recognizer restart/cleanup hardening, two-player reconnect/event/fanout hardening, and skill/resource implementation after the skill domain source is approved
 
 ## MVP Planning and QA
 
@@ -168,6 +172,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`: live recognizer adapter integration record.
 - `docs/implementation-artifacts/v2-2-camera-permission-smoke.en.md`: camera permission smoke automation record.
 - `docs/implementation-artifacts/v2-4-recognition-ui-state.en.md`: recognition UI state hardening record.
+- `docs/implementation-artifacts/v2-5-two-player-queue-pairing.en.md`: two-player queue pairing record.
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`: storage adapter persistence record.
 - `docs/implementation-artifacts/v2-planning-baseline.en.md`: v2 planning baseline record.
 - `docs/implementation-artifacts/v2-smoke-checklist.en.md`: v2 smoke checklist and blocked items.

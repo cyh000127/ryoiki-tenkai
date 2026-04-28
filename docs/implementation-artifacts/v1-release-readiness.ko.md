@@ -89,3 +89,5 @@
    - 구현 기록: `docs/implementation-artifacts/v2-audit-retention-boundary.ko.md`
 12. [x] no-hand, unstable-hand, recognized-token UI 상태를 분리합니다.
    - 구현 기록: `docs/implementation-artifacts/v2-4-recognition-ui-state.ko.md`
+13. [x] two-player queue pairing rule을 강화합니다.
+   - 구현 기록: `docs/implementation-artifacts/v2-5-two-player-queue-pairing.ko.md`

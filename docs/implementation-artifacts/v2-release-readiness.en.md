@@ -20,6 +20,7 @@ This document records the current v2 readiness decision. The current branch is r
 | Live recognizer adapter boundary | PASS | `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md` |
 | Camera permission smoke automation | PASS | `docs/implementation-artifacts/v2-2-camera-permission-smoke.en.md` |
 | Recognition UI state separation | PASS | `docs/implementation-artifacts/v2-4-recognition-ui-state.en.md` |
+| Two-player queue pairing | PASS | `docs/implementation-artifacts/v2-5-two-player-queue-pairing.en.md` |
 | Storage adapter persistence | PASS | `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md` |
 | SQL migration smoke procedure | PASS | `docs/implementation-artifacts/v2-sql-migration-smoke.en.md` |
 | Storage failure/fallback policy | PASS | `docs/implementation-artifacts/v2-storage-failure-policy.en.md` |
@@ -35,7 +36,7 @@ This document records the current v2 readiness decision. The current branch is r
 | --- | --- | --- |
 | V2-E1 Live Recognition Runtime Hardening | partial | Adapter boundary, camera smoke, and no-hand/unstable/recognized UI separation are complete; concrete runtime selection and restart/cleanup hardening remain. |
 | V2-E2 Persistence and Runtime Operation Readiness | done | Storage adapter transition, migration smoke, failure policy, and audit retention boundary are complete. |
-| V2-E3 Real Match Flow and Session Robustness | planned | Real two-player pairing, reconnect, event reconciliation, and fanout hardening remain. |
+| V2-E3 Real Match Flow and Session Robustness | partial | Two-player queue pairing is complete; reconnect, event reconciliation, and fanout hardening remain. |
 | V2-E4 Skill and Resource Domain Intake | blocked | An approved skill domain source is required. |
 | V2-E5 QA, Release, and Handoff | done | Planning baseline, smoke checklist, readiness review, and scan record are complete. |
 
@@ -45,7 +46,7 @@ The full v2 feature release should not be considered ready until the following i
 
 - `V2-E1-ST02`: concrete frame recognizer runtime selection and adapter binding.
 - `V2-E1-ST04`: recognizer restart, cleanup, and permission recovery hardening.
-- `V2-E3-ST01` through `V2-E3-ST04`: real two-player match flow and session robustness.
+- `V2-E3-ST02` through `V2-E3-ST04`: real two-player match flow and session robustness.
 - `V2-E4-ST01` through `V2-E4-ST04`: skill/resource intake after an approved skill domain source exists.
 
 ## Deferral Rule
@@ -62,15 +63,17 @@ This readiness review reflects frontend UI state hardening and documentation upd
 | `pnpm --dir FE/app test` | PASS | 34 tests |
 | `pnpm --dir FE/app smoke:camera` | PASS | 2 tests |
 | `pnpm --dir FE/app build` | PASS | production build |
+| `uv run ruff check BE` | PASS | backend lint |
+| `uv run pytest BE/api/tests/unit/test_battle_websocket_events.py BE/api/tests/unit/test_game_flow_api.py` | PASS | 17 tests |
 | `git diff --check` | PASS | whitespace/error check |
 | Provider-neutral targeted text scan | PASS | no matches outside ignored files |
 | README link review | PASS | Korean and English links include the v2 readiness document |
-| Story status review | PASS | `V2-E1-ST03` is marked complete |
+| Story status review | PASS | `V2-E3-ST01` is marked complete |
 
 ## Next Implementation Order
 
 Because the skill domain source is not available yet, the next safe implementation units stay inside the approved existing runtime boundary.
 
-1. `V2-E3-ST01`: harden two-player queue pairing rules.
-2. `V2-E3-ST02`: harden socket reconnect and latest snapshot resync.
-3. `V2-E3-ST03`: expand delayed/duplicate event reconciliation regression tests.
+1. `V2-E3-ST02`: harden socket reconnect and latest snapshot resync.
+2. `V2-E3-ST03`: expand delayed/duplicate event reconciliation regression tests.
+3. `V2-E3-ST04`: stabilize timeout watcher and surrender event fanout.

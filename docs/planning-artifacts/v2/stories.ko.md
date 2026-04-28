@@ -89,12 +89,12 @@
 
 ### V2-E3-ST01: two-player queue pairing rule 강화
 
-- Status: planned
+- Status: done
 - User story: 두 player는 practice rival 없이 같은 battle session으로 매칭될 수 있다.
 - Scope: queue pairing, seat assignment, duplicate queue guard, loadout guard.
 - Acceptance criteria: 두 player가 같은 battle id와 반대 seat를 받는다. practice rival path와 real pairing path가 테스트에서 분리된다.
 - Dependencies: v1 matchmaking queue, socket handoff.
-- Verification: backend API/socket test.
+- Verification: `docs/implementation-artifacts/v2-5-two-player-queue-pairing.ko.md`, `BE/api/tests/unit/test_battle_websocket_events.py`.
 
 ### V2-E3-ST02: socket reconnect와 latest snapshot 재동기화 hardening
 

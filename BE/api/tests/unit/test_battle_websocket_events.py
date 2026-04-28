@@ -16,6 +16,44 @@ from gesture_api.services.battle_websocket import BattleWebSocketEventHandler
 from starlette.websockets import WebSocketDisconnect
 
 
+def create_configured_guest(client: TestClient, nickname: str) -> str:
+    guest_response = client.post("/api/v1/players/guest", json={"nickname": nickname})
+    assert guest_response.status_code == 201
+    player_id = guest_response.json()["data"]["playerId"]
+    loadout_response = client.post(
+        "/api/v1/players/me/loadout",
+        headers={"X-Player-Id": player_id},
+        json={
+            "skillsetId": "skillset_seal_basic",
+            "animsetId": "animset_basic_2d",
+        },
+    )
+    assert loadout_response.status_code == 200
+    return player_id
+
+
+def get_ws_token(client: TestClient, player_id: str) -> str:
+    return str(
+        client.get("/api/v1/ws-token", headers={"X-Player-Id": player_id}).json()["data"][
+            "wsToken"
+        ]
+    )
+
+
+def create_practice_battle(client: TestClient, player_id: str) -> str:
+    queue_response = client.post(
+        "/api/v1/matchmaking/queue",
+        headers={"X-Player-Id": player_id},
+        json={"mode": "RANKED_1V1"},
+    )
+    assert queue_response.status_code == 200
+    assert queue_response.json()["data"]["queueStatus"] == "SEARCHING"
+    battle = game_state_repository.create_match_for_player(player_id)
+    assert battle is not None
+    assert battle.player_ids[1] == "pl_practice"
+    return battle.battle_session_id
+
+
 def test_battle_event_serializer_uses_wire_aliases() -> None:
     event = deserialize_battle_event(
         {
@@ -50,6 +88,7 @@ def test_battle_websocket_handler_submits_action_with_in_memory_engine() -> None
     assert queue_state is not None
     battle = repository.create_match_for_player(player.player_id)
     assert battle is not None
+    assert battle.player_ids == (player.player_id, "pl_practice")
     handler = BattleWebSocketEventHandler(repository)
     event = BattleSubmitActionEvent(
         type="battle.submit_action",
@@ -83,41 +122,20 @@ def test_battle_websocket_handler_submits_action_with_in_memory_engine() -> None
     assert duplicate_response.payload.reason == "DUPLICATE_ACTION"
 
 
-def test_ws_endpoint_replays_queue_handoff_and_handles_submit_action() -> None:
+def test_ws_endpoint_replays_practice_battle_and_handles_submit_action() -> None:
     client = TestClient(create_app())
-    guest_response = client.post("/api/v1/players/guest", json={"nickname": "ws-client"})
-    player_id = guest_response.json()["data"]["playerId"]
+    player_id = create_configured_guest(client, "ws-client")
     skill = client.get("/api/v1/skillsets").json()["data"][0]["skills"][0]
-    loadout_response = client.post(
-        "/api/v1/players/me/loadout",
-        headers={"X-Player-Id": player_id},
-        json={
-            "skillsetId": "skillset_seal_basic",
-            "animsetId": "animset_basic_2d",
-        },
-    )
-    assert loadout_response.status_code == 200
-    ws_token = client.get("/api/v1/ws-token", headers={"X-Player-Id": player_id}).json()["data"][
-        "wsToken"
-    ]
-
-    queue_response = client.post(
-        "/api/v1/matchmaking/queue",
-        headers={"X-Player-Id": player_id},
-        json={"mode": "RANKED_1V1"},
-    )
-    assert queue_response.status_code == 200
-    assert queue_response.json()["data"]["queueStatus"] == "SEARCHING"
+    battle_session_id = create_practice_battle(client, player_id)
+    ws_token = get_ws_token(client, player_id)
 
     with client.websocket_connect(f"/ws?token={ws_token}") as websocket:
-        ready_event = websocket.receive_json()
         found_event = websocket.receive_json()
         started_event = websocket.receive_json()
 
-        assert ready_event["type"] == "battle.match_ready"
         assert found_event["type"] == "battle.match_found"
         assert started_event["type"] == "battle.started"
-        battle_session_id = started_event["payload"]["battleSessionId"]
+        assert started_event["payload"]["battleSessionId"] == battle_session_id
 
         websocket.send_json({"type": "battle.ping", "requestId": "req-ping"})
         assert websocket.receive_json() == {
@@ -156,35 +174,90 @@ def test_ws_endpoint_replays_queue_handoff_and_handles_submit_action() -> None:
     assert state_updated_event["payload"]["battle"]["opponent"]["hp"] == 75
 
 
-def test_ws_endpoint_replays_latest_active_battle_snapshot_on_reconnect() -> None:
+def test_ws_endpoint_pairs_two_connected_players_without_practice_rival() -> None:
     client = TestClient(create_app())
-    guest_response = client.post("/api/v1/players/guest", json={"nickname": "ws-reconnect"})
-    player_id = guest_response.json()["data"]["playerId"]
-    skill = client.get("/api/v1/skillsets").json()["data"][0]["skills"][0]
-    loadout_response = client.post(
-        "/api/v1/players/me/loadout",
-        headers={"X-Player-Id": player_id},
-        json={
-            "skillsetId": "skillset_seal_basic",
-            "animsetId": "animset_basic_2d",
-        },
-    )
-    assert loadout_response.status_code == 200
-    ws_token = client.get("/api/v1/ws-token", headers={"X-Player-Id": player_id}).json()["data"][
-        "wsToken"
-    ]
+    first_player_id = create_configured_guest(client, "player-one")
+    second_player_id = create_configured_guest(client, "player-two")
+    first_ws_token = get_ws_token(client, first_player_id)
+    second_ws_token = get_ws_token(client, second_player_id)
 
-    with client.websocket_connect(f"/ws?token={ws_token}") as websocket:
-        queue_response = client.post(
+    with client.websocket_connect(f"/ws?token={first_ws_token}") as first_socket:
+        first_queue_response = client.post(
             "/api/v1/matchmaking/queue",
-            headers={"X-Player-Id": player_id},
+            headers={"X-Player-Id": first_player_id},
             json={"mode": "RANKED_1V1"},
         )
-        assert queue_response.status_code == 200
-        websocket.receive_json()
+        assert first_queue_response.status_code == 200
+        assert first_queue_response.json()["data"]["queueStatus"] == "SEARCHING"
+        first_ready_event = first_socket.receive_json()
+        assert first_ready_event["type"] == "battle.match_ready"
+
+        repeated_queue_response = client.post(
+            "/api/v1/matchmaking/queue",
+            headers={"X-Player-Id": first_player_id},
+            json={"mode": "RANKED_1V1"},
+        )
+        assert repeated_queue_response.status_code == 200
+        assert repeated_queue_response.json()["data"]["queueStatus"] == "SEARCHING"
+        assert (
+            repeated_queue_response.json()["data"]["queuedAt"]
+            == first_queue_response.json()["data"]["queuedAt"]
+        )
+
+        with client.websocket_connect(f"/ws?token={second_ws_token}") as second_socket:
+            second_queue_response = client.post(
+                "/api/v1/matchmaking/queue",
+                headers={"X-Player-Id": second_player_id},
+                json={"mode": "RANKED_1V1"},
+            )
+            assert second_queue_response.status_code == 200
+            second_queue_data = second_queue_response.json()["data"]
+            assert second_queue_data["queueStatus"] == "MATCHED"
+            battle_session_id = second_queue_data["battleSessionId"]
+
+            second_ready_event = second_socket.receive_json()
+            first_found_event = first_socket.receive_json()
+            first_started_event = first_socket.receive_json()
+            second_found_event = second_socket.receive_json()
+            second_started_event = second_socket.receive_json()
+
+    assert second_ready_event["type"] == "battle.match_ready"
+    assert first_found_event["type"] == "battle.match_found"
+    assert second_found_event["type"] == "battle.match_found"
+    assert first_found_event["payload"]["battleSessionId"] == battle_session_id
+    assert second_found_event["payload"]["battleSessionId"] == battle_session_id
+    assert first_found_event["payload"]["playerSeat"] == "PLAYER_ONE"
+    assert second_found_event["payload"]["playerSeat"] == "PLAYER_TWO"
+    assert first_started_event["type"] == "battle.started"
+    assert second_started_event["type"] == "battle.started"
+    assert first_started_event["payload"]["battleSessionId"] == battle_session_id
+    assert second_started_event["payload"]["battleSessionId"] == battle_session_id
+    assert first_started_event["payload"]["battle"]["self"]["playerId"] == first_player_id
+    assert first_started_event["payload"]["battle"]["opponent"]["playerId"] == second_player_id
+    assert second_started_event["payload"]["battle"]["self"]["playerId"] == second_player_id
+    assert second_started_event["payload"]["battle"]["opponent"]["playerId"] == first_player_id
+    assert first_started_event["payload"]["battle"]["turnOwnerPlayerId"] == first_player_id
+
+    first_status_response = client.get(
+        "/api/v1/matchmaking/status",
+        headers={"X-Player-Id": first_player_id},
+    )
+    assert first_status_response.status_code == 200
+    assert first_status_response.json()["data"]["queueStatus"] == "MATCHED"
+    assert first_status_response.json()["data"]["battleSessionId"] == battle_session_id
+
+
+def test_ws_endpoint_replays_latest_active_battle_snapshot_on_reconnect() -> None:
+    client = TestClient(create_app())
+    player_id = create_configured_guest(client, "ws-reconnect")
+    skill = client.get("/api/v1/skillsets").json()["data"][0]["skills"][0]
+    battle_session_id = create_practice_battle(client, player_id)
+    ws_token = get_ws_token(client, player_id)
+
+    with client.websocket_connect(f"/ws?token={ws_token}") as websocket:
         websocket.receive_json()
         started_event = websocket.receive_json()
-        battle_session_id = started_event["payload"]["battleSessionId"]
+        assert started_event["payload"]["battleSessionId"] == battle_session_id
 
         websocket.send_json(
             {
@@ -217,32 +290,14 @@ def test_ws_endpoint_replays_latest_active_battle_snapshot_on_reconnect() -> Non
 
 def test_ws_endpoint_replays_latest_ended_battle_on_reconnect() -> None:
     client = TestClient(create_app())
-    guest_response = client.post("/api/v1/players/guest", json={"nickname": "ws-ended-reconnect"})
-    player_id = guest_response.json()["data"]["playerId"]
-    loadout_response = client.post(
-        "/api/v1/players/me/loadout",
-        headers={"X-Player-Id": player_id},
-        json={
-            "skillsetId": "skillset_seal_basic",
-            "animsetId": "animset_basic_2d",
-        },
-    )
-    assert loadout_response.status_code == 200
-    ws_token = client.get("/api/v1/ws-token", headers={"X-Player-Id": player_id}).json()["data"][
-        "wsToken"
-    ]
+    player_id = create_configured_guest(client, "ws-ended-reconnect")
+    battle_session_id = create_practice_battle(client, player_id)
+    ws_token = get_ws_token(client, player_id)
 
     with client.websocket_connect(f"/ws?token={ws_token}") as websocket:
-        queue_response = client.post(
-            "/api/v1/matchmaking/queue",
-            headers={"X-Player-Id": player_id},
-            json={"mode": "RANKED_1V1"},
-        )
-        assert queue_response.status_code == 200
-        websocket.receive_json()
         websocket.receive_json()
         started_event = websocket.receive_json()
-        battle_session_id = started_event["payload"]["battleSessionId"]
+        assert started_event["payload"]["battleSessionId"] == battle_session_id
 
         battle = game_state_repository.get_battle(battle_session_id)
         assert battle is not None
@@ -261,33 +316,14 @@ def test_ws_endpoint_replays_latest_ended_battle_on_reconnect() -> None:
 
 def test_ws_endpoint_emits_timeout_and_ended_events_when_deadline_expires() -> None:
     client = TestClient(create_app())
-    guest_response = client.post("/api/v1/players/guest", json={"nickname": "ws-timeout"})
-    player_id = guest_response.json()["data"]["playerId"]
-    loadout_response = client.post(
-        "/api/v1/players/me/loadout",
-        headers={"X-Player-Id": player_id},
-        json={
-            "skillsetId": "skillset_seal_basic",
-            "animsetId": "animset_basic_2d",
-        },
-    )
-    assert loadout_response.status_code == 200
-    ws_token = client.get("/api/v1/ws-token", headers={"X-Player-Id": player_id}).json()["data"][
-        "wsToken"
-    ]
+    player_id = create_configured_guest(client, "ws-timeout")
+    battle_session_id = create_practice_battle(client, player_id)
+    ws_token = get_ws_token(client, player_id)
 
     with client.websocket_connect(f"/ws?token={ws_token}") as websocket:
-        queue_response = client.post(
-            "/api/v1/matchmaking/queue",
-            headers={"X-Player-Id": player_id},
-            json={"mode": "RANKED_1V1"},
-        )
-        assert queue_response.status_code == 200
-
-        websocket.receive_json()
         websocket.receive_json()
         started_event = websocket.receive_json()
-        battle_session_id = started_event["payload"]["battleSessionId"]
+        assert started_event["payload"]["battleSessionId"] == battle_session_id
 
         battle = game_state_repository.get_battle(battle_session_id)
         assert battle is not None

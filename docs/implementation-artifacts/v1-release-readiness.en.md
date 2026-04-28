@@ -89,3 +89,5 @@ These items are not v1 release blockers and should be handled in v2 or follow-up
    - Implementation record: `docs/implementation-artifacts/v2-audit-retention-boundary.en.md`
 12. [x] Separate no-hand, unstable-hand, and recognized-token UI states.
    - Implementation record: `docs/implementation-artifacts/v2-4-recognition-ui-state.en.md`
+13. [x] Harden two-player queue pairing rules.
+   - Implementation record: `docs/implementation-artifacts/v2-5-two-player-queue-pairing.en.md`

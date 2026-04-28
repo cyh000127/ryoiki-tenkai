@@ -89,12 +89,12 @@ Status values:
 
 ### V2-E3-ST01: Harden two-player queue pairing rules
 
-- Status: planned
+- Status: done
 - User story: two players can be matched into the same battle session without the practice rival path.
 - Scope: queue pairing, seat assignment, duplicate queue guard, loadout guard.
 - Acceptance criteria: both players receive the same battle id and opposite seats. Practice-rival and real-pairing paths are separated in tests.
 - Dependencies: v1 matchmaking queue, socket handoff.
-- Verification: backend API/socket test.
+- Verification: `docs/implementation-artifacts/v2-5-two-player-queue-pairing.en.md`, `BE/api/tests/unit/test_battle_websocket_events.py`.
 
 ### V2-E3-ST02: Harden socket reconnect and latest snapshot resync
 

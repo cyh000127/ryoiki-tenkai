@@ -25,27 +25,17 @@ def create_configured_guest(client: TestClient, nickname: str) -> str:
 
 
 def create_started_battle(client: TestClient, player_id: str) -> str:
-    ws_token = client.get("/api/v1/ws-token", headers={"X-Player-Id": player_id}).json()["data"][
-        "wsToken"
-    ]
+    queue_response = client.post(
+        "/api/v1/matchmaking/queue",
+        headers={"X-Player-Id": player_id},
+        json={"mode": "RANKED_1V1"},
+    )
+    assert queue_response.status_code == 200
+    assert queue_response.json()["data"]["queueStatus"] == "SEARCHING"
 
-    with client.websocket_connect(f"/ws?token={ws_token}") as websocket:
-        queue_response = client.post(
-            "/api/v1/matchmaking/queue",
-            headers={"X-Player-Id": player_id},
-            json={"mode": "RANKED_1V1"},
-        )
-        assert queue_response.status_code == 200
-        assert queue_response.json()["data"]["queueStatus"] == "MATCHED"
-
-        ready_event = websocket.receive_json()
-        found_event = websocket.receive_json()
-        started_event = websocket.receive_json()
-
-    assert ready_event["type"] == "battle.match_ready"
-    assert found_event["type"] == "battle.match_found"
-    assert started_event["type"] == "battle.started"
-    return str(started_event["payload"]["battleSessionId"])
+    battle = game_state_repository.create_match_for_player(player_id)
+    assert battle is not None
+    return battle.battle_session_id
 
 
 def test_profile_lookup_and_queue_require_saved_loadout() -> None:
@@ -237,22 +227,16 @@ def test_submit_action_after_deadline_returns_turn_timeout() -> None:
 def test_surrender_ends_battle_and_emits_ended_event() -> None:
     client = TestClient(create_app())
     player_id = create_configured_guest(client, "player-surrender")
+    battle_session_id = create_started_battle(client, player_id)
     ws_token = client.get("/api/v1/ws-token", headers={"X-Player-Id": player_id}).json()["data"][
         "wsToken"
     ]
 
     with client.websocket_connect(f"/ws?token={ws_token}") as websocket:
-        queue_response = client.post(
-            "/api/v1/matchmaking/queue",
-            headers={"X-Player-Id": player_id},
-            json={"mode": "RANKED_1V1"},
-        )
-        assert queue_response.status_code == 200
-
-        websocket.receive_json()
-        websocket.receive_json()
+        found_event = websocket.receive_json()
         started_event = websocket.receive_json()
-        battle_session_id = started_event["payload"]["battleSessionId"]
+        assert found_event["type"] == "battle.match_found"
+        assert started_event["type"] == "battle.started"
 
         surrender_response = client.post(
             f"/api/v1/battles/{battle_session_id}/surrender",

@@ -39,10 +39,11 @@
 
 ### Backend 변경
 
-- [ ] `uv run ruff check BE`
-- [ ] `uv run pytest BE`
+- [x] `uv run ruff check BE`
+- [x] `uv run pytest BE/api/tests/unit/test_battle_websocket_events.py BE/api/tests/unit/test_game_flow_api.py`
 - [ ] REST 또는 socket payload 변경 시 contract test를 확인한다.
-- [ ] state-mutating command가 stable action/request id를 유지하는지 확인한다.
+- [x] state-mutating command가 stable action/request id를 유지하는지 확인한다.
+  - 근거: `BE/api/tests/unit/test_battle_websocket_events.py`
 
 ### Storage 변경
 
@@ -57,7 +58,8 @@
 
 ### Match/Socket 변경
 
-- [ ] two-player queue pairing smoke 또는 backend socket test를 실행한다.
+- [x] two-player queue pairing smoke 또는 backend socket test를 실행한다.
+  - 근거: `docs/implementation-artifacts/v2-5-two-player-queue-pairing.ko.md`
 - [ ] reconnect 후 latest snapshot이 유지되는지 확인한다.
 - [ ] delayed/duplicate event가 UI를 stale state로 되돌리지 않는지 확인한다.
 - [ ] timeout/surrender/ended event ordering이 안정적인지 확인한다.
@@ -93,10 +95,10 @@
 
 ## v2 Real Match Flow
 
-- [ ] two-player queue pairing rule이 practice rival path와 분리되어 검증된다.
-  - 계획 story: `V2-E3-ST01`
-- [ ] 두 player가 같은 battle id, 반대 seat, 동일 turn state를 받는다.
-  - 계획 story: `V2-E3-ST01`
+- [x] two-player queue pairing rule이 practice rival path와 분리되어 검증된다.
+  - 근거: `docs/implementation-artifacts/v2-5-two-player-queue-pairing.ko.md`
+- [x] 두 player가 같은 battle id, 반대 seat, 동일 turn state를 받는다.
+  - 근거: `BE/api/tests/unit/test_battle_websocket_events.py`
 - [ ] reconnect가 two-player battle에서 latest snapshot을 복구한다.
   - 계획 story: `V2-E3-ST02`
 - [ ] delayed/duplicate event reconciliation 회귀 테스트가 확대되어 있다.

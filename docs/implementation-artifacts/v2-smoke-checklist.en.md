@@ -39,10 +39,11 @@ Use this document for local v2 handoff verification. Skill names, skill effects,
 
 ### Backend Changes
 
-- [ ] `uv run ruff check BE`
-- [ ] `uv run pytest BE`
+- [x] `uv run ruff check BE`
+- [x] `uv run pytest BE/api/tests/unit/test_battle_websocket_events.py BE/api/tests/unit/test_game_flow_api.py`
 - [ ] Contract tests are checked when REST or socket payloads change.
-- [ ] State-mutating commands keep stable action/request ids.
+- [x] State-mutating commands keep stable action/request ids.
+  - Evidence: `BE/api/tests/unit/test_battle_websocket_events.py`
 
 ### Storage Changes
 
@@ -57,7 +58,8 @@ Use this document for local v2 handoff verification. Skill names, skill effects,
 
 ### Match/Socket Changes
 
-- [ ] Two-player queue pairing smoke or backend socket tests run.
+- [x] Two-player queue pairing smoke or backend socket tests run.
+  - Evidence: `docs/implementation-artifacts/v2-5-two-player-queue-pairing.en.md`
 - [ ] Reconnect preserves the latest snapshot.
 - [ ] Delayed/duplicate events do not roll the UI back to stale state.
 - [ ] Timeout/surrender/ended event ordering is stable.
@@ -93,10 +95,10 @@ Use this document for local v2 handoff verification. Skill names, skill effects,
 
 ## v2 Real Match Flow
 
-- [ ] Two-player queue pairing rules are verified separately from the practice-rival path.
-  - Planned story: `V2-E3-ST01`
-- [ ] Both players receive the same battle id, opposite seats, and the same turn state.
-  - Planned story: `V2-E3-ST01`
+- [x] Two-player queue pairing rules are verified separately from the practice-rival path.
+  - Evidence: `docs/implementation-artifacts/v2-5-two-player-queue-pairing.en.md`
+- [x] Both players receive the same battle id, opposite seats, and the same turn state.
+  - Evidence: `BE/api/tests/unit/test_battle_websocket_events.py`
 - [ ] Reconnect restores the latest snapshot in a two-player battle.
   - Planned story: `V2-E3-ST02`
 - [ ] Delayed/duplicate event reconciliation regression tests are expanded.

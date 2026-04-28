@@ -123,6 +123,7 @@ async def enter_matchmaking_queue(
             "Save a valid loadout before entering matchmaking.",
             400,
         )
+    was_already_queued = game_state_repository.get_queue_entry(player_id) is not None
     queue_state = game_state_repository.enter_queue(player_id)
     if queue_state is None:
         raise DomainError("PLAYER_NOT_FOUND", "Player not found", "Unknown player.", 404)
@@ -143,19 +144,19 @@ async def enter_matchmaking_queue(
             "Queue state is invalid.",
             500,
         )
-    if battle_connection_manager.is_connected(player_id):
+    if not was_already_queued and battle_connection_manager.is_connected(player_id):
         await battle_connection_manager.send_event(player_id, build_match_ready_event(queued_at))
-        battle = game_state_repository.create_match_for_player(player_id)
-        if battle is not None:
-            await emit_battle_handoff(battle)
-            return ok(
-                QueueStatusResponse(
-                    queue_status="MATCHED",
-                    queued_at=queued_at,
-                    match_id=battle.match_id,
-                    battle_session_id=battle.battle_session_id,
-                )
+    battle = game_state_repository.create_match_for_player(player_id, allow_practice=False)
+    if battle is not None:
+        await emit_battle_handoff(battle)
+        return ok(
+            QueueStatusResponse(
+                queue_status="MATCHED",
+                queued_at=queued_at,
+                match_id=battle.match_id,
+                battle_session_id=battle.battle_session_id,
             )
+        )
     return ok(
         QueueStatusResponse(
             queue_status=queue_status,
@@ -442,7 +443,7 @@ async def replay_player_matchmaking_state(player_id: str) -> None:
     if queued_at is None:
         return
     await battle_connection_manager.send_event(player_id, build_match_ready_event(queued_at))
-    battle = game_state_repository.create_match_for_player(player_id)
+    battle = game_state_repository.create_match_for_player(player_id, allow_practice=False)
     if battle is not None:
         await emit_battle_handoff(battle)
 

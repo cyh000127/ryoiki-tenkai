@@ -157,16 +157,26 @@ class InMemoryGameStateRepository:
             return None
         return self.battles.get(battle_id)
 
-    def create_match_for_player(self, player_id: str) -> BattleSession | None:
+    def create_match_for_player(
+        self,
+        player_id: str,
+        *,
+        allow_practice: bool = True,
+    ) -> BattleSession | None:
         battle = self.get_player_battle(player_id)
         if battle is not None:
             return battle
         if player_id not in self.queue:
             return None
-        opponent_id = self._pick_opponent(player_id)
+        queued_opponent_id = self._pick_queued_opponent(player_id)
+        if queued_opponent_id is None and not allow_practice:
+            return None
+        opponent_id = queued_opponent_id if queued_opponent_id is not None else "pl_practice"
         self.queue.pop(player_id, None)
         if opponent_id in self.queue:
             self.queue.pop(opponent_id, None)
+        if queued_opponent_id is not None:
+            return self._create_battle(queued_opponent_id, player_id)
         return self._create_battle(player_id, opponent_id)
 
     def submit_action(
@@ -280,11 +290,11 @@ class InMemoryGameStateRepository:
         )
         return True, battle, timed_out_player_id
 
-    def _pick_opponent(self, player_id: str) -> str:
+    def _pick_queued_opponent(self, player_id: str) -> str | None:
         for queued_id in self.queue:
             if queued_id != player_id:
                 return queued_id
-        return "pl_practice"
+        return None
 
     def _create_battle(self, player_id: str, opponent_id: str) -> BattleSession:
         match_id = f"match_{uuid4().hex[:10]}"
