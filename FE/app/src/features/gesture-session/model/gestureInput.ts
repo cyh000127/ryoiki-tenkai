@@ -24,6 +24,17 @@ export function createDebugFallbackInput(
   };
 }
 
+export function createLiveCameraInput(
+  gesture: string,
+  confidence: number
+): NormalizedGestureInput {
+  return {
+    gesture,
+    confidence,
+    source: "live_camera"
+  };
+}
+
 export function createDeterministicFallbackSequence(
   targetSequence: readonly string[],
   confidence = DEBUG_FALLBACK_CONFIDENCE

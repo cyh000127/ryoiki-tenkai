@@ -34,6 +34,29 @@ let mockMatchHistory: Array<Record<string, unknown>> = [];
 let mockLeaderboard: Array<Record<string, unknown>> = [];
 let mockHistoryError = false;
 let mockLeaderboardError = false;
+const liveRecognizerMock = vi.hoisted(() => {
+  type MockLiveRecognizerOptions = {
+    getExpectedToken: () => string | null;
+    getTargetSequence: () => readonly string[];
+    onObservation: (observation: unknown, input: unknown) => void;
+    onStatusChange?: (status: string) => void;
+  };
+
+  const control = {
+    options: null as null | MockLiveRecognizerOptions,
+    start: vi.fn(async () => undefined),
+    stop: vi.fn(),
+    createBrowserLiveGestureRecognizer: vi.fn((options: MockLiveRecognizerOptions) => {
+      control.options = options;
+      return {
+        start: control.start,
+        stop: control.stop
+      };
+    })
+  };
+
+  return control;
+});
 
 function createUser() {
   return userEvent.setup();
@@ -69,6 +92,17 @@ vi.mock("../../src/platform/api/battleSocket", async () => {
         }
       };
     })
+  };
+});
+
+vi.mock("../../src/features/gesture-session/model/liveGestureRecognizer", async () => {
+  const actual = await vi.importActual<
+    typeof import("../../src/features/gesture-session/model/liveGestureRecognizer")
+  >("../../src/features/gesture-session/model/liveGestureRecognizer");
+
+  return {
+    ...actual,
+    createBrowserLiveGestureRecognizer: liveRecognizerMock.createBrowserLiveGestureRecognizer
   };
 });
 
@@ -299,6 +333,10 @@ describe("BattleGameWorkspace", () => {
     mockLeaderboard = [];
     mockHistoryError = false;
     mockLeaderboardError = false;
+    liveRecognizerMock.options = null;
+    liveRecognizerMock.start.mockClear();
+    liveRecognizerMock.stop.mockClear();
+    liveRecognizerMock.createBrowserLiveGestureRecognizer.mockClear();
   });
 
   afterEach(() => {
@@ -820,6 +858,116 @@ describe("BattleGameWorkspace", () => {
         "개발 및 스모크 테스트 전용 입력입니다. 일반 전투 입력과 분리되어 서버 검증은 그대로 거칩니다."
       )
     ).toBeInTheDocument();
+  });
+
+  it("routes live camera observations through the normalized gesture input boundary", async () => {
+    const user = createUser();
+    installGameApiMock();
+
+    renderWorkspace();
+
+    await user.clear(screen.getByRole("textbox", { name: "닉네임" }));
+    await user.type(screen.getByRole("textbox", { name: "닉네임" }), "rookie");
+    await user.click(screen.getByRole("button", { name: "게스트 시작" }));
+    await user.click(await screen.findByRole("button", { name: "로드아웃 저장" }));
+    await user.click(await screen.findByRole("button", { name: "랭크 1대1 매칭" }));
+
+    emitSocketEvent({
+      type: "battle.match_ready",
+      payload: {
+        queueStatus: "SEARCHING",
+        queuedAt: "2026-04-27T00:00:00Z"
+      }
+    });
+    emitSocketEvent({
+      type: "battle.match_found",
+      payload: {
+        matchId: "match_test",
+        battleSessionId: "battle_test",
+        playerSeat: "PLAYER_ONE"
+      }
+    });
+    emitSocketEvent({
+      type: "battle.started",
+      payload: {
+        battleSessionId: "battle_test",
+        playerSeat: "PLAYER_ONE",
+        battle: {
+          battleSessionId: "battle_test",
+          matchId: "match_test",
+          status: "ACTIVE",
+          turnNumber: 1,
+          turnOwnerPlayerId: "pl_guest",
+          actionDeadlineAt: "2026-04-27T00:00:30Z",
+          self: {
+            playerId: "pl_guest",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          opponent: {
+            playerId: "pl_practice",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          battleLog: [],
+          winnerPlayerId: null,
+          loserPlayerId: null,
+          endedReason: null
+        }
+      }
+    });
+
+    const liveCameraPanel = screen
+      .getByRole("heading", { name: "라이브 카메라 입력" })
+      .closest("section");
+    const inputPanel = screen.getByRole("heading", { name: "입력 콘솔" }).closest("section");
+
+    expect(liveCameraPanel).not.toBeNull();
+    expect(inputPanel).not.toBeNull();
+
+    await user.click(within(liveCameraPanel!).getByRole("button", { name: "카메라 시작" }));
+
+    expect(liveRecognizerMock.createBrowserLiveGestureRecognizer).toHaveBeenCalledTimes(1);
+    expect(liveRecognizerMock.start).toHaveBeenCalledTimes(1);
+    expect(liveRecognizerMock.options?.getExpectedToken()).toBe("seal_1");
+    expect(liveRecognizerMock.options?.getTargetSequence()).toEqual(["seal_1", "seal_3"]);
+
+    act(() => {
+      liveRecognizerMock.options?.onStatusChange?.("ready");
+    });
+
+    await waitFor(() => {
+      expect(within(liveCameraPanel!).getAllByText("준비됨").length).toBeGreaterThan(0);
+    });
+
+    act(() => {
+      liveRecognizerMock.options?.onObservation(
+        {
+          token: "seal_1",
+          confidence: 0.92,
+          handDetected: true,
+          stabilityMs: 700,
+          reason: "recognized"
+        },
+        {
+          gesture: "seal_1",
+          confidence: 0.92,
+          source: "live_camera"
+        }
+      );
+    });
+
+    expect(within(liveCameraPanel!).getByText("토큰 인식")).toBeInTheDocument();
+    expect(within(liveCameraPanel!).getByText("700ms")).toBeInTheDocument();
+    expect(within(inputPanel!).getByText("입력 진행 중")).toBeInTheDocument();
+    expect(within(inputPanel!).getByText("라이브 카메라")).toBeInTheDocument();
+    expect(within(inputPanel!).getByText("92%")).toBeInTheDocument();
+
+    await user.click(within(liveCameraPanel!).getByRole("button", { name: "카메라 중지" }));
+
+    expect(liveRecognizerMock.stop).toHaveBeenCalledTimes(1);
   });
 
   it("renders timeout reason on the result screen when the server ends the battle", async () => {

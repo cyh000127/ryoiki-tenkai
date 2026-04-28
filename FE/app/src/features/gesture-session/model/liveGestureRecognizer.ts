@@ -1,0 +1,234 @@
+import {
+  createLiveCameraInput,
+  type NormalizedGestureInput
+} from "./gestureInput";
+
+export const LIVE_GESTURE_POLL_INTERVAL_MS = 120;
+export const LIVE_GESTURE_MIN_CONFIDENCE = 0.65;
+
+export type LiveGestureObservationReason =
+  | "camera_ready"
+  | "no_hand"
+  | "unstable"
+  | "recognized"
+  | "permission_denied"
+  | "unsupported"
+  | "camera_error";
+
+export type LiveGestureObservation = {
+  token: string | null;
+  confidence: number;
+  handDetected: boolean;
+  stabilityMs: number;
+  reason: LiveGestureObservationReason;
+};
+
+export type LiveGestureRecognizerStatus =
+  | "idle"
+  | "starting"
+  | "ready"
+  | "blocked"
+  | "unsupported"
+  | "error"
+  | "stopped";
+
+export type LiveGestureFrame = {
+  video: HTMLVideoElement;
+  targetSequence: readonly string[];
+  expectedToken: string | null;
+  atMs: number;
+};
+
+export type LiveGestureFrameRecognizer = (
+  frame: LiveGestureFrame
+) => LiveGestureObservation | null;
+
+export type LiveGestureRecognizer = {
+  start: () => Promise<void>;
+  stop: () => void;
+};
+
+export type CreateBrowserLiveGestureRecognizerOptions = {
+  getTargetSequence: () => readonly string[];
+  getExpectedToken: () => string | null;
+  onObservation: (
+    observation: LiveGestureObservation,
+    input: NormalizedGestureInput | null
+  ) => void;
+  onStatusChange?: (status: LiveGestureRecognizerStatus) => void;
+  frameRecognizer?: LiveGestureFrameRecognizer;
+  pollIntervalMs?: number;
+  mediaDevices?: Pick<MediaDevices, "getUserMedia">;
+  createVideoElement?: () => HTMLVideoElement;
+};
+
+export function createNoopLiveGestureFrameRecognizer(): LiveGestureFrameRecognizer {
+  return ({ expectedToken }) => ({
+    token: null,
+    confidence: 0,
+    handDetected: false,
+    stabilityMs: 0,
+    reason: expectedToken ? "no_hand" : "camera_ready"
+  });
+}
+
+export function createBrowserLiveGestureRecognizer(
+  options: CreateBrowserLiveGestureRecognizerOptions
+): LiveGestureRecognizer {
+  const frameRecognizer =
+    options.frameRecognizer ?? createNoopLiveGestureFrameRecognizer();
+  const pollIntervalMs = options.pollIntervalMs ?? LIVE_GESTURE_POLL_INTERVAL_MS;
+  const mediaDevices = options.mediaDevices ?? getBrowserMediaDevices();
+  const createVideoElement =
+    options.createVideoElement ?? (() => document.createElement("video"));
+
+  let stream: MediaStream | null = null;
+  let video: HTMLVideoElement | null = null;
+  let intervalId: number | null = null;
+  let status: LiveGestureRecognizerStatus = "idle";
+  let lastObservationFingerprint: string | null = null;
+
+  function setStatus(nextStatus: LiveGestureRecognizerStatus) {
+    if (status === nextStatus) {
+      return;
+    }
+
+    status = nextStatus;
+    options.onStatusChange?.(nextStatus);
+  }
+
+  function observeFrame() {
+    if (!video) {
+      return;
+    }
+
+    const observation = frameRecognizer({
+      video,
+      targetSequence: options.getTargetSequence(),
+      expectedToken: options.getExpectedToken(),
+      atMs: Date.now()
+    });
+
+    if (!observation) {
+      return;
+    }
+
+    const fingerprint = getObservationFingerprint(observation);
+    if (fingerprint === lastObservationFingerprint) {
+      return;
+    }
+
+    lastObservationFingerprint = fingerprint;
+    options.onObservation(observation, toNormalizedInput(observation));
+  }
+
+  function cleanup() {
+    if (intervalId !== null) {
+      window.clearInterval(intervalId);
+      intervalId = null;
+    }
+
+    if (stream) {
+      for (const track of stream.getTracks()) {
+        track.stop();
+      }
+      stream = null;
+    }
+
+    if (video) {
+      video.srcObject = null;
+      video = null;
+    }
+
+    lastObservationFingerprint = null;
+  }
+
+  return {
+    async start() {
+      if (status === "starting" || status === "ready") {
+        return;
+      }
+
+      if (!mediaDevices?.getUserMedia || typeof document === "undefined") {
+        setStatus("unsupported");
+        return;
+      }
+
+      setStatus("starting");
+
+      try {
+        stream = await mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            facingMode: "user"
+          }
+        });
+        video = createVideoElement();
+        video.muted = true;
+        video.playsInline = true;
+        video.srcObject = stream;
+
+        if (typeof video.play === "function") {
+          await video.play();
+        }
+
+        setStatus("ready");
+        observeFrame();
+        intervalId = window.setInterval(observeFrame, pollIntervalMs);
+      } catch (error) {
+        cleanup();
+        setStatus(getCameraErrorStatus(error));
+      }
+    },
+    stop() {
+      cleanup();
+      setStatus("stopped");
+    }
+  };
+}
+
+function toNormalizedInput(
+  observation: LiveGestureObservation
+): NormalizedGestureInput | null {
+  if (
+    observation.reason !== "recognized" ||
+    !observation.handDetected ||
+    observation.token === null ||
+    observation.confidence < LIVE_GESTURE_MIN_CONFIDENCE
+  ) {
+    return null;
+  }
+
+  return createLiveCameraInput(observation.token, observation.confidence);
+}
+
+function getObservationFingerprint(observation: LiveGestureObservation): string {
+  const confidenceBucket = Math.round(observation.confidence * 100);
+  const stabilityBucket = Math.floor(observation.stabilityMs / 250);
+
+  return [
+    observation.reason,
+    observation.token ?? "",
+    observation.handDetected ? "1" : "0",
+    confidenceBucket,
+    stabilityBucket
+  ].join(":");
+}
+
+function getBrowserMediaDevices(): Pick<MediaDevices, "getUserMedia"> | undefined {
+  if (typeof navigator === "undefined") {
+    return undefined;
+  }
+
+  return navigator.mediaDevices;
+}
+
+function getCameraErrorStatus(error: unknown): LiveGestureRecognizerStatus {
+  const errorName = typeof error === "object" && error !== null && "name" in error
+    ? String((error as { name?: unknown }).name)
+    : "";
+
+  return errorName === "NotAllowedError" || errorName === "SecurityError"
+    ? "blocked"
+    : "error";
+}

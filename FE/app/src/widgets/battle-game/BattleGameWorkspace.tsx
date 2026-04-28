@@ -13,6 +13,7 @@ import {
   getSubmitFailureReason,
   initialBattleFlowState,
   shouldIgnoreIncomingBattleSnapshot,
+  type BattleFlowState,
   type InputFailureReason,
   type ServerConfirmationStatus,
   type ScreenKey
@@ -21,8 +22,15 @@ import {
   DEBUG_FALLBACK_ENABLED,
   createDebugFallbackInput,
   createDeterministicFallbackSequence,
+  createLiveCameraInput,
   type GestureInputSource
 } from "../../features/gesture-session/model/gestureInput";
+import {
+  createBrowserLiveGestureRecognizer,
+  type LiveGestureObservation,
+  type LiveGestureRecognizer,
+  type LiveGestureRecognizerStatus
+} from "../../features/gesture-session/model/liveGestureRecognizer";
 import {
   connectBattleSocket,
   toBattleState,
@@ -68,6 +76,7 @@ export function BattleGameWorkspace() {
   const [state, dispatch] = useReducer(battleFlowReducer, initialBattleFlowState);
   const stateRef = useRef(state);
   const socketConnectionRef = useRef<BattleSocketConnection | null>(null);
+  const liveRecognizerRef = useRef<LiveGestureRecognizer | null>(null);
   const pendingActionRef = useRef<PendingAction | null>(null);
   const reconnectInFlightRef = useRef(false);
   const ignoreSocketCloseRef = useRef(false);
@@ -77,6 +86,9 @@ export function BattleGameWorkspace() {
   const [draftSkillId, setDraftSkillId] = useState(initialBattleFlowState.selectedSkillId);
   const [selectedAnimsetId, setSelectedAnimsetId] = useState(initialBattleFlowState.equippedAnimsetId);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [liveRecognizerStatus, setLiveRecognizerStatus] =
+    useState<LiveGestureRecognizerStatus>("idle");
+  const [liveObservation, setLiveObservation] = useState<LiveGestureObservation | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   const skillsetsQuery = useQuery({
@@ -208,8 +220,18 @@ export function BattleGameWorkspace() {
   useEffect(() => {
     return () => {
       closeBattleSocket(true);
+      liveRecognizerRef.current?.stop();
+      liveRecognizerRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (state.screen === "battle" && state.battle?.status === "ACTIVE") {
+      return;
+    }
+
+    stopLiveRecognizer();
+  }, [state.battle?.status, state.screen]);
 
   useEffect(() => {
     if (state.socketStatus === "DISCONNECTED" && socketConnectionRef.current) {
@@ -324,6 +346,8 @@ export function BattleGameWorkspace() {
   const isServerConfirming = state.input.serverConfirmationStatus === "PENDING";
   const canUseGestureInput =
     state.screen === "battle" && Boolean(state.battle) && isMyTurn && !isServerConfirming;
+  const canStartLiveRecognizer =
+    state.screen === "battle" && state.battle?.status === "ACTIVE";
   const completedStepCount = Math.min(state.input.currentStep, state.input.targetSequence.length);
   const remainingStepCount = Math.max(0, state.input.targetSequence.length - completedStepCount);
   const progressPercent = getSequenceProgress(
@@ -477,11 +501,10 @@ export function BattleGameWorkspace() {
   }
 
   function handleGestureInput(gesture: string, source: GestureInputSource) {
-    const input = source === "debug_fallback" ? createDebugFallbackInput(gesture) : {
-      gesture,
-      confidence: 0.91,
-      source
-    };
+    const input =
+      source === "debug_fallback"
+        ? createDebugFallbackInput(gesture)
+        : createLiveCameraInput(gesture, 0.91);
 
     dispatch({
       type: "receiveGestureInput",
@@ -489,6 +512,71 @@ export function BattleGameWorkspace() {
       confidence: input.confidence,
       source: input.source
     });
+  }
+
+  async function handleStartLiveRecognizer() {
+    if (liveRecognizerRef.current) {
+      return;
+    }
+
+    setStatusMessage(null);
+    const recognizer = createBrowserLiveGestureRecognizer({
+      getTargetSequence: () => stateRef.current.input.targetSequence,
+      getExpectedToken: () => {
+        const input = stateRef.current.input;
+        return input.targetSequence[input.currentStep] ?? null;
+      },
+      onObservation: handleLiveGestureObservation,
+      onStatusChange: handleLiveRecognizerStatusChange
+    });
+
+    liveRecognizerRef.current = recognizer;
+    await recognizer.start();
+  }
+
+  function handleLiveRecognizerStatusChange(status: LiveGestureRecognizerStatus) {
+    setLiveRecognizerStatus(status);
+
+    if (status === "blocked" || status === "unsupported" || status === "error") {
+      liveRecognizerRef.current = null;
+    }
+  }
+
+  function handleLiveGestureObservation(
+    observation: LiveGestureObservation,
+    input: ReturnType<typeof createLiveCameraInput> | null
+  ) {
+    setLiveObservation(observation);
+
+    if (input && canAcceptLiveGestureInput(stateRef.current)) {
+      dispatch({
+        type: "receiveGestureInput",
+        gesture: input.gesture,
+        confidence: input.confidence,
+        source: input.source
+      });
+      return;
+    }
+
+    dispatch({
+      type: "receiveGestureObservation",
+      cameraReady: isCameraReadyObservation(observation),
+      handDetected: observation.handDetected,
+      gesture: observation.token,
+      confidence: observation.confidence,
+      source: "live_camera"
+    });
+  }
+
+  function stopLiveRecognizer() {
+    const recognizer = liveRecognizerRef.current;
+    if (!recognizer) {
+      return;
+    }
+
+    recognizer.stop();
+    liveRecognizerRef.current = null;
+    setLiveObservation(null);
   }
 
   function handleRunDeterministicFallback() {
@@ -979,6 +1067,14 @@ export function BattleGameWorkspace() {
                   </Button>
                 </div>
               </Panel>
+              <LiveCameraPanel
+                canStart={canStartLiveRecognizer}
+                currentSource={state.input.lastInputSource}
+                observation={liveObservation}
+                onStart={handleStartLiveRecognizer}
+                onStop={stopLiveRecognizer}
+                status={liveRecognizerStatus}
+              />
               <Panel title={copy.battleLog}>
                 <ol className="log-list">
                   {state.battle.battleLog.length === 0 ? <li>{copy.commandWaiting}</li> : null}
@@ -1135,6 +1231,23 @@ function createClientRequestId(): string {
   return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function canAcceptLiveGestureInput(state: BattleFlowState): boolean {
+  return (
+    state.screen === "battle" &&
+    state.battle?.status === "ACTIVE" &&
+    state.battle.turnOwnerPlayerId === state.player.playerId &&
+    state.input.serverConfirmationStatus !== "PENDING"
+  );
+}
+
+function isCameraReadyObservation(observation: LiveGestureObservation): boolean {
+  return (
+    observation.reason !== "unsupported" &&
+    observation.reason !== "permission_denied" &&
+    observation.reason !== "camera_error"
+  );
+}
+
 function formatHistorySummary(record: {
   result: "WIN" | "LOSE";
   ratingChange: number;
@@ -1256,6 +1369,62 @@ function DebugPanel({ events, latency }: { events: string[]; latency: number }) 
           <li key={`${eventName}-${index}`}>{eventName}</li>
         ))}
       </ol>
+    </Panel>
+  );
+}
+
+function LiveCameraPanel({
+  canStart,
+  currentSource,
+  observation,
+  onStart,
+  onStop,
+  status
+}: {
+  canStart: boolean;
+  currentSource: GestureInputSource | null;
+  observation: LiveGestureObservation | null;
+  onStart: () => void;
+  onStop: () => void;
+  status: LiveGestureRecognizerStatus;
+}) {
+  const isRunning = status === "starting" || status === "ready";
+
+  return (
+    <Panel title={copy.liveCameraPanel}>
+      <div className="live-camera__header">
+        <StatusBadge tone={getLiveRecognizerStatusTone(status)}>
+          {getLiveRecognizerStatusLabel(status)}
+        </StatusBadge>
+      </div>
+      <div className="metric-list">
+        <Metric label={copy.liveCameraStatus} value={getLiveRecognizerStatusLabel(status)} />
+        <Metric label={copy.inputSource} value={getInputSourceLabel(currentSource)} />
+        <Metric
+          label={copy.handStatus}
+          value={observation?.handDetected ? copy.detected : copy.notDetected}
+        />
+        <Metric
+          label={copy.liveObservationReason}
+          value={
+            observation
+              ? getLiveObservationReasonLabel(observation.reason)
+              : copy.inputSourceWaiting
+          }
+        />
+        <Metric
+          label={copy.liveStability}
+          value={formatStabilityMs(observation?.stabilityMs ?? 0)}
+        />
+      </div>
+      <div className="live-camera__actions">
+        <Button disabled={!canStart || isRunning} onClick={onStart} variant="primary">
+          {copy.liveCameraStart}
+        </Button>
+        <Button disabled={!isRunning} onClick={onStop}>
+          {copy.liveCameraStop}
+        </Button>
+      </div>
     </Panel>
   );
 }
@@ -1483,6 +1652,32 @@ function getInputSourceLabel(source: GestureInputSource | null): string {
   }
 
   return copy.inputSourceWaiting;
+}
+
+function getLiveRecognizerStatusLabel(status: LiveGestureRecognizerStatus): string {
+  return copy.liveRecognizerStatusText[status];
+}
+
+function getLiveRecognizerStatusTone(
+  status: LiveGestureRecognizerStatus
+): "neutral" | "success" | "warning" {
+  if (status === "ready") {
+    return "success";
+  }
+
+  if (status === "blocked" || status === "unsupported" || status === "error") {
+    return "warning";
+  }
+
+  return "neutral";
+}
+
+function getLiveObservationReasonLabel(reason: LiveGestureObservation["reason"]): string {
+  return copy.liveObservationReasonText[reason];
+}
+
+function formatStabilityMs(stabilityMs: number): string {
+  return stabilityMs > 0 ? `${Math.round(stabilityMs)}ms` : "-";
 }
 
 function getDeadlinePresentation(

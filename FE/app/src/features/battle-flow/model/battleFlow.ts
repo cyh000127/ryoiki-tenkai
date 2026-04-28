@@ -65,6 +65,14 @@ export type BattleFlowAction =
   | { type: "socketReconnecting" }
   | { type: "socketDisconnected" }
   | { type: "selectSkill"; skillId: string }
+  | {
+      type: "receiveGestureObservation";
+      cameraReady: boolean;
+      handDetected: boolean;
+      gesture: string | null;
+      confidence: number;
+      source: GestureInputSource;
+    }
   | { type: "receiveGestureInput"; gesture: string; confidence: number; source: GestureInputSource }
   | { type: "submitSkill" }
   | { type: "resetGestureProgress" }
@@ -242,6 +250,19 @@ export function battleFlowReducer(
           serverRejectionReason: null,
           serverConfirmationStatus: "IDLE"
         }
+      };
+    case "receiveGestureObservation":
+      return {
+        ...state,
+        input: {
+          ...state.input,
+          cameraReady: action.cameraReady,
+          handDetected: action.handDetected,
+          lastInputSource: action.source,
+          currentGesture: action.gesture,
+          confidence: action.confidence
+        },
+        recentEvents: prependEvent(state, "gesture.live_observed")
       };
     case "receiveGestureInput":
       return applyGestureStep(state, action.gesture, action.confidence, action.source);

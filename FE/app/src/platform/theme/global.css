@@ -478,6 +478,19 @@ textarea {
   margin: 12px 0;
 }
 
+.live-camera__header {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 12px;
+}
+
+.live-camera__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 .input-feedback,
 .confirmation-strip {
   display: grid;

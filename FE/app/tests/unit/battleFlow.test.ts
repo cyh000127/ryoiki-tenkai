@@ -170,6 +170,25 @@ describe("battleFlowReducer", () => {
     expect(liveInput.input.handDetected).toBe(true);
   });
 
+  it("updates live camera observation without advancing the gesture sequence", () => {
+    const matched = createMatchedBattle();
+    const observed = battleFlowReducer(matched, {
+      type: "receiveGestureObservation",
+      cameraReady: true,
+      handDetected: false,
+      gesture: null,
+      confidence: 0,
+      source: "live_camera"
+    });
+
+    expect(observed.input.cameraReady).toBe(true);
+    expect(observed.input.handDetected).toBe(false);
+    expect(observed.input.lastInputSource).toBe("live_camera");
+    expect(observed.input.currentGesture).toBeNull();
+    expect(observed.input.currentStep).toBe(0);
+    expect(observed.recentEvents[0]).toBe("gesture.live_observed");
+  });
+
   it("maps server rejection reasons into UI failure states", () => {
     const ready = completeDefaultSequence();
     const submitted = battleFlowReducer(ready, { type: "submitSkill" });
