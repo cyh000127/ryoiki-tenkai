@@ -18,6 +18,7 @@ TURN_SECONDS = 30
 class SkillDefinition:
     skill_id: str
     name: str
+    description: str
     gesture_sequence: list[str]
     mana_cost: int
     damage: int

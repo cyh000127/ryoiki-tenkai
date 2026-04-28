@@ -88,42 +88,9 @@
       "name": "주술회전 Phase 1 술식",
       "skills": [
         {
-          "skillId": "pulse_strike",
-          "name": "파동격",
-          "gestureSequence": [
-            "seal_1",
-            "seal_3"
-          ],
-          "manaCost": 20,
-          "damage": 25,
-          "cooldownTurn": 1
-        },
-        {
-          "skillId": "burst_edge",
-          "name": "쇄도참",
-          "gestureSequence": [
-            "seal_2",
-            "hold_300",
-            "seal_4"
-          ],
-          "manaCost": 30,
-          "damage": 35,
-          "cooldownTurn": 2
-        },
-        {
-          "skillId": "focus_bolt",
-          "name": "집중탄",
-          "gestureSequence": [
-            "open_palm",
-            "seal_5"
-          ],
-          "manaCost": 15,
-          "damage": 18,
-          "cooldownTurn": 1
-        },
-        {
           "skillId": "jjk_gojo_red",
           "name": "赫",
+          "description": "한국어명: 혁. 문서 기준 고죠 사토루 무하한주술의 밀어내는 폭발 피해.",
           "gestureSequence": [
             "index_up"
           ],
@@ -134,6 +101,7 @@
         {
           "skillId": "jjk_gojo_hollow_purple",
           "name": "虚式「茈」",
+          "description": "한국어명: 허식 자. 문서 기준 고죠 사토루 무하한주술의 고비용 직선형 큰 피해.",
           "gestureSequence": [
             "pinch",
             "blue_orb",
@@ -147,6 +115,7 @@
         {
           "skillId": "jjk_gojo_infinite_void",
           "name": "領域展開「無量空処」",
+          "description": "한국어명: 무량공처. 문서 기준 무한 정보 과부하로 상대 입력을 정지시키는 제어형 영역.",
           "gestureSequence": [
             "two_finger_cross",
             "domain_seal"
@@ -158,6 +127,7 @@
         {
           "skillId": "jjk_sukuna_malevolent_shrine",
           "name": "領域展開「伏魔御厨子」",
+          "description": "한국어명: 복마어주자. 문서 기준 열린 영역 안에서 범위 절단 피해를 주는 공격형 영역.",
           "gestureSequence": [
             "flat_prayer",
             "domain_seal"
@@ -169,6 +139,7 @@
         {
           "skillId": "jjk_megumi_chimera_shadow_garden",
           "name": "領域展開「嵌合暗翳庭」",
+          "description": "한국어명: 감합암예정. 문서 기준 그림자 바다와 식신 소환을 강화하는 영역.",
           "gestureSequence": [
             "shadow_seal",
             "domain_seal"

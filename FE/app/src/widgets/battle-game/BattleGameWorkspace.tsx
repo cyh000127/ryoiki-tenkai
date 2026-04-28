@@ -1130,6 +1130,7 @@ export function BattleGameWorkspace() {
                     type="button"
                   >
                     <strong>{skill.name}</strong>
+                    <div>{skill.description}</div>
                     <div>{skill.gestureSequence.join(" -> ")}</div>
                     <div>
                       {copy.mana} {skill.manaCost} / {skill.damage}
@@ -1139,6 +1140,7 @@ export function BattleGameWorkspace() {
               </div>
             </Panel>
             <Panel title={copy.skillDetail}>
+              <Metric label={copy.skillDescription} value={selectedSkill.description} />
               <Metric label={copy.targetSequence} value={selectedSkill.gestureSequence.join(" -> ")} />
               <Metric label={copy.mana} value={selectedSkill.manaCost} />
               <Metric label={copy.cooldown} value={selectedSkill.cooldownTurn} />
@@ -1235,6 +1237,7 @@ export function BattleGameWorkspace() {
             <div className="surface-grid">
               <Panel title={copy.selectedSkillStatus}>
                 <Metric label={copy.skillDetail} value={selectedSkill.name} />
+                <Metric label={copy.skillDescription} value={selectedSkill.description} />
                 <Metric label={copy.mana} value={selectedSkill.manaCost} />
                 <Metric label={copy.damage} value={selectedSkill.damage} />
                 <Metric

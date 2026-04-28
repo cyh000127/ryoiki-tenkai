@@ -10,10 +10,13 @@ from gesture_api.api.schemas.websocket import (
     deserialize_battle_event,
     serialize_battle_event,
 )
+from gesture_api.domain.catalog import SKILLSETS
 from gesture_api.main import create_app
 from gesture_api.repositories.game_state import InMemoryGameStateRepository, game_state_repository
 from gesture_api.services.battle_websocket import BattleWebSocketEventHandler
 from starlette.websockets import WebSocketDisconnect
+
+DEFAULT_SKILL = SKILLSETS[0].skills[0]
 
 
 def create_configured_guest(client: TestClient, nickname: str) -> str:
@@ -64,7 +67,7 @@ def test_battle_event_serializer_uses_wire_aliases() -> None:
                 "playerId": "player-1",
                 "turnNumber": 1,
                 "actionId": "act-1",
-                "gestureSequence": ["seal_1", "seal_3"],
+                "gestureSequence": DEFAULT_SKILL.gesture_sequence,
                 "submittedAt": "2026-04-27T00:00:00Z",
             },
         }
@@ -98,7 +101,7 @@ def test_battle_websocket_handler_submits_action_with_in_memory_engine() -> None
             player_id=player.player_id,
             turn_number=1,
             action_id="act-ws-1",
-            gesture_sequence=["seal_1", "seal_3"],
+            gesture_sequence=DEFAULT_SKILL.gesture_sequence,
             submitted_at=datetime(2026, 4, 27, tzinfo=UTC),
         ),
     )
@@ -109,8 +112,8 @@ def test_battle_websocket_handler_submits_action_with_in_memory_engine() -> None
     assert response.request_id == "req-action"
     assert response.payload.status == "ACCEPTED"
     assert response.payload.battle is not None
-    assert response.payload.battle.opponent.hp == 75
-    assert response.payload.battle.self.hp == 75
+    assert response.payload.battle.opponent.hp == 100 - DEFAULT_SKILL.damage
+    assert response.payload.battle.self.hp == 100 - DEFAULT_SKILL.damage
     assert response.payload.battle.turn_number == 3
     assert response.payload.battle.turn_owner_player_id == player.player_id
     assert len(response.payload.battle.battle_log) == 2
@@ -164,14 +167,14 @@ def test_ws_endpoint_replays_practice_battle_and_handles_submit_action() -> None
     assert response["type"] == "battle.action_result"
     assert response["requestId"] == "req-action"
     assert response["payload"]["status"] == "ACCEPTED"
-    assert response["payload"]["battle"]["opponent"]["hp"] == 75
-    assert response["payload"]["battle"]["self"]["hp"] == 75
+    assert response["payload"]["battle"]["opponent"]["hp"] == 100 - skill["damage"]
+    assert response["payload"]["battle"]["self"]["hp"] == 100 - skill["damage"]
     assert response["payload"]["battle"]["turnNumber"] == 3
     assert state_updated_event["type"] == "battle.state_updated"
     assert state_updated_event["payload"]["sourceActionId"] == "act-ws-endpoint"
     assert state_updated_event["payload"]["battle"]["turnOwnerPlayerId"] == player_id
-    assert state_updated_event["payload"]["battle"]["self"]["hp"] == 75
-    assert state_updated_event["payload"]["battle"]["opponent"]["hp"] == 75
+    assert state_updated_event["payload"]["battle"]["self"]["hp"] == 100 - skill["damage"]
+    assert state_updated_event["payload"]["battle"]["opponent"]["hp"] == 100 - skill["damage"]
 
 
 def test_ws_endpoint_pairs_two_connected_players_without_practice_rival() -> None:
@@ -313,10 +316,10 @@ def test_ws_endpoint_replays_latest_two_player_battle_snapshot_on_reconnect() ->
     assert replayed_battle["turnOwnerPlayerId"] == second_player_id
     assert replayed_battle["self"]["playerId"] == first_player_id
     assert replayed_battle["self"]["hp"] == 100
-    assert replayed_battle["self"]["mana"] == 80
-    assert replayed_battle["self"]["cooldowns"]["pulse_strike"] == 1
+    assert replayed_battle["self"]["mana"] == 100 - DEFAULT_SKILL.mana_cost
+    assert replayed_battle["self"]["cooldowns"][DEFAULT_SKILL.skill_id] == DEFAULT_SKILL.cooldown_turn
     assert replayed_battle["opponent"]["playerId"] == second_player_id
-    assert replayed_battle["opponent"]["hp"] == 75
+    assert replayed_battle["opponent"]["hp"] == 100 - DEFAULT_SKILL.damage
     assert replayed_battle["opponent"]["mana"] == 100
     assert replayed_battle["battleLog"][0]["turnNumber"] == 1
 
@@ -489,8 +492,8 @@ def test_ws_endpoint_replays_latest_active_battle_snapshot_on_reconnect() -> Non
     assert replayed_started_event["type"] == "battle.started"
     assert replayed_started_event["payload"]["battle"]["turnNumber"] == 3
     assert replayed_started_event["payload"]["battle"]["turnOwnerPlayerId"] == player_id
-    assert replayed_started_event["payload"]["battle"]["self"]["hp"] == 75
-    assert replayed_started_event["payload"]["battle"]["opponent"]["hp"] == 75
+    assert replayed_started_event["payload"]["battle"]["self"]["hp"] == 100 - skill["damage"]
+    assert replayed_started_event["payload"]["battle"]["opponent"]["hp"] == 100 - skill["damage"]
 
 
 def test_ws_endpoint_resolves_due_timeout_before_reconnect_replay() -> None:

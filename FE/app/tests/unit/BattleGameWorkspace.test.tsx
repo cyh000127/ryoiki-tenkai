@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+﻿import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { AppProviders } from "../../src/app/AppProviders";
@@ -82,6 +82,11 @@ const startupVoiceMock = vi.hoisted(() => {
 
   return control;
 });
+
+const defaultSkill = DEFAULT_SKILLSET.skills[0];
+const defaultGestureSequence = defaultSkill.gestureSequence;
+const defaultGesture = defaultGestureSequence[0];
+const defaultSkillLog = `${defaultSkill.skillId} dealt ${defaultSkill.damage}`;
 
 function createUser() {
   return userEvent.setup();
@@ -763,7 +768,7 @@ describe("BattleGameWorkspace", () => {
       battleSessionId: "battle_test",
       playerId: "pl_guest",
       turnNumber: 1,
-      gestureSequence: ["seal_1", "seal_3"]
+      gestureSequence: defaultGestureSequence
     });
     expect(screen.getAllByText("서버 확정 대기 중").length).toBeGreaterThan(0);
 
@@ -796,7 +801,7 @@ describe("BattleGameWorkspace", () => {
             hp: 75,
             mana: 90,
             cooldowns: {
-              pulse_strike: 0
+              [defaultSkill.skillId]: 0
             }
           },
           opponent: {
@@ -804,17 +809,17 @@ describe("BattleGameWorkspace", () => {
             hp: 75,
             mana: 80,
             cooldowns: {
-              pulse_strike: 1
+              [defaultSkill.skillId]: 1
             }
           },
           battleLog: [
             {
               turnNumber: 1,
-              message: "pulse_strike dealt 25"
+              message: defaultSkillLog
             },
             {
               turnNumber: 2,
-              message: "pulse_strike dealt 25"
+              message: defaultSkillLog
             }
           ],
           winnerPlayerId: null,
@@ -828,9 +833,9 @@ describe("BattleGameWorkspace", () => {
       expect(screen.getByText("서버 확정 완료")).toBeInTheDocument();
     });
     expect(screen.getAllByText("75")).toHaveLength(2);
-    expect(screen.getByText("T1 pulse_strike dealt 25")).toBeInTheDocument();
-    expect(screen.getByText("T2 pulse_strike dealt 25")).toBeInTheDocument();
-    expect(screen.getByText("파동격 · 1T")).toBeInTheDocument();
+    expect(screen.getByText(`T1 ${defaultSkillLog}`)).toBeInTheDocument();
+    expect(screen.getByText(`T2 ${defaultSkillLog}`)).toBeInTheDocument();
+    expect(screen.getByText(`${defaultSkill.name} · 1T`)).toBeInTheDocument();
     expect(screen.getByText("선택 스킬 상태")).toBeInTheDocument();
   });
 
@@ -871,7 +876,7 @@ describe("BattleGameWorkspace", () => {
             hp: 75,
             mana: 90,
             cooldowns: {
-              pulse_strike: 0
+              [defaultSkill.skillId]: 0
             }
           },
           opponent: {
@@ -879,17 +884,17 @@ describe("BattleGameWorkspace", () => {
             hp: 75,
             mana: 80,
             cooldowns: {
-              pulse_strike: 1
+              [defaultSkill.skillId]: 1
             }
           },
           battleLog: [
             {
               turnNumber: 1,
-              message: "pulse_strike dealt 25"
+              message: defaultSkillLog
             },
             {
               turnNumber: 2,
-              message: "pulse_strike dealt 25"
+              message: defaultSkillLog
             }
           ],
           winnerPlayerId: null,
@@ -995,13 +1000,7 @@ describe("BattleGameWorkspace", () => {
     expect(within(localFeedback!).getByText("대기")).toBeInTheDocument();
     expect(within(readinessMetric!).getByText("순서 입력 중")).toBeInTheDocument();
 
-    await user.click(within(debugFallbackPanel!).getByRole("button", { name: "seal_1" }));
-    expect(within(localFeedback!).getByText("입력 진행 중")).toBeInTheDocument();
-    expect(
-      within(localFeedback!).getByText(/다음 제스처: seal_3/)
-    ).toBeInTheDocument();
-
-    await user.click(within(debugFallbackPanel!).getByRole("button", { name: "seal_3" }));
+    await user.click(within(debugFallbackPanel!).getByRole("button", { name: defaultGesture }));
     expect(within(localFeedback!).getByText("입력 완료")).toBeInTheDocument();
     expect(within(readinessMetric!).getByText("제출 가능")).toBeInTheDocument();
 
@@ -1094,8 +1093,8 @@ describe("BattleGameWorkspace", () => {
 
     expect(inputPanel).not.toBeNull();
     expect(debugFallbackPanel).not.toBeNull();
-    expect(within(inputPanel!).queryByRole("button", { name: "seal_1" })).toBeNull();
-    expect(within(debugFallbackPanel!).getByRole("button", { name: "seal_1" })).toBeInTheDocument();
+    expect(within(inputPanel!).queryByRole("button", { name: defaultGesture })).toBeNull();
+    expect(within(debugFallbackPanel!).getByRole("button", { name: defaultGesture })).toBeInTheDocument();
     expect(
       within(debugFallbackPanel!).getByText(
         "개발 및 스모크 테스트 전용 입력입니다. 일반 전투 입력과 분리되어 서버 검증은 그대로 거칩니다."
@@ -1140,7 +1139,7 @@ describe("BattleGameWorkspace", () => {
     expect(replayButton).not.toBeDisabled();
 
     await user.click(replayButton);
-    expect(screen.getAllByText("2/2").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(`${defaultGestureSequence.length}/${defaultGestureSequence.length}`).length).toBeGreaterThan(0);
 
     await user.click(screen.getByRole("button", { name: "서버 판정 요청" }));
     expect(submittedSocketActions).toHaveLength(1);
@@ -1222,8 +1221,8 @@ describe("BattleGameWorkspace", () => {
 
     expect(liveRecognizerMock.createBrowserLiveGestureRecognizer).toHaveBeenCalledTimes(1);
     expect(liveRecognizerMock.start).toHaveBeenCalledTimes(1);
-    expect(liveRecognizerMock.options?.getExpectedToken()).toBe("seal_1");
-    expect(liveRecognizerMock.options?.getTargetSequence()).toEqual(["seal_1", "seal_3"]);
+    expect(liveRecognizerMock.options?.getExpectedToken()).toBe(defaultGesture);
+    expect(liveRecognizerMock.options?.getTargetSequence()).toEqual(defaultGestureSequence);
 
     act(() => {
       liveRecognizerMock.options?.onStatusChange?.("ready");
@@ -1236,14 +1235,14 @@ describe("BattleGameWorkspace", () => {
     act(() => {
       liveRecognizerMock.options?.onObservation(
         {
-          token: "seal_1",
+          token: defaultGesture,
           confidence: 0.92,
           handDetected: true,
           stabilityMs: 700,
           reason: "recognized"
         },
         {
-          gesture: "seal_1",
+          gesture: defaultGesture,
           confidence: 0.92,
           source: "live_camera"
         }
@@ -1252,7 +1251,7 @@ describe("BattleGameWorkspace", () => {
 
     expect(within(liveCameraPanel!).getByText("토큰 인식")).toBeInTheDocument();
     expect(within(liveCameraPanel!).getByText("700ms")).toBeInTheDocument();
-    expect(within(inputPanel!).getByText("입력 진행 중")).toBeInTheDocument();
+    expect(within(inputPanel!).getByText("입력 완료")).toBeInTheDocument();
     expect(within(inputPanel!).getByText("라이브 카메라")).toBeInTheDocument();
     expect(within(inputPanel!).getByText("92%")).toBeInTheDocument();
 
@@ -1354,14 +1353,14 @@ describe("BattleGameWorkspace", () => {
     act(() => {
       liveRecognizerMock.options?.onObservation(
         {
-          token: "seal_1",
+          token: defaultGesture,
           confidence: 0.92,
           handDetected: true,
           stabilityMs: 700,
           reason: "recognized"
         },
         {
-          gesture: "seal_1",
+          gesture: defaultGesture,
           confidence: 0.92,
           source: "live_camera"
         }
@@ -1373,7 +1372,7 @@ describe("BattleGameWorkspace", () => {
     });
     expect(noHandState).toHaveAttribute("data-active", "false");
     expect(unstableState).toHaveAttribute("data-active", "false");
-    expect(within(liveCameraPanel!).getByText("seal_1")).toBeInTheDocument();
+    expect(within(liveCameraPanel!).getByText(defaultGesture)).toBeInTheDocument();
   });
 
   it("shows blocked live camera state without entering action submission", async () => {
@@ -1716,7 +1715,7 @@ describe("BattleGameWorkspace", () => {
             hp: 75,
             mana: 90,
             cooldowns: {
-              pulse_strike: 0
+              [defaultSkill.skillId]: 0
             }
           },
           opponent: {
@@ -1724,17 +1723,17 @@ describe("BattleGameWorkspace", () => {
             hp: 75,
             mana: 80,
             cooldowns: {
-              pulse_strike: 1
+              [defaultSkill.skillId]: 1
             }
           },
           battleLog: [
             {
               turnNumber: 1,
-              message: "pulse_strike dealt 25"
+              message: defaultSkillLog
             },
             {
               turnNumber: 2,
-              message: "pulse_strike dealt 25"
+              message: defaultSkillLog
             }
           ],
           winnerPlayerId: null,
@@ -1796,7 +1795,7 @@ describe("BattleGameWorkspace", () => {
     });
 
     expect(screen.getAllByText("75")).toHaveLength(2);
-    expect(screen.getByText("T1 pulse_strike dealt 25")).toBeInTheDocument();
+    expect(screen.getByText(`T1 ${defaultSkillLog}`)).toBeInTheDocument();
     expect(screen.queryByText("SEARCHING")).not.toBeInTheDocument();
   });
 
@@ -1906,7 +1905,7 @@ describe("BattleGameWorkspace", () => {
             hp: 75,
             mana: 90,
             cooldowns: {
-              pulse_strike: 0
+              [defaultSkill.skillId]: 0
             }
           },
           opponent: {
@@ -1914,17 +1913,17 @@ describe("BattleGameWorkspace", () => {
             hp: 75,
             mana: 80,
             cooldowns: {
-              pulse_strike: 1
+              [defaultSkill.skillId]: 1
             }
           },
           battleLog: [
             {
               turnNumber: 1,
-              message: "pulse_strike dealt 25"
+              message: defaultSkillLog
             },
             {
               turnNumber: 2,
-              message: "pulse_strike dealt 25"
+              message: defaultSkillLog
             }
           ],
           winnerPlayerId: null,
@@ -1937,7 +1936,7 @@ describe("BattleGameWorkspace", () => {
     await waitFor(() => {
       expect(screen.getAllByText("75")).toHaveLength(2);
     });
-    expect(screen.getByText("T1 pulse_strike dealt 25")).toBeInTheDocument();
+    expect(screen.getByText(`T1 ${defaultSkillLog}`)).toBeInTheDocument();
     expect(screen.queryByText("소켓을 다시 연결하는 중입니다. 최신 전투 상태를 복구합니다.")).not.toBeInTheDocument();
   });
 
@@ -1977,7 +1976,7 @@ describe("BattleGameWorkspace", () => {
             hp: 75,
             mana: 90,
             cooldowns: {
-              pulse_strike: 0
+              [defaultSkill.skillId]: 0
             }
           },
           opponent: {
@@ -1985,13 +1984,13 @@ describe("BattleGameWorkspace", () => {
             hp: 75,
             mana: 80,
             cooldowns: {
-              pulse_strike: 1
+              [defaultSkill.skillId]: 1
             }
           },
           battleLog: [
             {
               turnNumber: 1,
-              message: "pulse_strike dealt 25"
+              message: defaultSkillLog
             },
             {
               turnNumber: 2,
@@ -2024,7 +2023,7 @@ describe("BattleGameWorkspace", () => {
             hp: 75,
             mana: 90,
             cooldowns: {
-              pulse_strike: 0
+              [defaultSkill.skillId]: 0
             }
           },
           opponent: {
@@ -2032,13 +2031,13 @@ describe("BattleGameWorkspace", () => {
             hp: 75,
             mana: 80,
             cooldowns: {
-              pulse_strike: 1
+              [defaultSkill.skillId]: 1
             }
           },
           battleLog: [
             {
               turnNumber: 1,
-              message: "pulse_strike dealt 25"
+              message: defaultSkillLog
             },
             {
               turnNumber: 2,

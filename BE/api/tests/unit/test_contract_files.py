@@ -135,6 +135,7 @@ def test_backend_skill_catalog_matches_shared_mvp_gesture_fixture() -> None:
                 {
                     "skillId": skill.skill_id,
                     "name": skill.name,
+                    "description": skill.description,
                     "gestureSequence": skill.gesture_sequence,
                     "manaCost": skill.mana_cost,
                     "damage": skill.damage,

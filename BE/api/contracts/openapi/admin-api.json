@@ -661,6 +661,7 @@
         "required": [
           "skillId",
           "name",
+          "description",
           "gestureSequence",
           "manaCost",
           "damage",
@@ -671,6 +672,9 @@
             "type": "string"
           },
           "name": {
+            "type": "string"
+          },
+          "description": {
             "type": "string"
           },
           "gestureSequence": {

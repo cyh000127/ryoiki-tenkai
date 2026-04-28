@@ -57,7 +57,7 @@ def test_json_game_state_storage_adapter_round_trips_snapshot(tmp_path) -> None:
                     {
                         "turn_number": 1,
                         "actor_player_id": "pl_saved",
-                        "message": "pulse_strike dealt 25",
+                        "message": "jjk_gojo_red dealt 24",
                         "created_at": played_at,
                     }
                 ]

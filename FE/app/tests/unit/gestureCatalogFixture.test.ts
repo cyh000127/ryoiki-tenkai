@@ -16,6 +16,7 @@ type GestureCatalogContract = {
     skills: Array<{
       skillId: string;
       name: string;
+      description: string;
       gestureSequence: string[];
       manaCost: number;
       damage: number;
@@ -43,7 +44,17 @@ describe("mvp gesture catalog contract", () => {
 
     expect(contract.tokenSetId).toBe("mvp_gesture_tokens_v1");
     expect(contractSkillset).toEqual(DEFAULT_SKILLSET);
-    expect(DEFAULT_SKILLSET.skills.length).toBeGreaterThanOrEqual(8);
+    expect(DEFAULT_SKILLSET.skills.length).toBe(5);
+    expect(DEFAULT_SKILLSET.skills.map((skill) => skill.skillId)).toEqual([
+      "jjk_gojo_red",
+      "jjk_gojo_hollow_purple",
+      "jjk_gojo_infinite_void",
+      "jjk_sukuna_malevolent_shrine",
+      "jjk_megumi_chimera_shadow_garden"
+    ]);
+    expect(DEFAULT_SKILLSET.skills.every((skill) => skill.description.includes("한국어명:"))).toBe(
+      true
+    );
     expect(
       DEFAULT_SKILLSET.skills.every((skill) =>
         skill.gestureSequence.every((token) => allowedTokens.has(token))

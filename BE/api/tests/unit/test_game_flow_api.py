@@ -2,8 +2,11 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from fastapi.testclient import TestClient
+from gesture_api.domain.catalog import SKILLSETS
 from gesture_api.main import create_app
 from gesture_api.repositories.game_state import game_state_repository
+
+DEFAULT_SKILL = SKILLSETS[0].skills[0]
 
 
 def create_configured_guest(client: TestClient, nickname: str) -> str:
@@ -186,8 +189,8 @@ def test_guest_player_can_match_and_submit_turn_action() -> None:
 
     assert action_response.status_code == 202
     assert action_response.json()["data"]["status"] == "ACCEPTED"
-    assert action_response.json()["data"]["battle"]["opponent"]["hp"] == 75
-    assert action_response.json()["data"]["battle"]["self"]["hp"] == 75
+    assert action_response.json()["data"]["battle"]["opponent"]["hp"] == 100 - skill["damage"]
+    assert action_response.json()["data"]["battle"]["self"]["hp"] == 100 - skill["damage"]
     assert action_response.json()["data"]["battle"]["turnNumber"] == 3
     assert action_response.json()["data"]["battle"]["turnOwnerPlayerId"] == player_id
 
@@ -202,7 +205,7 @@ def test_rejects_duplicate_action_id() -> None:
         "playerId": player_id,
         "turnNumber": 1,
         "actionId": "act-duplicate",
-        "gestureSequence": ["seal_1", "seal_3"],
+        "gestureSequence": DEFAULT_SKILL.gesture_sequence,
         "submittedAt": "2026-04-27T00:00:00Z",
     }
     first_response = client.post(f"/api/v1/battles/{battle_session_id}/actions", json=payload)
@@ -229,7 +232,7 @@ def test_submit_action_after_deadline_returns_turn_timeout() -> None:
             "playerId": player_id,
             "turnNumber": 1,
             "actionId": "act-timeout",
-            "gestureSequence": ["seal_1", "seal_3"],
+            "gestureSequence": DEFAULT_SKILL.gesture_sequence,
             "submittedAt": "2026-04-27T00:00:00Z",
         },
     )

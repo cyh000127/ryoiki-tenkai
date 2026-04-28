@@ -1,8 +1,11 @@
-import {
+﻿import {
   battleFlowReducer,
   initialBattleFlowState
 } from "../../src/features/battle-flow/model/battleFlow";
-import type { BattleState } from "../../src/entities/game/model";
+import { DEFAULT_SKILLSET, type BattleState } from "../../src/entities/game/model";
+
+const defaultSkill = DEFAULT_SKILLSET.skills[0];
+const defaultSkillLog = `${defaultSkill.skillId} dealt ${defaultSkill.damage}`;
 
 describe("battleFlowReducer", () => {
   function createStartedBattle(playerId = initialBattleFlowState.player.playerId): BattleState {
@@ -43,20 +46,16 @@ describe("battleFlowReducer", () => {
   }
 
   function completeDefaultSequence() {
-    const matched = createMatchedBattle();
-    const firstStep = battleFlowReducer(matched, {
-      type: "receiveGestureInput",
-      gesture: "seal_1",
-      confidence: 0.91,
-      source: "debug_fallback"
-    });
-
-    return battleFlowReducer(firstStep, {
-      type: "receiveGestureInput",
-      gesture: "seal_3",
-      confidence: 0.91,
-      source: "debug_fallback"
-    });
+    return defaultSkill.gestureSequence.reduce(
+      (state, gesture) =>
+        battleFlowReducer(state, {
+          type: "receiveGestureInput",
+          gesture,
+          confidence: 0.91,
+          source: "debug_fallback"
+        }),
+      createMatchedBattle()
+    );
   }
 
   it("creates a matched battle from queue", () => {
@@ -111,11 +110,11 @@ describe("battleFlowReducer", () => {
         battleLog: [
           {
             turnNumber: 1,
-            message: "pulse_strike dealt 25"
+            message: defaultSkillLog
           },
           {
             turnNumber: 2,
-            message: "pulse_strike dealt 25"
+            message: defaultSkillLog
           }
         ]
       }
@@ -132,13 +131,13 @@ describe("battleFlowReducer", () => {
     const matched = createMatchedBattle();
     const lowConfidence = battleFlowReducer(matched, {
       type: "receiveGestureInput",
-      gesture: "seal_1",
+      gesture: defaultSkill.gestureSequence[0],
       confidence: 0.4,
       source: "debug_fallback"
     });
     const mismatch = battleFlowReducer(matched, {
       type: "receiveGestureInput",
-      gesture: "seal_3",
+      gesture: "unexpected_token",
       confidence: 0.91,
       source: "debug_fallback"
     });
@@ -153,13 +152,13 @@ describe("battleFlowReducer", () => {
     const matched = createMatchedBattle();
     const debugInput = battleFlowReducer(matched, {
       type: "receiveGestureInput",
-      gesture: "seal_1",
+      gesture: defaultSkill.gestureSequence[0],
       confidence: 0.91,
       source: "debug_fallback"
     });
     const liveInput = battleFlowReducer(debugInput, {
       type: "receiveGestureInput",
-      gesture: "seal_3",
+      gesture: defaultSkill.gestureSequence[0],
       confidence: 0.91,
       source: "live_camera"
     });
@@ -252,11 +251,11 @@ describe("battleFlowReducer", () => {
         battleLog: [
           {
             turnNumber: 1,
-            message: "pulse_strike dealt 25"
+            message: defaultSkillLog
           },
           {
             turnNumber: 2,
-            message: "pulse_strike dealt 25"
+            message: defaultSkillLog
           }
         ]
       }
@@ -301,11 +300,11 @@ describe("battleFlowReducer", () => {
         battleLog: [
           {
             turnNumber: 1,
-            message: "pulse_strike dealt 25"
+            message: defaultSkillLog
           },
           {
             turnNumber: 2,
-            message: "pulse_strike dealt 25"
+            message: defaultSkillLog
           }
         ]
       }
@@ -323,7 +322,7 @@ describe("battleFlowReducer", () => {
         battleLog: [
           {
             turnNumber: 1,
-            message: "pulse_strike dealt 25"
+            message: defaultSkillLog
           }
         ]
       }
@@ -371,11 +370,11 @@ describe("battleFlowReducer", () => {
         battleLog: [
           {
             turnNumber: 1,
-            message: "pulse_strike dealt 25"
+            message: defaultSkillLog
           },
           {
             turnNumber: 2,
-            message: "pulse_strike dealt 25"
+            message: defaultSkillLog
           }
         ]
       }

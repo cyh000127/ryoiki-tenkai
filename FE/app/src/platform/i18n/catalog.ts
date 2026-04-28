@@ -73,6 +73,7 @@ export const copy = {
   turnDeadline: "턴 마감",
   selectedSkillStatus: "선택 스킬 상태",
   skillCooldownStatus: "스킬 쿨다운",
+  skillDescription: "스킬 설명",
   activeCooldowns: "활성 쿨다운",
   noActiveCooldowns: "활성 쿨다운 없음",
   deadlineExpired: "마감됨",
