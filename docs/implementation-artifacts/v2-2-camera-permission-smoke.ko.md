@@ -45,5 +45,4 @@ pnpm --dir FE/app exec playwright install chromium
 ## 남은 v2 선행조건
 
 - 구체 frame recognizer 패키지 또는 런타임 바인딩 선택.
-- production persistence 전환.
 - 정식 skill/resource 교체.

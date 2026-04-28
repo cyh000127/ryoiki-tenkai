@@ -13,7 +13,7 @@
 ## 종합 판단
 
 - 핵심 플레이 루프는 명세 기준으로 실제 동작합니다.
-  player entry -> loadout -> queue -> WebSocket handoff -> battle -> result -> history/rating -> runtime persistence
+  player entry -> loadout -> queue -> WebSocket handoff -> battle -> result -> history/rating -> storage adapter persistence
 - v1 기능 MVP는 릴리스 준비 완료 상태입니다.
 - 릴리스 차단 항목은 없습니다.
 - 스토리 상태 집계
@@ -56,7 +56,7 @@
 - valid action은 서버 승인 뒤 state update가 반영됩니다.
 - invalid, duplicate, out-of-turn, timeout, surrender path는 서버 권위 규칙으로 처리됩니다.
 - reconnect 시 latest battle snapshot 또는 ended result state가 복구됩니다.
-- completed battle은 history, rating, leaderboard에 반영되고 runtime store에 저장됩니다.
+- completed battle은 history, rating, leaderboard에 반영되고 storage adapter 경계로 저장됩니다.
 
 ## 현재 구현 문서화 위치
 
@@ -72,4 +72,4 @@
 ## 다음 우선순위
 
 - v2 또는 follow-up hardening
-  live recognizer adapter 연결, 실기기 카메라 smoke 자동화, production persistence 전환, 정식 리소스 교체를 진행합니다.
+  live recognizer adapter 연결, 실기기 카메라 smoke 자동화, storage adapter persistence 전환, 정식 리소스 교체를 진행합니다.

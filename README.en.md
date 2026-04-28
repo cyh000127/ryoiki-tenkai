@@ -9,7 +9,7 @@ Korean documentation is available in `README.md`. `README.ko.md` keeps the same 
 - The v1 functional MVP is release-ready.
 - There are no release blockers.
 - The v2-1 live recognizer adapter boundary integration is complete.
-- Final skill names, skill images, hand-motion assets, concrete frame recognizer binding, and production persistence are v2 or follow-up scope.
+- Final skill names, skill images, hand-motion assets, and concrete frame recognizer binding are v2 or follow-up scope.
 - Final release readiness document: `docs/implementation-artifacts/v1-release-readiness.en.md`
 - v2-1 implementation record: `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`
 
@@ -34,6 +34,7 @@ The repository is currently wired through the following playable flow:
 - automatic practice rival turns
 - `HP_ZERO`, `TIMEOUT`, and `SURRENDER` resolution with result screen rendering
 - live camera adapter start/stop/status display and recognized-token dispatch through the normalized input boundary
+- result/history/rating persistence moved behind the storage adapter boundary
 
 ## Run Locally
 
@@ -126,13 +127,13 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - reconnect restore for the latest active battle snapshot and ended battle result state
 - delayed and duplicate socket events are reconciled so stale snapshots do not rewind the UI or reapply results
 - server-backed history, rating, and leaderboard screens with loading, empty, and error states
-- battle results, compact action audit, ratings, and history now persist in the backend runtime store
+- battle results, compact action audit, ratings, and history now persist behind the backend storage adapter boundary
 
 ## Remaining Work
 
 - no v1 release blockers
 - v2 or follow-up scope
-  concrete frame recognizer binding, production persistence, and final asset replacement
+  concrete frame recognizer binding and final asset replacement
 
 ## MVP Planning and QA
 
@@ -140,6 +141,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v1-release-readiness.en.md`: v1 release readiness decision and verification evidence.
 - `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`: live recognizer adapter integration record.
 - `docs/implementation-artifacts/v2-2-camera-permission-smoke.en.md`: camera permission smoke automation record.
+- `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`: storage adapter persistence record.
 - `docs/implementation-artifacts/mvp-v1-implementation-plan.en.md`: MVP implementation baseline for WebSocket flow, server authoritative rules, client hand recognition, and excluded scope.
 - `docs/planning-artifacts/mvp-v1/technology-stack.en.md`: selected MVP technology stack, boundaries, deferred choices, and dependency rules.
 - `docs/planning-artifacts/mvp-v1/epics.en.md`: MVP implementation plan split into epic-level outcomes, boundaries, stories, and acceptance signals.

@@ -45,5 +45,4 @@ pnpm --dir FE/app exec playwright install chromium
 ## Remaining v2 Prerequisites
 
 - Select the concrete frame recognizer package or runtime binding.
-- Move to production persistence.
 - Replace final skill/resource assets.

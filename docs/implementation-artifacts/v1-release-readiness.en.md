@@ -13,7 +13,7 @@ This document records the final readiness decision for the v1 release.
 
 - All 28 MVP v1 stories are marked `done`.
 - The core playable loop is implemented.
-  player entry -> loadout -> queue -> WebSocket handoff -> battle -> result -> history/rating -> runtime persistence
+  player entry -> loadout -> queue -> WebSocket handoff -> battle -> result -> history/rating -> storage adapter persistence
 - Backend and frontend tests cover the critical success and failure paths.
 - Server-authoritative battle rules cover action validation, exact-once mutation, rejection, timeout, surrender, and battle end.
 - The frontend renders pending, rejected, confirmed, timeout, surrender, result, reconnect, and history/rating states.
@@ -69,6 +69,7 @@ These items are not v1 release blockers and should be handled in v2 or follow-up
    - Implementation record: `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`
 2. [x] Automate real-device browser camera smoke scenarios.
    - Implementation record: `docs/implementation-artifacts/v2-2-camera-permission-smoke.en.md`
-3. [ ] Replace runtime-store persistence with the formal storage adapter.
+3. [x] Replace runtime-store persistence with the formal storage adapter.
+   - Implementation record: `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`
 4. [ ] Replace skill names, visual assets, and hand-motion resources from the separate source.
 5. [ ] Draft the v2 planning documents.

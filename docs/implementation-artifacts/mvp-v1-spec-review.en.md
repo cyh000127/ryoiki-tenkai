@@ -13,7 +13,7 @@ This document is a quick snapshot of how far the current implementation satisfie
 ## Overall Assessment
 
 - The core playable loop is implemented end to end.
-  player entry -> loadout -> queue -> WebSocket handoff -> battle -> result -> history/rating -> runtime persistence
+  player entry -> loadout -> queue -> WebSocket handoff -> battle -> result -> history/rating -> storage adapter persistence
 - The v1 functional MVP is release-ready.
 - There are no release blockers.
 - Story status summary
@@ -56,7 +56,7 @@ This document is a quick snapshot of how far the current implementation satisfie
 - Valid actions update battle state only after server confirmation.
 - Invalid, duplicate, out-of-turn, timeout, and surrender paths are handled by server-authoritative rules.
 - Reconnect restores the latest battle snapshot or ended result state.
-- Completed battles update history, rating, and leaderboard data and persist to the runtime store.
+- Completed battles update history, rating, and leaderboard data and persist behind the storage adapter boundary.
 
 ## Where the Current Implementation Is Documented
 
@@ -72,4 +72,4 @@ This document is a quick snapshot of how far the current implementation satisfie
 ## Recommended Next Priorities
 
 - v2 or follow-up hardening
-  Connect the live recognizer adapter, automate real-device camera smoke checks, move persistence to the production storage adapter, and replace final resources.
+  Connect the live recognizer adapter, automate real-device camera smoke checks, move persistence to the storage adapter boundary, and replace final resources.

@@ -9,7 +9,7 @@
 - v1 기능 MVP는 릴리스 준비 완료 상태입니다.
 - 릴리스 차단 항목은 없습니다.
 - v2-1 live recognizer adapter boundary 연결이 완료되었습니다.
-- 정식 스킬명, 스킬 이미지, 손동작 리소스, 구체 frame recognizer 바인딩, production persistence 전환은 v2 또는 follow-up 범위입니다.
+- 정식 스킬명, 스킬 이미지, 손동작 리소스, 구체 frame recognizer 바인딩은 v2 또는 follow-up 범위입니다.
 - 최종 릴리스 점검 문서: `docs/implementation-artifacts/v1-release-readiness.ko.md`
 - v2-1 구현 기록: `docs/implementation-artifacts/v2-1-live-recognizer-adapter.ko.md`
 
@@ -42,8 +42,9 @@
 - reconnect 후 최신 battle snapshot 복구
 - delayed/duplicate socket event 정합성 처리
 - 전적, 레이팅, leaderboard 조회
-- battle result, compact action audit, rating, history의 runtime store 영속화
+- battle result, compact action audit, rating, history의 storage adapter 영속화
 - live camera adapter의 시작/중지/상태 표시와 recognized token의 normalized input boundary 연결
+- result/history/rating persistence를 storage adapter 경계 뒤로 전환
 
 ## 실행 방법
 
@@ -122,13 +123,13 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - reconnect 시 latest active battle snapshot 복구와 ended battle 결과 상태 복원
 - delayed/duplicate socket event를 최신 battle state 기준으로 정리해 UI rollback과 중복 결과 반영 방지
 - server-backed 전적/레이팅/leaderboard 화면과 loading/empty/error 상태 렌더링
-- battle result, compact action audit, rating, history를 백엔드 runtime store에 영속화
+- battle result, compact action audit, rating, history를 백엔드 storage adapter 경계로 영속화
 
 ## 남은 작업
 
 - v1 릴리스 차단 작업 없음
 - v2 또는 follow-up 범위
-  구체 frame recognizer 바인딩, production persistence 전환, 정식 리소스 교체
+  구체 frame recognizer 바인딩, 정식 리소스 교체
 
 ## 경계
 
@@ -156,6 +157,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v1-release-readiness.ko.md`: v1 릴리스 준비 완료 판정과 검증 근거.
 - `docs/implementation-artifacts/v2-1-live-recognizer-adapter.ko.md`: live recognizer adapter 연결 구현 기록.
 - `docs/implementation-artifacts/v2-2-camera-permission-smoke.ko.md`: 카메라 권한 smoke 자동화 구현 기록.
+- `docs/implementation-artifacts/v2-3-storage-adapter-persistence.ko.md`: storage adapter persistence 구현 기록.
 - `docs/planning-artifacts/mvp-v1/technology-stack.ko.md`: 선택한 MVP 기술스택, 경계, 보류 항목, 의존성 추가 규칙.
 - `docs/planning-artifacts/mvp-v1/epics.ko.md`: MVP 구현 계획을 에픽 단위로 분리한 문서.
 - `docs/planning-artifacts/mvp-v1/stories.ko.md`: 스토리 단위 구현 항목, 상태, 범위, 의존성, 검증 메모.
@@ -171,6 +173,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v1-release-readiness.en.md`
 - `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`
 - `docs/implementation-artifacts/v2-2-camera-permission-smoke.en.md`
+- `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`
 - `docs/planning-artifacts/mvp-v1/technology-stack.en.md`
 - `docs/planning-artifacts/mvp-v1/epics.en.md`
 - `docs/planning-artifacts/mvp-v1/stories.en.md`
