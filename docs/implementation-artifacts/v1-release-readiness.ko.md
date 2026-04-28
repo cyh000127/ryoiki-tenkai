@@ -81,3 +81,5 @@
    - 구현 기록: `docs/implementation-artifacts/v2-release-readiness.ko.md`
 8. [x] provider-neutral scan 결과를 readiness 문서에 기록합니다.
    - 구현 기록: `docs/implementation-artifacts/v2-release-readiness.ko.md`
+9. [x] SQL migration smoke 절차를 작성합니다.
+   - 구현 기록: `docs/implementation-artifacts/v2-sql-migration-smoke.ko.md`

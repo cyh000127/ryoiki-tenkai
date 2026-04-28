@@ -47,7 +47,8 @@
 
 - [ ] storage adapter unit test가 JSON, SQL, null adapter path를 커버한다.
 - [ ] repository reload 후 profile, history, rating, compact audit이 유지되는지 확인한다.
-- [ ] SQL migration apply/reset 또는 rollback smoke 절차를 실행하거나 blocker를 기록한다.
+- [x] SQL migration apply/reset 또는 rollback smoke 절차를 실행하거나 blocker를 기록한다.
+  - 근거: `docs/implementation-artifacts/v2-sql-migration-smoke.ko.md`, `scripts/storage-migration-smoke.ps1`
 - [ ] storage failure policy가 silent data loss를 허용하지 않는지 확인한다.
 
 ### Match/Socket 변경
@@ -79,8 +80,8 @@
   - 근거: `docs/implementation-artifacts/v2-3-storage-adapter-persistence.ko.md`
 - [x] JSON, SQL, null adapter 동작을 backend unit test로 검증한다.
   - 근거: `BE/api/tests/unit/test_game_state_storage.py`
-- [ ] SQL migration apply/reset 또는 rollback smoke 절차가 문서화되어 있다.
-  - 계획 story: `V2-E2-ST02`
+- [x] SQL migration apply/reset 또는 rollback smoke 절차가 문서화되어 있다.
+  - 근거: `docs/implementation-artifacts/v2-sql-migration-smoke.ko.md`
 - [ ] storage adapter failure mode와 fallback policy가 문서화되어 있다.
   - 계획 story: `V2-E2-ST03`
 - [ ] compact audit retention boundary가 문서화되어 있다.

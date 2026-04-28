@@ -20,6 +20,7 @@
 | Live recognizer adapter boundary | PASS | `docs/implementation-artifacts/v2-1-live-recognizer-adapter.ko.md` |
 | Camera permission smoke automation | PASS | `docs/implementation-artifacts/v2-2-camera-permission-smoke.ko.md` |
 | Storage adapter persistence | PASS | `docs/implementation-artifacts/v2-3-storage-adapter-persistence.ko.md` |
+| SQL migration smoke procedure | PASS | `docs/implementation-artifacts/v2-sql-migration-smoke.ko.md` |
 | v2 planning baseline | PASS | `docs/implementation-artifacts/v2-planning-baseline.ko.md` |
 | v2 smoke checklist | PASS | `docs/implementation-artifacts/v2-smoke-checklist.ko.md` |
 | v2 release readiness 재점검 | PASS | 이 문서 |
@@ -30,7 +31,7 @@
 | Epic | 현재 상태 | 비고 |
 | --- | --- | --- |
 | V2-E1 Live Recognition Runtime Hardening | partial | adapter boundary와 camera smoke는 완료, concrete runtime 선택과 UX hardening은 남아 있음 |
-| V2-E2 Persistence and Runtime Operation Readiness | partial | storage adapter 전환은 완료, migration smoke와 failure policy 문서가 남아 있음 |
+| V2-E2 Persistence and Runtime Operation Readiness | partial | storage adapter 전환과 migration smoke 절차는 완료, failure policy와 audit retention 문서가 남아 있음 |
 | V2-E3 Real Match Flow and Session Robustness | planned | real two-player pairing, reconnect, event reconciliation, fanout hardening이 남아 있음 |
 | V2-E4 Skill and Resource Domain Intake | blocked | approved skill domain source가 필요함 |
 | V2-E5 QA, Release, and Handoff | done | planning baseline, smoke checklist, readiness, scan 기록이 완료됨 |
@@ -42,7 +43,6 @@
 - `V2-E1-ST02`: concrete frame recognizer runtime 선택 및 adapter 결합.
 - `V2-E1-ST03`: no-hand, unstable-hand, recognized-token 상태의 시각적 분리.
 - `V2-E1-ST04`: recognizer restart, cleanup, permission recovery hardening.
-- `V2-E2-ST02`: SQL migration apply/reset 또는 rollback smoke 절차.
 - `V2-E2-ST03`: storage adapter failure mode와 fallback policy.
 - `V2-E2-ST04`: compact audit retention boundary.
 - `V2-E3-ST01`부터 `V2-E3-ST04`: real two-player match flow와 session robustness.
@@ -67,6 +67,6 @@
 
 스킬 domain source가 아직 없으므로 다음 안전한 구현 단위는 storage operation 문서입니다.
 
-1. `V2-E2-ST02`: SQL migration apply/reset 또는 rollback smoke 절차 작성.
-2. `V2-E2-ST03`: storage adapter failure mode와 fallback policy 정의.
-3. `V2-E2-ST04`: compact audit retention boundary 문서화.
+1. `V2-E2-ST03`: storage adapter failure mode와 fallback policy 정의.
+2. `V2-E2-ST04`: compact audit retention boundary 문서화.
+3. `V2-E1-ST03`: no-hand, unstable-hand, recognized-token 상태 분리.

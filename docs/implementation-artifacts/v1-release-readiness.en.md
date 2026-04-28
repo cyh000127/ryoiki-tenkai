@@ -81,3 +81,5 @@ These items are not v1 release blockers and should be handled in v2 or follow-up
    - Implementation record: `docs/implementation-artifacts/v2-release-readiness.en.md`
 8. [x] Record the provider-neutral scan result in the readiness document.
    - Implementation record: `docs/implementation-artifacts/v2-release-readiness.en.md`
+9. [x] Document the SQL migration smoke procedure.
+   - Implementation record: `docs/implementation-artifacts/v2-sql-migration-smoke.en.md`

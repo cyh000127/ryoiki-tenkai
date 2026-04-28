@@ -60,12 +60,12 @@
 
 ### V2-E2-ST02: SQL migration apply/rollback smoke 절차 작성
 
-- Status: planned
+- Status: done
 - User story: developer는 SQL storage adapter를 사용할 때 migration 절차를 검증할 수 있다.
 - Scope: migration command, local database setup note, rollback 또는 reset guidance.
 - Acceptance criteria: command가 docs에 있고 실패 시 복구 절차가 보인다.
 - Dependencies: V2-E2-ST01.
-- Verification: manual smoke or script check.
+- Verification: `docs/implementation-artifacts/v2-sql-migration-smoke.ko.md`, `scripts/storage-migration-smoke.ps1 -PlanOnly`.
 
 ### V2-E2-ST03: storage adapter failure mode와 fallback policy 정의
 

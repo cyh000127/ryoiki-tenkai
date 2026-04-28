@@ -60,12 +60,12 @@ Status values:
 
 ### V2-E2-ST02: Document SQL migration apply/rollback smoke steps
 
-- Status: planned
+- Status: done
 - User story: a developer can verify migration steps when using the SQL storage adapter.
 - Scope: migration command, local database setup note, rollback or reset guidance.
 - Acceptance criteria: commands are documented and recovery steps are visible when failures happen.
 - Dependencies: V2-E2-ST01.
-- Verification: manual smoke or script check.
+- Verification: `docs/implementation-artifacts/v2-sql-migration-smoke.en.md`, `scripts/storage-migration-smoke.ps1 -PlanOnly`.
 
 ### V2-E2-ST03: Define storage adapter failure modes and fallback policy
 
