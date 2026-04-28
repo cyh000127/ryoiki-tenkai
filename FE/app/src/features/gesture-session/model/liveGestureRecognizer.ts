@@ -246,7 +246,6 @@ function toNormalizedInput(
 
   return createLiveCameraInput(observation.token, observation.confidence);
 }
-
 function getObservationFingerprint(observation: LiveGestureObservation): string {
   const confidenceBucket = Math.round(observation.confidence * 100);
   const stabilityBucket = Math.floor(observation.stabilityMs / 250);

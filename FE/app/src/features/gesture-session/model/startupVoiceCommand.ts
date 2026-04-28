@@ -42,6 +42,7 @@ export type StartupVoiceCommandRecognizer = {
 
 type StartupVoiceCommandRecognizerOptions = {
   commands?: readonly JapaneseStartupCommand[];
+  lang?: string;
   onResult: (result: StartupVoiceRecognitionResult) => void;
   onStatusChange?: (status: StartupVoiceRecognitionStatus) => void;
 };
@@ -80,7 +81,7 @@ export function createJapaneseStartupVoiceCommandRecognizer(
     async start() {
       recognizer = createBrowserSpeechTranscriptRecognizer(
         {
-          lang: "ja-JP",
+          lang: options.lang ?? "ja-JP",
           onEndWithoutTranscript: () => {
             options.onStatusChange?.("rejected");
           },

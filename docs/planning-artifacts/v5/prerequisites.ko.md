@@ -27,7 +27,7 @@
 ## 현재 구현상 주의점
 
 - 현재 연습모드는 프론트 로컬 진행만 갱신하며 서버 action submit을 하지 않는다.
-- 현재 손동작 runtime은 실제 landmark 기반 분류가 아니라 browser frame signal 기반이다.
+- 현재 기본 손동작 runtime은 MediaPipe landmark 기반 heuristic 분류기이며, frame signal runtime은 테스트와 명시적 fallback 용도로만 유지된다.
 - 현재 전투 제출은 서버가 gesture sequence와 skill rule을 검증하지만, 서버가 카메라 원본을 독립 검증하지는 않는다.
 - API 매칭 경로는 혼자 들어온 사용자를 연습 상대와 자동 매칭하지 않는다.
 - 운영형 multi-process 매칭은 아직 별도 설계가 필요하다.
@@ -35,6 +35,6 @@
 ## 구현 중단 조건
 
 - 연습 완료를 레이팅이나 전적에 반영하라는 요구가 생기면 별도 제품 결정을 먼저 한다.
-- 실제 손모양 landmark classifier를 도입하려면 runtime 선택과 token 기준을 먼저 확정한다.
+- MediaPipe heuristic을 별도 classifier로 고도화하려면 token 기준, threshold, 검증 샘플을 먼저 확정한다.
 - 서버가 손동작 관찰 자체를 검증해야 한다면 raw frame 전송 없이 어떤 normalized observation을 신뢰할지 별도 계약을 만든다.
 - 운영형 매칭 확장이 필요하면 queue/session store와 timeout worker 설계를 먼저 확정한다.

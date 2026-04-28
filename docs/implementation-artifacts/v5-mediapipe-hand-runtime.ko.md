@@ -32,7 +32,7 @@ v5에서는 기본 손동작 런타임을 MediaPipe Hand Landmarker 기반으로
 
 - landmark가 없으면 `no_hand`를 반환한다.
 - token이 한 번 잡혀도 바로 성공시키지 않고 안정 시간 이후 `recognized`로 전환한다.
-- 연습모드는 `recognized`만으로 자동 완료하지 않고 사용자의 `현재 동작 확인`이 필요하다.
+- 연습모드는 `recognized` 상태가 안정 시간 기준을 넘기면 현재 단계를 자동으로 다음 단계로 진행한다.
 - 서버에는 원시 카메라 프레임이나 landmark를 저장하지 않는다.
 
 ## 남은 한계

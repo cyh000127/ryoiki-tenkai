@@ -121,6 +121,10 @@ describe("battleFlowReducer", () => {
     });
 
     expect(confirmed.input.serverConfirmationStatus).toBe("CONFIRMED");
+    expect(confirmed.input.currentStep).toBe(defaultSkill.gestureSequence.length);
+    expect(confirmed.input.currentGesture).toBe(
+      defaultSkill.gestureSequence[defaultSkill.gestureSequence.length - 1]
+    );
     expect(confirmed.battle?.opponent.hp).toBe(75);
     expect(confirmed.battle?.self.hp).toBe(75);
     expect(confirmed.battle?.turnOwnerPlayerId).toBe(confirmed.player.playerId);

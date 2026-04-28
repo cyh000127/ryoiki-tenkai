@@ -123,7 +123,8 @@
 - Node.js
 - `uv`
 - `pnpm`
-- Docker Compose
+- PostgreSQL `16+` 또는 Docker Compose
+- Homebrew (macOS에서 PostgreSQL을 설치할 때 선택)
 
 ### 처음 한 번만 설치
 
@@ -138,6 +139,60 @@ pnpm --dir FE/app install
 
 ```powershell
 Copy-Item FE/app/.env.example FE/app/.env
+```
+
+### 로컬 macOS 실행: Docker 없이
+
+Docker가 없어도 로컬 PostgreSQL만 준비되어 있으면 백엔드와 프론트를 바로 실행할 수 있습니다.
+
+1. PostgreSQL을 설치하고 시작합니다.
+
+```bash
+brew install postgresql@16
+brew services start postgresql@16
+```
+
+2. 개발용 role과 database를 한 번만 준비합니다.
+
+```bash
+createuser app
+psql postgres -c "ALTER USER app WITH PASSWORD 'app';"
+createdb -O app gesture_skill
+```
+
+3. SQL migration을 적용합니다.
+
+```bash
+export DATABASE_URL="postgresql+psycopg://app:app@localhost:5432/gesture_skill"
+export GAME_STATE_STORAGE_BACKEND="sql"
+cd BE/api
+uv run --package gesture-api alembic upgrade head
+```
+
+주의:
+
+- `alembic.ini`의 `script_location = migrations`는 `BE/api` 기준 상대경로입니다.
+- migration command는 `BE/api` 디렉터리에서 실행하는 것을 권장합니다.
+
+4. 백엔드를 실행합니다.
+
+```bash
+export DATABASE_URL="postgresql+psycopg://app:app@localhost:5432/gesture_skill"
+export GAME_STATE_STORAGE_BACKEND="sql"
+cd BE/api
+uv run --package gesture-api uvicorn gesture_api.main:app --app-dir src --reload --host 0.0.0.0 --port 8000
+```
+
+5. 새 터미널에서 프론트엔드를 실행합니다.
+
+```bash
+pnpm --dir FE/app dev
+```
+
+6. 브라우저에서 접속합니다.
+
+```text
+http://localhost:5173
 ```
 
 ### 빠른 실행: 전체 런타임을 Compose로 실행
