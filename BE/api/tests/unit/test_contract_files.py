@@ -27,6 +27,21 @@ def test_openapi_contract_covers_mvp_rest_surface() -> None:
         "/gesture-commands",
     }.issubset(contract["paths"])
 
+    assert "runtime" in contract["components"]["schemas"]["HealthResponse"]["required"]
+    assert (
+        contract["components"]["schemas"]["HealthResponse"]["properties"]["runtime"]["$ref"]
+        == "#/components/schemas/HealthRuntimeSummary"
+    )
+    assert {
+        "appEnv",
+        "database",
+        "stateStorage",
+        "persistencePolicy",
+        "recognitionDataBoundary",
+        "recognizerRuntime",
+        "skillDomainSource",
+    } == set(contract["components"]["schemas"]["HealthRuntimeSummary"]["required"])
+
     assert contract["paths"]["/api/v1/animsets"]["get"]["operationId"] == "listAnimsets"
     assert (
         contract["paths"]["/api/v1/battles/{battleSessionId}/surrender"]["post"]["operationId"]

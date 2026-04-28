@@ -29,19 +29,19 @@ Status values:
 
 ### V3-E2-ST01: Add a safe runtime summary to the backend health response
 
-- Status: planned
+- Status: done
 - Scope: add application status, storage mode summary, persistence policy, and runtime blocker summary to the health response.
 - Acceptance criteria: database URLs, credentials, and raw recognition data are not returned.
 - Dependencies: existing health route and settings.
-- Verification: backend unit test.
+- Verification: `docs/implementation-artifacts/v3-2-health-runtime-summary.en.md`, backend unit test.
 
 ### V3-E2-ST02: Refresh the health response contract and tests
 
-- Status: planned
+- Status: done
 - Scope: update schema, tests, and docs to lock the health contract.
 - Acceptance criteria: API response shape is fixed by tests.
 - Dependencies: V3-E2-ST01.
-- Verification: backend test, contract review.
+- Verification: `docs/implementation-artifacts/v3-2-health-runtime-summary.en.md`, backend test, contract review.
 
 ## V3-E3: Release Evidence and Handoff
 

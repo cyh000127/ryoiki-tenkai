@@ -29,19 +29,19 @@
 
 ### V3-E2-ST01: backend health response에 safe runtime summary 추가
 
-- Status: planned
+- Status: done
 - Scope: health response에 application status, storage mode summary, persistence policy, runtime blocker summary를 추가.
 - Acceptance criteria: database URL, credential, raw recognition data는 응답에 포함하지 않는다.
 - Dependencies: 기존 health route와 settings.
-- Verification: backend unit test.
+- Verification: `docs/implementation-artifacts/v3-2-health-runtime-summary.ko.md`, backend unit test.
 
 ### V3-E2-ST02: health response contract와 테스트 갱신
 
-- Status: planned
+- Status: done
 - Scope: schema, test, docs를 갱신해 health contract를 고정.
 - Acceptance criteria: API response shape가 테스트로 고정된다.
 - Dependencies: V3-E2-ST01.
-- Verification: backend test, contract review.
+- Verification: `docs/implementation-artifacts/v3-2-health-runtime-summary.ko.md`, backend test, contract review.
 
 ## V3-E3: Release Evidence and Handoff
 

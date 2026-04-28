@@ -484,12 +484,50 @@
       }
     },
     "schemas": {
+      "HealthRuntimeSummary": {
+        "type": "object",
+        "required": [
+          "appEnv",
+          "database",
+          "stateStorage",
+          "persistencePolicy",
+          "recognitionDataBoundary",
+          "recognizerRuntime",
+          "skillDomainSource"
+        ],
+        "properties": {
+          "appEnv": {
+            "type": "string"
+          },
+          "database": {
+            "type": "string"
+          },
+          "stateStorage": {
+            "type": "string"
+          },
+          "persistencePolicy": {
+            "type": "string"
+          },
+          "recognitionDataBoundary": {
+            "type": "string"
+          },
+          "recognizerRuntime": {
+            "type": "string"
+          },
+          "skillDomainSource": {
+            "type": "string"
+          }
+        }
+      },
       "HealthResponse": {
         "type": "object",
-        "required": ["status"],
+        "required": ["status", "runtime"],
         "properties": {
           "status": {
             "type": "string"
+          },
+          "runtime": {
+            "$ref": "#/components/schemas/HealthRuntimeSummary"
           }
         }
       },
