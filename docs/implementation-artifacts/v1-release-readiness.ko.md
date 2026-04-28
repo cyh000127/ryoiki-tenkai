@@ -72,4 +72,6 @@
 3. [x] runtime store persistence를 정식 storage adapter로 교체합니다.
    - 구현 기록: `docs/implementation-artifacts/v2-3-storage-adapter-persistence.ko.md`
 4. [ ] 스킬명, 시각 자산, 손동작 리소스를 별도 소스로 교체합니다.
-5. [ ] v2 기획 문서를 작성합니다.
+   - 보류 사유: 별도 skill domain source 확정 전까지 임의 구현하지 않습니다.
+5. [x] v2 기획 문서를 작성합니다.
+   - 구현 기록: `docs/implementation-artifacts/v2-planning-baseline.ko.md`

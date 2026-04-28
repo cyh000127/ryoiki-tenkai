@@ -72,4 +72,6 @@ These items are not v1 release blockers and should be handled in v2 or follow-up
 3. [x] Replace runtime-store persistence with the formal storage adapter.
    - Implementation record: `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`
 4. [ ] Replace skill names, visual assets, and hand-motion resources from the separate source.
-5. [ ] Draft the v2 planning documents.
+   - Deferred reason: do not invent implementation before the separate skill domain source is approved.
+5. [x] Draft the v2 planning documents.
+   - Implementation record: `docs/implementation-artifacts/v2-planning-baseline.en.md`

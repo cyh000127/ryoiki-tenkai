@@ -9,9 +9,13 @@ Korean documentation is available in `README.md`. `README.ko.md` keeps the same 
 - The v1 functional MVP is release-ready.
 - There are no release blockers.
 - The v2-1 live recognizer adapter boundary integration is complete.
-- Final skill names, skill images, hand-motion assets, and concrete frame recognizer binding are v2 or follow-up scope.
+- The v2-2 camera permission smoke automation and v2-3 storage adapter persistence transition are complete.
+- The v2 planning baseline is written.
+- Skill names, skill effects, hand-motion resources, and visual assets will proceed only after a separate domain source is approved.
+- Concrete frame recognizer binding remains v2 follow-up scope.
 - Final release readiness document: `docs/implementation-artifacts/v1-release-readiness.en.md`
 - v2-1 implementation record: `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`
+- v2 planning baseline: `docs/implementation-artifacts/v2-planning-baseline.en.md`
 
 ## Current Status
 
@@ -35,6 +39,7 @@ The repository is currently wired through the following playable flow:
 - `HP_ZERO`, `TIMEOUT`, and `SURRENDER` resolution with result screen rendering
 - live camera adapter start/stop/status display and recognized-token dispatch through the normalized input boundary
 - result/history/rating persistence moved behind the storage adapter boundary
+- v2 epics, stories, implementation order, prerequisites, and technology stack documented
 
 ## Run Locally
 
@@ -128,12 +133,13 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - delayed and duplicate socket events are reconciled so stale snapshots do not rewind the UI or reapply results
 - server-backed history, rating, and leaderboard screens with loading, empty, and error states
 - battle results, compact action audit, ratings, and history now persist behind the backend storage adapter boundary
+- v2 planning baseline and blocked conditions for skill implementation are documented
 
 ## Remaining Work
 
 - no v1 release blockers
 - v2 or follow-up scope
-  concrete frame recognizer binding and final asset replacement
+  concrete frame recognizer binding and skill/resource implementation after the skill domain source is approved
 
 ## MVP Planning and QA
 
@@ -142,6 +148,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`: live recognizer adapter integration record.
 - `docs/implementation-artifacts/v2-2-camera-permission-smoke.en.md`: camera permission smoke automation record.
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`: storage adapter persistence record.
+- `docs/implementation-artifacts/v2-planning-baseline.en.md`: v2 planning baseline record.
+- `docs/planning-artifacts/v2/technology-stack.en.md`: v2 technology keep/defer decisions.
+- `docs/planning-artifacts/v2/epics.en.md`: v2 epics, boundaries, and acceptance signals.
+- `docs/planning-artifacts/v2/stories.en.md`: v2 story status and blocked conditions.
+- `docs/planning-artifacts/v2/implementation-order.en.md`: v2 implementation order and commit units.
+- `docs/planning-artifacts/v2/prerequisites.en.md`: v2 prerequisites and stop conditions.
 - `docs/implementation-artifacts/mvp-v1-implementation-plan.en.md`: MVP implementation baseline for WebSocket flow, server authoritative rules, client hand recognition, and excluded scope.
 - `docs/planning-artifacts/mvp-v1/technology-stack.en.md`: selected MVP technology stack, boundaries, deferred choices, and dependency rules.
 - `docs/planning-artifacts/mvp-v1/epics.en.md`: MVP implementation plan split into epic-level outcomes, boundaries, stories, and acceptance signals.
