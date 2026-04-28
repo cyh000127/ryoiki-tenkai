@@ -43,10 +43,7 @@ class JsonGameStateStorageAdapter:
         if not self.persistence_path.exists():
             return None
 
-        try:
-            payload = json.loads(self.persistence_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            return None
+        payload = json.loads(self.persistence_path.read_text(encoding="utf-8"))
 
         return GameStatePersistenceSnapshot(
             players=[

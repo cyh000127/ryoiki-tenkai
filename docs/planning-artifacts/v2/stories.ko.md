@@ -69,12 +69,12 @@
 
 ### V2-E2-ST03: storage adapter failure mode와 fallback policy 정의
 
-- Status: planned
+- Status: done
 - User story: system owner는 storage load/save 실패 시 어떤 동작을 허용할지 알 수 있다.
 - Scope: startup failure, save failure, partial write, read recovery, local fallback policy.
 - Acceptance criteria: silent data loss를 허용하지 않는다. local development fallback과 production behavior가 분리된다.
 - Dependencies: V2-E2-ST01.
-- Verification: docs review, backend failure test when behavior is implemented.
+- Verification: `docs/implementation-artifacts/v2-storage-failure-policy.ko.md`, `BE/api/tests/unit/test_game_state_storage.py`.
 
 ### V2-E2-ST04: compact audit retention boundary 문서화
 

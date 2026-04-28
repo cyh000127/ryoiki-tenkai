@@ -49,7 +49,8 @@ Use this document for local v2 handoff verification. Skill names, skill effects,
 - [ ] Profile, history, rating, and compact audit survive repository reload.
 - [x] SQL migration apply/reset or rollback smoke steps are run, or a blocker is recorded.
   - Evidence: `docs/implementation-artifacts/v2-sql-migration-smoke.en.md`, `scripts/storage-migration-smoke.ps1`
-- [ ] Storage failure policy does not allow silent data loss.
+- [x] Storage failure policy does not allow silent data loss.
+  - Evidence: `docs/implementation-artifacts/v2-storage-failure-policy.en.md`
 
 ### Match/Socket Changes
 
@@ -82,8 +83,8 @@ Use this document for local v2 handoff verification. Skill names, skill effects,
   - Evidence: `BE/api/tests/unit/test_game_state_storage.py`
 - [x] SQL migration apply/reset or rollback smoke steps are documented.
   - Evidence: `docs/implementation-artifacts/v2-sql-migration-smoke.en.md`
-- [ ] Storage adapter failure modes and fallback policy are documented.
-  - Planned story: `V2-E2-ST03`
+- [x] Storage adapter failure modes and fallback policy are documented.
+  - Evidence: `docs/implementation-artifacts/v2-storage-failure-policy.en.md`
 - [ ] Compact audit retention boundaries are documented.
   - Planned story: `V2-E2-ST04`
 

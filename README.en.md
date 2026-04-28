@@ -14,6 +14,7 @@ Korean documentation is available in `README.md`. `README.ko.md` keeps the same 
 - The v2 smoke checklist is written.
 - The v2 release readiness checkpoint is written.
 - The v2 SQL migration smoke procedure is written.
+- The v2 storage failure/fallback policy is written.
 - Skill names, skill effects, hand-motion resources, and visual assets will proceed only after a separate domain source is approved.
 - Concrete frame recognizer binding remains v2 follow-up scope.
 - Final release readiness document: `docs/implementation-artifacts/v1-release-readiness.en.md`
@@ -47,6 +48,7 @@ The repository is currently wired through the following playable flow:
 - v2 camera/runtime/storage/matching smoke checklist documented
 - v2 release readiness checkpoint documented
 - SQL migration apply/reset/rollback smoke procedure documented
+- storage failure/fallback policy documented, with corrupted JSON state rejection
 
 ## Run Locally
 
@@ -144,12 +146,13 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - v2 smoke checklist separates implemented, planned, and blocked items
 - v2 release readiness checkpoint separates full v2 release blockers
 - SQL migration smoke script and procedure are documented
+- storage failure/fallback policy is documented and corrupted JSON state is tested
 
 ## Remaining Work
 
 - no v1 release blockers
 - v2 or follow-up scope
-  concrete frame recognizer binding, storage failure/retention docs, real two-player match hardening, and skill/resource implementation after the skill domain source is approved
+  concrete frame recognizer binding, compact audit retention docs, real two-player match hardening, and skill/resource implementation after the skill domain source is approved
 
 ## MVP Planning and QA
 
@@ -162,6 +165,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v2-smoke-checklist.en.md`: v2 smoke checklist and blocked items.
 - `docs/implementation-artifacts/v2-release-readiness.en.md`: v2 checkpoint decision and full v2 release blockers.
 - `docs/implementation-artifacts/v2-sql-migration-smoke.en.md`: SQL migration apply/reset/rollback smoke procedure.
+- `docs/implementation-artifacts/v2-storage-failure-policy.en.md`: storage failure modes and fallback policy.
 - `docs/planning-artifacts/v2/technology-stack.en.md`: v2 technology keep/defer decisions.
 - `docs/planning-artifacts/v2/epics.en.md`: v2 epics, boundaries, and acceptance signals.
 - `docs/planning-artifacts/v2/stories.en.md`: v2 story status and blocked conditions.

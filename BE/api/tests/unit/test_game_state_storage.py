@@ -1,5 +1,7 @@
+import json
 from datetime import UTC, datetime
 
+import pytest
 from gesture_api.db.base import Base
 from gesture_api.domain.game import PlayerRecord
 from gesture_api.repositories.game_state import InMemoryGameStateRepository
@@ -66,6 +68,14 @@ def test_json_game_state_storage_adapter_round_trips_snapshot(tmp_path) -> None:
     assert reloaded.players[0].rating == 1016
     assert reloaded.match_history[0]["played_at"] == played_at
     assert reloaded.match_audits["battle_saved"][0]["created_at"] == played_at
+
+
+def test_json_game_state_storage_adapter_rejects_corrupted_snapshot(tmp_path) -> None:
+    storage_path = tmp_path / "corrupted-game-state.json"
+    storage_path.write_text("{broken-json", encoding="utf-8")
+
+    with pytest.raises(json.JSONDecodeError):
+        JsonGameStateStorageAdapter(storage_path).load()
 
 
 def test_game_state_repository_uses_storage_adapter_boundary(tmp_path) -> None:

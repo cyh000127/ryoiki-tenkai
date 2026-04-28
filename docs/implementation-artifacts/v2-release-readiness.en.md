@@ -21,6 +21,7 @@ This document records the current v2 readiness decision. The current branch is r
 | Camera permission smoke automation | PASS | `docs/implementation-artifacts/v2-2-camera-permission-smoke.en.md` |
 | Storage adapter persistence | PASS | `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md` |
 | SQL migration smoke procedure | PASS | `docs/implementation-artifacts/v2-sql-migration-smoke.en.md` |
+| Storage failure/fallback policy | PASS | `docs/implementation-artifacts/v2-storage-failure-policy.en.md` |
 | v2 planning baseline | PASS | `docs/implementation-artifacts/v2-planning-baseline.en.md` |
 | v2 smoke checklist | PASS | `docs/implementation-artifacts/v2-smoke-checklist.en.md` |
 | v2 release readiness review | PASS | this document |
@@ -31,7 +32,7 @@ This document records the current v2 readiness decision. The current branch is r
 | Epic | Current Status | Notes |
 | --- | --- | --- |
 | V2-E1 Live Recognition Runtime Hardening | partial | Adapter boundary and camera smoke are complete; concrete runtime selection and UX hardening remain. |
-| V2-E2 Persistence and Runtime Operation Readiness | partial | Storage adapter transition and migration smoke procedure are complete; failure policy and audit retention docs remain. |
+| V2-E2 Persistence and Runtime Operation Readiness | partial | Storage adapter transition, migration smoke, and failure policy are complete; audit retention docs remain. |
 | V2-E3 Real Match Flow and Session Robustness | planned | Real two-player pairing, reconnect, event reconciliation, and fanout hardening remain. |
 | V2-E4 Skill and Resource Domain Intake | blocked | An approved skill domain source is required. |
 | V2-E5 QA, Release, and Handoff | done | Planning baseline, smoke checklist, readiness review, and scan record are complete. |
@@ -43,7 +44,6 @@ The full v2 feature release should not be considered ready until the following i
 - `V2-E1-ST02`: concrete frame recognizer runtime selection and adapter binding.
 - `V2-E1-ST03`: visual separation for no-hand, unstable-hand, and recognized-token states.
 - `V2-E1-ST04`: recognizer restart, cleanup, and permission recovery hardening.
-- `V2-E2-ST03`: storage adapter failure modes and fallback policy.
 - `V2-E2-ST04`: compact audit retention boundary.
 - `V2-E3-ST01` through `V2-E3-ST04`: real two-player match flow and session robustness.
 - `V2-E4-ST01` through `V2-E4-ST04`: skill/resource intake after an approved skill domain source exists.
@@ -67,6 +67,6 @@ This readiness review is a docs-only change.
 
 Because the skill domain source is not available yet, the next safe implementation unit is storage operation documentation.
 
-1. `V2-E2-ST03`: define storage adapter failure modes and fallback policy.
-2. `V2-E2-ST04`: document compact audit retention boundaries.
-3. `V2-E1-ST03`: separate no-hand, unstable-hand, and recognized-token states.
+1. `V2-E2-ST04`: document compact audit retention boundaries.
+2. `V2-E1-ST03`: separate no-hand, unstable-hand, and recognized-token states.
+3. `V2-E1-ST04`: harden recognizer restart, cleanup, and permission recovery.

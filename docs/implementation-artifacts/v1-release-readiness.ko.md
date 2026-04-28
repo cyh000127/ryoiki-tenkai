@@ -83,3 +83,5 @@
    - 구현 기록: `docs/implementation-artifacts/v2-release-readiness.ko.md`
 9. [x] SQL migration smoke 절차를 작성합니다.
    - 구현 기록: `docs/implementation-artifacts/v2-sql-migration-smoke.ko.md`
+10. [x] storage failure mode와 fallback policy를 정의합니다.
+   - 구현 기록: `docs/implementation-artifacts/v2-storage-failure-policy.ko.md`
