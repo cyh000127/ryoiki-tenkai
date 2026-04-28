@@ -3,13 +3,13 @@ import {
   type NormalizedGestureInput
 } from "./gestureInput";
 import {
-  createBrowserFrameSignalRuntime,
   createFrameRecognizerRuntime,
   type LiveGestureFrameRecognizer,
   type LiveGestureFrameRuntime,
   type LiveGestureObservation,
   type LiveGestureRuntimeSession
 } from "./liveGestureRuntime";
+import { createMediaPipeHandGestureRuntime } from "./mediaPipeHandRuntime";
 
 export {
   createBrowserFrameSignalRecognizer,
@@ -27,6 +27,12 @@ export {
   type LiveGestureRuntimeSession,
   type LiveGestureRuntimeStartContext
 } from "./liveGestureRuntime";
+export {
+  classifyMediaPipeHandGesture,
+  createMediaPipeHandGestureRuntime,
+  type ClassifiedHandGesture,
+  type MediaPipeHandGestureRuntimeOptions
+} from "./mediaPipeHandRuntime";
 
 export const LIVE_GESTURE_POLL_INTERVAL_MS = 120;
 export const LIVE_GESTURE_MIN_CONFIDENCE = 0.65;
@@ -67,7 +73,7 @@ export function createBrowserLiveGestureRecognizer(
     options.runtime ??
     (options.frameRecognizer
       ? createFrameRecognizerRuntime(options.frameRecognizer)
-      : createBrowserFrameSignalRuntime());
+      : createMediaPipeHandGestureRuntime());
   const pollIntervalMs = options.pollIntervalMs ?? LIVE_GESTURE_POLL_INTERVAL_MS;
   const mediaDevices = options.mediaDevices ?? getBrowserMediaDevices();
   const createVideoElement =

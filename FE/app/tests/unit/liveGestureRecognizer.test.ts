@@ -1,7 +1,9 @@
 import {
+  classifyMediaPipeHandGesture,
   createBrowserFrameSignalRecognizer,
   createBrowserFrameSignalRuntime,
   createBrowserLiveGestureRecognizer,
+  createMediaPipeHandGestureRuntime,
   type LiveGestureObservation,
   type LiveGestureRecognizerStatus
 } from "../../src/features/gesture-session/model/liveGestureRecognizer";
@@ -190,12 +192,24 @@ describe("createBrowserLiveGestureRecognizer", () => {
       play: vi.fn(async () => undefined)
     } as unknown as HTMLVideoElement;
     const statuses: LiveGestureRecognizerStatus[] = [];
+    const runtime = {
+      start: vi.fn(async () => ({
+        recognizeFrame: () => ({
+          token: null,
+          confidence: 0,
+          handDetected: false,
+          stabilityMs: 0,
+          reason: "no_hand" as const
+        })
+      }))
+    };
 
     const recognizer = createBrowserLiveGestureRecognizer({
       getTargetSequence: () => ["seal_1"],
       getExpectedToken: () => "seal_1",
       mediaDevices,
       createVideoElement: () => video,
+      runtime,
       onObservation: vi.fn(),
       onStatusChange: (status) => {
         statuses.push(status);
@@ -206,6 +220,7 @@ describe("createBrowserLiveGestureRecognizer", () => {
     await recognizer.start();
 
     expect(mediaDevices.getUserMedia).toHaveBeenCalledTimes(2);
+    expect(runtime.start).toHaveBeenCalledTimes(1);
     expect(statuses).toEqual(["starting", "blocked", "starting", "ready"]);
     expect(video.srcObject).toBe(stream);
 
@@ -412,4 +427,87 @@ describe("createBrowserLiveGestureRecognizer", () => {
       reason: "recognized"
     });
   });
+
+  it("classifies MediaPipe hand landmarks into gesture tokens", () => {
+    const result = {
+      landmarks: [createHandLandmarks("index_up")],
+      handedness: [[{ score: 0.94, index: 0, categoryName: "Right", displayName: "Right" }]]
+    };
+
+    expect(classifyMediaPipeHandGesture(result, "index_up")).toEqual({
+      token: "index_up",
+      confidence: 0.94
+    });
+    expect(classifyMediaPipeHandGesture(result, "pinch")).toEqual({
+      token: "index_up",
+      confidence: 0.94
+    });
+  });
+
+  it("uses a MediaPipe hand landmarker runtime with stable recognition", async () => {
+    const close = vi.fn();
+    const detectForVideo = vi.fn(() => ({
+      landmarks: [createHandLandmarks("pinch")],
+      worldLandmarks: [],
+      handednesses: [],
+      handedness: [[{ score: 0.91, index: 0, categoryName: "Right", displayName: "Right" }]]
+    }));
+    const runtime = createMediaPipeHandGestureRuntime({
+      recognitionStableMs: 400,
+      handLandmarkerLoader: async () => ({
+        detectForVideo,
+        close
+      })
+    });
+    const video = {} as HTMLVideoElement;
+    const session = await runtime.start({ video });
+
+    expect(session.recognizeFrame({
+      video,
+      targetSequence: ["pinch"],
+      expectedToken: "pinch",
+      atMs: 1000
+    })).toMatchObject({
+      token: "pinch",
+      handDetected: true,
+      reason: "unstable"
+    });
+    expect(session.recognizeFrame({
+      video,
+      targetSequence: ["pinch"],
+      expectedToken: "pinch",
+      atMs: 1500
+    })).toMatchObject({
+      token: "pinch",
+      handDetected: true,
+      reason: "recognized"
+    });
+
+    session.stop?.();
+
+    expect(detectForVideo).toHaveBeenCalledTimes(2);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
 });
+
+function createHandLandmarks(shape: "index_up" | "pinch") {
+  const landmarks = Array.from({ length: 21 }, (_, index) => ({
+    x: 0.5 + index * 0.001,
+    y: 0.7,
+    z: 0,
+    visibility: 1
+  }));
+
+  landmarks[0] = { x: 0.5, y: 0.82, z: 0, visibility: 1 };
+  landmarks[4] = { x: shape === "pinch" ? 0.52 : 0.35, y: shape === "pinch" ? 0.32 : 0.52, z: 0, visibility: 1 };
+  landmarks[6] = { x: 0.5, y: 0.48, z: 0, visibility: 1 };
+  landmarks[8] = { x: shape === "pinch" ? 0.53 : 0.5, y: shape === "pinch" ? 0.33 : 0.24, z: 0, visibility: 1 };
+  landmarks[10] = { x: 0.55, y: 0.52, z: 0, visibility: 1 };
+  landmarks[12] = { x: 0.55, y: 0.6, z: 0, visibility: 1 };
+  landmarks[14] = { x: 0.6, y: 0.54, z: 0, visibility: 1 };
+  landmarks[16] = { x: 0.6, y: 0.62, z: 0, visibility: 1 };
+  landmarks[18] = { x: 0.65, y: 0.56, z: 0, visibility: 1 };
+  landmarks[20] = { x: 0.65, y: 0.64, z: 0, visibility: 1 };
+
+  return landmarks;
+}
