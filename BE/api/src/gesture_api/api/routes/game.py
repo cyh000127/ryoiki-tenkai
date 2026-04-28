@@ -288,25 +288,13 @@ async def surrender_battle(
 
 @api_router.get("/matches/history", response_model=ApiResponse[list[MatchHistoryItemResponse]])
 def list_match_history(player_id: PlayerIdHeader) -> ApiResponse[list[MatchHistoryItemResponse]]:
-    rows = sorted(
-        (
-            row
-            for row in game_state_repository.match_history
-            if row["player_id"] == player_id
-        ),
-        key=lambda row: row["played_at"],
-        reverse=True,
-    )
+    rows = game_state_repository.list_match_history(player_id)
     return ok([MatchHistoryItemResponse.model_validate(row) for row in rows])
 
 
 @api_router.get("/ratings/leaderboard", response_model=ApiResponse[list[LeaderboardItemResponse]])
 def get_leaderboard() -> ApiResponse[list[LeaderboardItemResponse]]:
-    players = sorted(
-        game_state_repository.players.values(),
-        key=lambda player: player.rating,
-        reverse=True,
-    )
+    players = game_state_repository.list_leaderboard_players()
     return ok(
         [
             LeaderboardItemResponse(

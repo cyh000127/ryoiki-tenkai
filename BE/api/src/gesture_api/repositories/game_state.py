@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
@@ -14,17 +13,37 @@ from gesture_api.domain.game import (
     PlayerRecord,
 )
 from gesture_api.domain.rating import calculate_elo_delta
+from gesture_api.repositories.game_state_storage import (
+    GameStatePersistenceSnapshot,
+    GameStateStorageAdapter,
+    JsonGameStateStorageAdapter,
+    NullGameStateStorageAdapter,
+)
 
 DEFAULT_GAME_STATE_PATH = Path(__file__).resolve().parents[3] / ".runtime" / "game-state.json"
 
 
 class InMemoryGameStateRepository:
-    def __init__(self, persistence_path: Path | None = None) -> None:
-        self.persistence_path = persistence_path
-        self.reset_runtime_state(persistence_path=persistence_path)
+    def __init__(
+        self,
+        persistence_path: Path | None = None,
+        storage_adapter: GameStateStorageAdapter | None = None,
+    ) -> None:
+        self.storage_adapter = self._resolve_storage_adapter(
+            persistence_path=persistence_path,
+            storage_adapter=storage_adapter,
+        )
+        self.reset_runtime_state(storage_adapter=self.storage_adapter)
 
-    def reset_runtime_state(self, persistence_path: Path | None = None) -> None:
-        self.persistence_path = persistence_path
+    def reset_runtime_state(
+        self,
+        persistence_path: Path | None = None,
+        storage_adapter: GameStateStorageAdapter | None = None,
+    ) -> None:
+        self.storage_adapter = self._resolve_storage_adapter(
+            persistence_path=persistence_path,
+            storage_adapter=storage_adapter,
+        )
         self.players: dict[str, PlayerRecord] = {}
         self.queue: dict[str, datetime] = {}
         self.battles: dict[str, BattleSession] = {}
@@ -48,6 +67,20 @@ class InMemoryGameStateRepository:
 
     def get_match_audit(self, battle_session_id: str) -> list[dict[str, object]]:
         return list(self.match_audits.get(battle_session_id, []))
+
+    def list_match_history(self, player_id: str) -> list[dict[str, object]]:
+        return sorted(
+            (row for row in self.match_history if row["player_id"] == player_id),
+            key=lambda row: row["played_at"],
+            reverse=True,
+        )
+
+    def list_leaderboard_players(self, limit: int = 20) -> list[PlayerRecord]:
+        return sorted(
+            self.players.values(),
+            key=lambda player: player.rating,
+            reverse=True,
+        )[:limit]
 
     def create_guest_player(self, nickname: str) -> PlayerRecord:
         player_id = f"pl_{uuid4().hex[:10]}"
@@ -376,99 +409,38 @@ class InMemoryGameStateRepository:
         self._persist_state()
 
     def _load_persisted_state(self) -> None:
-        if self.persistence_path is None or not self.persistence_path.exists():
-            return
-
-        try:
-            payload = json.loads(self.persistence_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+        snapshot = self.storage_adapter.load()
+        if snapshot is None:
             return
 
         self.players = {
-            player_row["player_id"]: PlayerRecord(**player_row)
-            for player_row in payload.get("players", [])
+            player.player_id: player
+            for player in snapshot.players
         }
-        self.match_history = [
-            self._deserialize_history_row(row)
-            for row in payload.get("match_history", [])
-        ]
-        self.match_audits = {
-            battle_session_id: [
-                self._deserialize_audit_row(row)
-                for row in audit_rows
-            ]
-            for battle_session_id, audit_rows in payload.get("match_audits", {}).items()
-        }
+        self.match_history = snapshot.match_history
+        self.match_audits = snapshot.match_audits
 
     def _persist_state(self) -> None:
-        if self.persistence_path is None:
-            return
+        self.storage_adapter.save(
+            GameStatePersistenceSnapshot(
+                players=list(self.players.values()),
+                match_history=self.match_history,
+                match_audits=self.match_audits,
+            )
+        )
 
-        self.persistence_path.parent.mkdir(parents=True, exist_ok=True)
-        payload = {
-            "players": [
-                {
-                    "player_id": player.player_id,
-                    "guest_token": player.guest_token,
-                    "nickname": player.nickname,
-                    "rating": player.rating,
-                    "wins": player.wins,
-                    "losses": player.losses,
-                    "equipped_skillset_id": player.equipped_skillset_id,
-                    "equipped_animset_id": player.equipped_animset_id,
-                    "loadout_configured": player.loadout_configured,
-                }
-                for player in self.players.values()
-            ],
-            "match_history": [
-                self._serialize_history_row(row)
-                for row in self.match_history
-            ],
-            "match_audits": {
-                battle_session_id: [
-                    self._serialize_audit_row(row)
-                    for row in audit_rows
-                ]
-                for battle_session_id, audit_rows in self.match_audits.items()
-            },
-        }
-        temp_path = self.persistence_path.with_suffix(".tmp")
-        temp_path.write_text(json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8")
-        temp_path.replace(self.persistence_path)
-
-    def _serialize_history_row(self, row: dict[str, object]) -> dict[str, object]:
-        return {
-            **row,
-            "played_at": self._serialize_datetime(row["played_at"]),
-        }
-
-    def _deserialize_history_row(self, row: dict[str, object]) -> dict[str, object]:
-        return {
-            **row,
-            "played_at": self._deserialize_datetime(row["played_at"]),
-        }
-
-    def _serialize_audit_row(self, row: dict[str, object]) -> dict[str, object]:
-        return {
-            **row,
-            "created_at": self._serialize_datetime(row["created_at"]),
-        }
-
-    def _deserialize_audit_row(self, row: dict[str, object]) -> dict[str, object]:
-        return {
-            **row,
-            "created_at": self._deserialize_datetime(row["created_at"]),
-        }
-
-    def _serialize_datetime(self, value: object) -> str:
-        if not isinstance(value, datetime):
-            raise TypeError("Expected datetime value.")
-        return value.isoformat()
-
-    def _deserialize_datetime(self, value: object) -> datetime:
-        if not isinstance(value, str):
-            raise TypeError("Expected datetime string.")
-        return datetime.fromisoformat(value)
+    def _resolve_storage_adapter(
+        self,
+        persistence_path: Path | None,
+        storage_adapter: GameStateStorageAdapter | None,
+    ) -> GameStateStorageAdapter:
+        if storage_adapter is not None:
+            return storage_adapter
+        if persistence_path is not None:
+            return JsonGameStateStorageAdapter(persistence_path)
+        return NullGameStateStorageAdapter()
 
 
-game_state_repository = InMemoryGameStateRepository(persistence_path=DEFAULT_GAME_STATE_PATH)
+game_state_repository = InMemoryGameStateRepository(
+    storage_adapter=JsonGameStateStorageAdapter(DEFAULT_GAME_STATE_PATH)
+)

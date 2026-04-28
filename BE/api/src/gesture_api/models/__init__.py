@@ -1,3 +1,4 @@
+from gesture_api.models.game_state import GamePlayerOrm, MatchAuditOrm, MatchHistoryOrm
 from gesture_api.models.gesture import (
     GestureDefinitionOrm,
     RecognitionSessionOrm,
@@ -6,7 +7,10 @@ from gesture_api.models.gesture import (
 )
 
 __all__ = [
+    "GamePlayerOrm",
     "GestureDefinitionOrm",
+    "MatchAuditOrm",
+    "MatchHistoryOrm",
     "RecognitionSessionOrm",
     "SkillExecutionLogOrm",
     "UserGestureMappingOrm",
