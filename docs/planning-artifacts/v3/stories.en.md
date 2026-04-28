@@ -19,11 +19,11 @@ Status values:
 
 ### V3-E1-ST02: Document script usage and failure handling
 
-- Status: planned
+- Status: done
 - Scope: record the command and failure triage order in README, smoke checklist, and readiness documents.
 - Acceptance criteria: developers can find the V3 verification path as one command.
 - Dependencies: V3-E1-ST01.
-- Verification: docs review, text scan.
+- Verification: `docs/implementation-artifacts/v3-smoke-checklist.en.md`, `docs/implementation-artifacts/v3-release-readiness.en.md`, README link review.
 
 ## V3-E2: Runtime Health and Diagnostics
 
@@ -47,23 +47,23 @@ Status values:
 
 ### V3-E3-ST01: Write the v3 smoke checklist
 
-- Status: planned
+- Status: done
 - Scope: v3 verification commands, runtime health, compose, provider-neutral scan, and blocked items.
 - Acceptance criteria: implemented and blocked items are separated.
 - Dependencies: V3-E1, V3-E2.
-- Verification: docs review.
+- Verification: `docs/implementation-artifacts/v3-smoke-checklist.en.md`, v3 handoff check.
 
 ### V3-E3-ST02: Write the v3 release readiness document
 
-- Status: planned
+- Status: done
 - Scope: v3 checkpoint decision, full feature blockers, and verification evidence.
 - Acceptance criteria: handoff readiness and full feature release blockers are separated.
 - Dependencies: V3-E3-ST01.
-- Verification: v3 handoff check.
+- Verification: `docs/implementation-artifacts/v3-release-readiness.en.md`, v3 handoff check.
 
 ### V3-E3-ST03: Add v3 links to README and handoff documents
 
-- Status: planned
+- Status: done
 - Scope: add v3 result links to Korean and English README plus v1/v2 readiness documents.
 - Acceptance criteria: a new worker can find v3 documents from README.
 - Dependencies: V3-E3-ST01, V3-E3-ST02.
@@ -73,16 +73,16 @@ Status values:
 
 ### V3-E4-ST01: Record v2 blocker carryover in v3 readiness
 
-- Status: planned
+- Status: done
 - Scope: record the missing concrete runtime choice and missing skill/resource domain source as v3 blocker carryover.
 - Acceptance criteria: blocked items are not marked as implemented.
 - Dependencies: v2 readiness.
-- Verification: docs review.
+- Verification: `docs/implementation-artifacts/v3-release-readiness.en.md`, `docs/implementation-artifacts/v3-smoke-checklist.en.md`.
 
 ### V3-E4-ST02: Include the provider-neutral scan in the v3 release gate
 
-- Status: planned
+- Status: done
 - Scope: include the scan command in the script and readiness document.
 - Acceptance criteria: scan results outside lock/generated output are recorded as PASS.
 - Dependencies: V3-E1-ST01.
-- Verification: provider-neutral targeted text scan.
+- Verification: `scripts/v3-handoff-check.ps1`, `docs/implementation-artifacts/v3-release-readiness.en.md`, provider-neutral targeted text scan.

@@ -25,12 +25,20 @@
 - v2 recognizer runtime port boundary가 분리되었습니다.
 - v2 recognizer runtime port smoke가 강화되었습니다.
 - v3 planning baseline이 작성되었습니다.
+- v3 handoff 검증 스크립트가 작성되었습니다.
+- v3 runtime health summary가 backend health response에 반영되었습니다.
+- v3 smoke checklist가 작성되었습니다.
+- v3 release readiness checkpoint가 작성되었습니다.
 - 스킬명, 스킬 효과, 손동작 리소스, 시각 자산은 별도 domain source 확정 후 진행합니다.
 - 구체 frame recognizer 바인딩은 v2 follow-up 범위입니다.
 - 최종 릴리스 점검 문서: `docs/implementation-artifacts/v1-release-readiness.ko.md`
 - v2-1 구현 기록: `docs/implementation-artifacts/v2-1-live-recognizer-adapter.ko.md`
 - v2 planning baseline: `docs/implementation-artifacts/v2-planning-baseline.ko.md`
 - v2 release readiness checkpoint: `docs/implementation-artifacts/v2-release-readiness.ko.md`
+- v3 handoff 검증 기록: `docs/implementation-artifacts/v3-1-handoff-check.ko.md`
+- v3 runtime health summary 기록: `docs/implementation-artifacts/v3-2-health-runtime-summary.ko.md`
+- v3 smoke checklist: `docs/implementation-artifacts/v3-smoke-checklist.ko.md`
+- v3 release readiness checkpoint: `docs/implementation-artifacts/v3-release-readiness.ko.md`
 
 ## 명세 점검
 
@@ -70,6 +78,9 @@
 - camera permission smoke의 runtime port start/stop 경로 검증
 - no-hand, unstable-hand, recognized-token live camera UI 상태 분리
 - v3 에픽, 스토리, 구현 순서, 선행조건, 기술스택 문서화
+- v3 handoff check fast/full mode와 plan-only 검증 경로 문서화
+- backend `/healthz` safe runtime summary와 contract/test 반영
+- v3 smoke checklist와 release readiness checkpoint 문서화
 - result/history/rating persistence를 storage adapter 경계 뒤로 전환
 - v2 에픽, 스토리, 구현 순서, 선행조건, 기술스택 문서화
 - v2 camera/runtime/storage/matching smoke checklist 문서화
@@ -152,6 +163,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\dev-deps.ps1 -Pl
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\check-boundaries.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\backend-check.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check.ps1 -Mode fast
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check.ps1 -Mode full
 ```
 
 ## 완료된 작업
@@ -192,14 +205,16 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - recognizer runtime session start/stop과 startup failure cleanup 회귀 테스트
 - camera permission smoke의 fake runtime port lifecycle 검증
 - v3 planning baseline 작성과 blocked domain/runtime 범위 유지
+- v3 handoff 검증 자동화 fast/full mode와 plan-only 경로
+- backend health response의 safe runtime summary와 contract 회귀 테스트
+- v3 smoke checklist와 release readiness 문서화
 
 ## 남은 작업
 
 - v1 릴리스 차단 작업 없음
+- v3 릴리스 차단 작업 없음
 - v2 또는 follow-up 범위
   구체 frame recognizer 바인딩, 스킬 domain source 확정 후 skill/resource 구현
-- v3 범위
-  handoff 검증 자동화, runtime health summary, v3 smoke/readiness 문서화
 
 ## 경계
 
@@ -237,6 +252,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.ko.md`: recognizer runtime port smoke 구현 기록.
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.ko.md`: storage adapter persistence 구현 기록.
 - `docs/implementation-artifacts/v3-planning-baseline.ko.md`: v3 planning baseline 구현 기록.
+- `docs/implementation-artifacts/v3-1-handoff-check.ko.md`: v3 handoff 검증 스크립트 구현 기록.
+- `docs/implementation-artifacts/v3-2-health-runtime-summary.ko.md`: safe runtime health summary 구현 기록.
+- `docs/implementation-artifacts/v3-smoke-checklist.ko.md`: v3 smoke checklist와 blocked carryover.
+- `docs/implementation-artifacts/v3-release-readiness.ko.md`: v3 checkpoint 판정과 full feature release blocker.
 - `docs/implementation-artifacts/v2-planning-baseline.ko.md`: v2 planning baseline 구현 기록.
 - `docs/implementation-artifacts/v2-smoke-checklist.ko.md`: v2 smoke checklist와 blocked 항목.
 - `docs/implementation-artifacts/v2-release-readiness.ko.md`: v2 checkpoint 판정과 full v2 release blocker.
@@ -278,6 +297,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.en.md`
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`
 - `docs/implementation-artifacts/v3-planning-baseline.en.md`
+- `docs/implementation-artifacts/v3-1-handoff-check.en.md`
+- `docs/implementation-artifacts/v3-2-health-runtime-summary.en.md`
+- `docs/implementation-artifacts/v3-smoke-checklist.en.md`
+- `docs/implementation-artifacts/v3-release-readiness.en.md`
 - `docs/implementation-artifacts/v2-planning-baseline.en.md`
 - `docs/implementation-artifacts/v2-smoke-checklist.en.md`
 - `docs/implementation-artifacts/v2-release-readiness.en.md`

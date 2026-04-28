@@ -25,12 +25,20 @@ Korean documentation is available in `README.md`. `README.ko.md` keeps the same 
 - The v2 recognizer runtime port boundary is separated.
 - The v2 recognizer runtime port smoke is hardened.
 - The v3 planning baseline is written.
+- The v3 handoff verification script is written.
+- The v3 runtime health summary is reflected in the backend health response.
+- The v3 smoke checklist is written.
+- The v3 release readiness checkpoint is written.
 - Skill names, skill effects, hand-motion resources, and visual assets will proceed only after a separate domain source is approved.
 - Concrete frame recognizer binding remains v2 follow-up scope.
 - Final release readiness document: `docs/implementation-artifacts/v1-release-readiness.en.md`
 - v2-1 implementation record: `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`
 - v2 planning baseline: `docs/implementation-artifacts/v2-planning-baseline.en.md`
 - v2 release readiness checkpoint: `docs/implementation-artifacts/v2-release-readiness.en.md`
+- v3 handoff verification record: `docs/implementation-artifacts/v3-1-handoff-check.en.md`
+- v3 runtime health summary record: `docs/implementation-artifacts/v3-2-health-runtime-summary.en.md`
+- v3 smoke checklist: `docs/implementation-artifacts/v3-smoke-checklist.en.md`
+- v3 release readiness checkpoint: `docs/implementation-artifacts/v3-release-readiness.en.md`
 
 ## Current Status
 
@@ -61,6 +69,9 @@ The repository is currently wired through the following playable flow:
 - camera permission smoke verifies runtime port start/stop
 - no-hand, unstable-hand, and recognized-token live camera UI states separated
 - v3 epics, stories, implementation order, prerequisites, and technology stack documented
+- v3 handoff check fast/full modes and plan-only verification path documented
+- backend `/healthz` safe runtime summary reflected in contract/tests
+- v3 smoke checklist and release readiness checkpoint documented
 - result/history/rating persistence moved behind the storage adapter boundary
 - v2 epics, stories, implementation order, prerequisites, and technology stack documented
 - v2 camera/runtime/storage/matching smoke checklist documented
@@ -141,6 +152,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\dev-deps.ps1 -Pl
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\check-boundaries.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\backend-check.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check.ps1 -Mode fast
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check.ps1 -Mode full
 ```
 
 ## Boundaries
@@ -197,14 +210,16 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - recognizer runtime session start/stop and startup failure cleanup are covered by regression tests
 - camera permission smoke verifies the fake runtime port lifecycle
 - v3 planning baseline is written while blocked domain/runtime scope is preserved
+- v3 handoff verification automation has fast/full modes and a plan-only path
+- backend health response has a safe runtime summary with contract regression coverage
+- v3 smoke checklist and release readiness are documented
 
 ## Remaining Work
 
 - no v1 release blockers
+- no v3 release blockers
 - v2 or follow-up scope
   concrete frame recognizer binding and skill/resource implementation after the skill domain source is approved
-- v3 scope
-  handoff verification automation, runtime health summary, and v3 smoke/readiness documentation
 
 ## MVP Planning and QA
 
@@ -222,6 +237,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.en.md`: recognizer runtime port smoke record.
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`: storage adapter persistence record.
 - `docs/implementation-artifacts/v3-planning-baseline.en.md`: v3 planning baseline record.
+- `docs/implementation-artifacts/v3-1-handoff-check.en.md`: v3 handoff verification script record.
+- `docs/implementation-artifacts/v3-2-health-runtime-summary.en.md`: safe runtime health summary record.
+- `docs/implementation-artifacts/v3-smoke-checklist.en.md`: v3 smoke checklist and blocked carryover.
+- `docs/implementation-artifacts/v3-release-readiness.en.md`: v3 checkpoint decision and full feature release blockers.
 - `docs/implementation-artifacts/v2-planning-baseline.en.md`: v2 planning baseline record.
 - `docs/implementation-artifacts/v2-smoke-checklist.en.md`: v2 smoke checklist and blocked items.
 - `docs/implementation-artifacts/v2-release-readiness.en.md`: v2 checkpoint decision and full v2 release blockers.

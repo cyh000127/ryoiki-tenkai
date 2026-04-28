@@ -36,6 +36,18 @@
 | v2 release readiness 재점검 | PASS | 이 문서 |
 | Provider-neutral scan 기록 | PASS | 이 문서의 검증 섹션 |
 
+## v3 후속 checkpoint
+
+v2의 blocked 항목은 임의 구현하지 않고 v3 handoff 안정화 범위로 이어졌습니다.
+
+| 항목 | 상태 | 근거 |
+| --- | --- | --- |
+| v3 planning baseline | PASS | `docs/implementation-artifacts/v3-planning-baseline.ko.md` |
+| v3 handoff 검증 자동화 | PASS | `docs/implementation-artifacts/v3-1-handoff-check.ko.md` |
+| v3 runtime health summary | PASS | `docs/implementation-artifacts/v3-2-health-runtime-summary.ko.md` |
+| v3 smoke checklist | PASS | `docs/implementation-artifacts/v3-smoke-checklist.ko.md` |
+| v3 release readiness | PASS | `docs/implementation-artifacts/v3-release-readiness.ko.md` |
+
 ## v2 story 상태 요약
 
 | Epic | 현재 상태 | 비고 |

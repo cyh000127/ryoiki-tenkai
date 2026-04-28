@@ -36,6 +36,18 @@ This document records the current v2 readiness decision. The current branch is r
 | v2 release readiness review | PASS | this document |
 | Provider-neutral scan record | PASS | verification section in this document |
 
+## v3 Follow-Up Checkpoint
+
+The blocked v2 items were not implemented without approval and were carried into the v3 handoff stabilization scope.
+
+| Item | Status | Evidence |
+| --- | --- | --- |
+| v3 planning baseline | PASS | `docs/implementation-artifacts/v3-planning-baseline.en.md` |
+| v3 handoff verification automation | PASS | `docs/implementation-artifacts/v3-1-handoff-check.en.md` |
+| v3 runtime health summary | PASS | `docs/implementation-artifacts/v3-2-health-runtime-summary.en.md` |
+| v3 smoke checklist | PASS | `docs/implementation-artifacts/v3-smoke-checklist.en.md` |
+| v3 release readiness | PASS | `docs/implementation-artifacts/v3-release-readiness.en.md` |
+
 ## v2 Story Status Summary
 
 | Epic | Current Status | Notes |

@@ -19,11 +19,11 @@
 
 ### V3-E1-ST02: 검증 스크립트 사용법과 실패 대응 문서화
 
-- Status: planned
+- Status: done
 - Scope: README, smoke checklist, readiness 문서에 command와 실패 시 확인 순서를 기록.
 - Acceptance criteria: 개발자가 V3 검증을 한 명령으로 찾을 수 있다.
 - Dependencies: V3-E1-ST01.
-- Verification: docs review, text scan.
+- Verification: `docs/implementation-artifacts/v3-smoke-checklist.ko.md`, `docs/implementation-artifacts/v3-release-readiness.ko.md`, README link review.
 
 ## V3-E2: Runtime Health and Diagnostics
 
@@ -47,23 +47,23 @@
 
 ### V3-E3-ST01: v3 smoke checklist 작성
 
-- Status: planned
+- Status: done
 - Scope: v3 검증 command, runtime health, compose, provider-neutral scan, blocked 항목.
 - Acceptance criteria: implemented/blocked 항목이 분리된다.
 - Dependencies: V3-E1, V3-E2.
-- Verification: docs review.
+- Verification: `docs/implementation-artifacts/v3-smoke-checklist.ko.md`, v3 handoff check.
 
 ### V3-E3-ST02: v3 release readiness 작성
 
-- Status: planned
+- Status: done
 - Scope: v3 checkpoint 판정, full feature blocker, verification evidence.
 - Acceptance criteria: handoff 가능 여부와 full feature release blocker가 분리된다.
 - Dependencies: V3-E3-ST01.
-- Verification: v3 handoff check.
+- Verification: `docs/implementation-artifacts/v3-release-readiness.ko.md`, v3 handoff check.
 
 ### V3-E3-ST03: README와 handoff 문서에 v3 링크 추가
 
-- Status: planned
+- Status: done
 - Scope: README 한국어/영어, v1/v2 readiness 문서에 v3 결과 링크 추가.
 - Acceptance criteria: 새 작업자가 v3 문서를 README에서 찾을 수 있다.
 - Dependencies: V3-E3-ST01, V3-E3-ST02.
@@ -73,16 +73,16 @@
 
 ### V3-E4-ST01: v2 blocker carryover를 v3 readiness에 명시
 
-- Status: planned
+- Status: done
 - Scope: concrete runtime 선택과 skill/resource domain source 부재를 v3 blocker carryover로 기록.
 - Acceptance criteria: blocked 항목이 구현 완료로 표시되지 않는다.
 - Dependencies: v2 readiness.
-- Verification: docs review.
+- Verification: `docs/implementation-artifacts/v3-release-readiness.ko.md`, `docs/implementation-artifacts/v3-smoke-checklist.ko.md`.
 
 ### V3-E4-ST02: provider-neutral scan을 v3 release gate에 포함
 
-- Status: planned
+- Status: done
 - Scope: scan command를 script와 readiness에 포함.
 - Acceptance criteria: lock/generated output을 제외한 scan 결과가 PASS로 기록된다.
 - Dependencies: V3-E1-ST01.
-- Verification: provider-neutral targeted text scan.
+- Verification: `scripts/v3-handoff-check.ps1`, `docs/implementation-artifacts/v3-release-readiness.ko.md`, provider-neutral targeted text scan.
