@@ -67,7 +67,8 @@
 
 1. [x] live recognizer adapter를 현재 normalized gesture input boundary에 연결합니다.
    - 구현 기록: `docs/implementation-artifacts/v2-1-live-recognizer-adapter.ko.md`
-2. [ ] 실기기 브라우저 카메라 smoke 시나리오를 자동화합니다.
+2. [x] 실기기 브라우저 카메라 smoke 시나리오를 자동화합니다.
+   - 구현 기록: `docs/implementation-artifacts/v2-2-camera-permission-smoke.ko.md`
 3. [ ] runtime store persistence를 정식 storage adapter로 교체합니다.
 4. [ ] 스킬명, 시각 자산, 손동작 리소스를 별도 소스로 교체합니다.
 5. [ ] v2 기획 문서를 작성합니다.

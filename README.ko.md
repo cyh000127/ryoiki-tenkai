@@ -85,6 +85,7 @@ pnpm --dir FE/app dev
 ```bash
 pnpm --dir FE/app typecheck
 pnpm --dir FE/app test
+pnpm --dir FE/app smoke:camera
 uv run pytest BE/api/tests/unit
 git diff --check
 ```
@@ -127,7 +128,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 
 - v1 릴리스 차단 작업 없음
 - v2 또는 follow-up 범위
-  실기기 카메라 smoke 자동화, 구체 frame recognizer 바인딩, production persistence 전환, 정식 리소스 교체
+  구체 frame recognizer 바인딩, production persistence 전환, 정식 리소스 교체
 
 ## 경계
 
@@ -154,6 +155,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/mvp-v1-spec-review.ko.md`: 현재 구현과 스토리 명세를 대조한 점검 문서.
 - `docs/implementation-artifacts/v1-release-readiness.ko.md`: v1 릴리스 준비 완료 판정과 검증 근거.
 - `docs/implementation-artifacts/v2-1-live-recognizer-adapter.ko.md`: live recognizer adapter 연결 구현 기록.
+- `docs/implementation-artifacts/v2-2-camera-permission-smoke.ko.md`: 카메라 권한 smoke 자동화 구현 기록.
 - `docs/planning-artifacts/mvp-v1/technology-stack.ko.md`: 선택한 MVP 기술스택, 경계, 보류 항목, 의존성 추가 규칙.
 - `docs/planning-artifacts/mvp-v1/epics.ko.md`: MVP 구현 계획을 에픽 단위로 분리한 문서.
 - `docs/planning-artifacts/mvp-v1/stories.ko.md`: 스토리 단위 구현 항목, 상태, 범위, 의존성, 검증 메모.
@@ -168,6 +170,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/mvp-v1-spec-review.en.md`
 - `docs/implementation-artifacts/v1-release-readiness.en.md`
 - `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`
+- `docs/implementation-artifacts/v2-2-camera-permission-smoke.en.md`
 - `docs/planning-artifacts/mvp-v1/technology-stack.en.md`
 - `docs/planning-artifacts/mvp-v1/epics.en.md`
 - `docs/planning-artifacts/mvp-v1/stories.en.md`

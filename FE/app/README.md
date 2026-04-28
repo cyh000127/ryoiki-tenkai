@@ -11,6 +11,7 @@ This app follows the frontend convention:
 pnpm --dir FE/app install
 pnpm --dir FE/app typecheck
 pnpm --dir FE/app test
+pnpm --dir FE/app smoke:camera
 pnpm --dir FE/app build
 ```
 

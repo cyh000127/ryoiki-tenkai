@@ -12,6 +12,7 @@ Use this checklist for local handoff verification after FE, BE, or input-runtime
   - `uv run pytest BE`
   - `pnpm --dir FE/app typecheck`
   - `pnpm --dir FE/app test`
+  - `pnpm --dir FE/app smoke:camera`
   - `pnpm --dir FE/app build`
   - `scripts\check-boundaries.ps1`
   - `docker compose -f docker-compose.yml config --quiet`
@@ -67,8 +68,10 @@ Use this checklist for local handoff verification after FE, BE, or input-runtime
 
 ## Client Hand Recognition
 
-- [ ] Camera permission allowed state shows camera-ready and hand-detected feedback.
-- [ ] Camera permission denied state shows a clear blocked state and does not enter battle action submission.
+- [x] Camera permission allowed state shows camera-ready and hand-detected feedback.
+  Automation evidence: `pnpm --dir FE/app smoke:camera`, `BattleGameWorkspace.test.tsx`
+- [x] Camera permission denied state shows a clear blocked state and does not enter battle action submission.
+  Automation evidence: `pnpm --dir FE/app smoke:camera`, `BattleGameWorkspace.test.tsx`
 - [ ] No-hand state, unstable-hand state, and recognized-gesture state are visually distinct.
 - [ ] Sequence progress displays current step, remaining steps, and reset or timeout state.
 - [ ] Local recognition success does not apply skill effects until server confirmation arrives.

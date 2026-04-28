@@ -73,6 +73,7 @@ Open `http://localhost:5173`.
 ```bash
 pnpm --dir FE/app typecheck
 pnpm --dir FE/app test
+pnpm --dir FE/app smoke:camera
 uv run pytest BE/api/tests/unit
 git diff --check
 ```
@@ -131,13 +132,14 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 
 - no v1 release blockers
 - v2 or follow-up scope
-  real-device camera smoke automation, concrete frame recognizer binding, production persistence, and final asset replacement
+  concrete frame recognizer binding, production persistence, and final asset replacement
 
 ## MVP Planning and QA
 
 - `docs/implementation-artifacts/mvp-v1-spec-review.en.md`: spec review snapshot that compares current implementation against the MVP stories.
 - `docs/implementation-artifacts/v1-release-readiness.en.md`: v1 release readiness decision and verification evidence.
 - `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`: live recognizer adapter integration record.
+- `docs/implementation-artifacts/v2-2-camera-permission-smoke.en.md`: camera permission smoke automation record.
 - `docs/implementation-artifacts/mvp-v1-implementation-plan.en.md`: MVP implementation baseline for WebSocket flow, server authoritative rules, client hand recognition, and excluded scope.
 - `docs/planning-artifacts/mvp-v1/technology-stack.en.md`: selected MVP technology stack, boundaries, deferred choices, and dependency rules.
 - `docs/planning-artifacts/mvp-v1/epics.en.md`: MVP implementation plan split into epic-level outcomes, boundaries, stories, and acceptance signals.

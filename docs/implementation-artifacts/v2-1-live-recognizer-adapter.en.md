@@ -32,9 +32,7 @@ As the first post-v1 follow-up, the browser-camera live recognizer adapter is no
 - `pnpm --dir FE/app typecheck`
 - `pnpm --dir FE/app test`
 
-## Remaining v2 Prerequisites
+## Follow-Up Status
 
-- Automate real-device browser camera allowed/denied smoke scenarios.
-- Select the concrete frame recognizer package or runtime binding.
-- Move to production persistence.
-- Replace final skill/resource assets.
+- Camera permission allowed/denied smoke automation is complete in `docs/implementation-artifacts/v2-2-camera-permission-smoke.en.md`.
+- Remaining prerequisites are concrete frame recognizer binding, production persistence, and final skill/resource replacement.
