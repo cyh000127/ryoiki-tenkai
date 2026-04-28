@@ -70,6 +70,12 @@ export const copy = {
   liveCameraStop: "카메라 중지",
   liveObservationReason: "관찰 상태",
   liveStability: "안정 시간",
+  liveHandState: "손 상태",
+  liveHandNoHand: "손 없음",
+  liveHandUnstable: "안정화",
+  liveHandRecognized: "인식 토큰",
+  liveHandActive: "현재",
+  liveHandInactive: "대기",
   liveRecognizerStatusText: {
     idle: "대기",
     starting: "시작 중",
@@ -81,7 +87,7 @@ export const copy = {
   },
   liveObservationReasonText: {
     camera_ready: "카메라 준비됨",
-    no_hand: "손 대기",
+    no_hand: "손 없음",
     unstable: "안정화 중",
     recognized: "토큰 인식",
     permission_denied: "권한 거부",

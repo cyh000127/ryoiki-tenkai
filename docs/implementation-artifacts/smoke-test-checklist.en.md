@@ -72,7 +72,8 @@ Use this checklist for local handoff verification after FE, BE, or input-runtime
   Automation evidence: `pnpm --dir FE/app smoke:camera`, `BattleGameWorkspace.test.tsx`
 - [x] Camera permission denied state shows a clear blocked state and does not enter battle action submission.
   Automation evidence: `pnpm --dir FE/app smoke:camera`, `BattleGameWorkspace.test.tsx`
-- [ ] No-hand state, unstable-hand state, and recognized-gesture state are visually distinct.
+- [x] No-hand state, unstable-hand state, and recognized-gesture state are visually distinct.
+  Automation evidence: `FE/app/tests/unit/BattleGameWorkspace.test.tsx`, `docs/implementation-artifacts/v2-4-recognition-ui-state.en.md`
 - [ ] Sequence progress displays current step, remaining steps, and reset or timeout state.
 - [ ] Local recognition success does not apply skill effects until server confirmation arrives.
 - [ ] Local failure reasons are separate from server rejection reasons.

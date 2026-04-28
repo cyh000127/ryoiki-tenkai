@@ -30,11 +30,12 @@
 
 ### Frontend 변경
 
-- [ ] `pnpm --dir FE/app typecheck`
-- [ ] `pnpm --dir FE/app test`
-- [ ] `pnpm --dir FE/app smoke:camera`
-- [ ] `pnpm --dir FE/app build`
-- [ ] camera state, hand state, local sequence state, server confirmation state가 서로 섞이지 않는지 확인한다.
+- [x] `pnpm --dir FE/app typecheck`
+- [x] `pnpm --dir FE/app test -- BattleGameWorkspace.test.tsx`
+- [x] `pnpm --dir FE/app smoke:camera`
+- [x] `pnpm --dir FE/app build`
+- [x] camera state, hand state, local sequence state, server confirmation state가 서로 섞이지 않는지 확인한다.
+  - 근거: `docs/implementation-artifacts/v2-4-recognition-ui-state.ko.md`
 
 ### Backend 변경
 
@@ -69,8 +70,8 @@
   - 근거: `docs/implementation-artifacts/v2-2-camera-permission-smoke.ko.md`
 - [x] 권한 거부 상태는 action submission으로 들어가지 않는다.
   - 근거: `pnpm --dir FE/app smoke:camera`
-- [ ] no-hand, unstable-hand, recognized-token 상태가 시각적으로 분리되어 있다.
-  - 계획 story: `V2-E1-ST03`
+- [x] no-hand, unstable-hand, recognized-token 상태가 시각적으로 분리되어 있다.
+  - 근거: `docs/implementation-artifacts/v2-4-recognition-ui-state.ko.md`
 - [ ] stop/start/unmount cleanup과 permission recovery가 회귀 테스트로 고정되어 있다.
   - 계획 story: `V2-E1-ST04`
 - Blocked: concrete frame recognizer adapter lifecycle smoke.

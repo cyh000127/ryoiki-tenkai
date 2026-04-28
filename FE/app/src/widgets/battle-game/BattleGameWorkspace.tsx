@@ -1389,6 +1389,7 @@ function LiveCameraPanel({
   status: LiveGestureRecognizerStatus;
 }) {
   const isRunning = status === "starting" || status === "ready";
+  const handState = getLiveHandState(observation);
 
   return (
     <Panel title={copy.liveCameraPanel}>
@@ -1396,6 +1397,23 @@ function LiveCameraPanel({
         <StatusBadge tone={getLiveRecognizerStatusTone(status)}>
           {getLiveRecognizerStatusLabel(status)}
         </StatusBadge>
+      </div>
+      <div className="live-hand-state" role="list" aria-label={copy.liveHandState}>
+        <LiveHandStateItem
+          activeState={handState}
+          label={copy.liveHandNoHand}
+          state="no_hand"
+        />
+        <LiveHandStateItem
+          activeState={handState}
+          label={copy.liveHandUnstable}
+          state="unstable"
+        />
+        <LiveHandStateItem
+          activeState={handState}
+          label={copy.liveHandRecognized}
+          state="recognized"
+        />
       </div>
       <div className="metric-list">
         <Metric label={copy.liveCameraStatus} value={getLiveRecognizerStatusLabel(status)} />
@@ -1416,6 +1434,7 @@ function LiveCameraPanel({
           label={copy.liveStability}
           value={formatStabilityMs(observation?.stabilityMs ?? 0)}
         />
+        <Metric label={copy.currentGesture} value={observation?.token ?? copy.noGesture} />
       </div>
       <div className="live-camera__actions">
         <Button disabled={!canStart || isRunning} onClick={onStart} variant="primary">
@@ -1426,6 +1445,35 @@ function LiveCameraPanel({
         </Button>
       </div>
     </Panel>
+  );
+}
+
+type LiveHandState = "waiting" | "no_hand" | "unstable" | "recognized";
+
+function LiveHandStateItem({
+  activeState,
+  label,
+  state
+}: {
+  activeState: LiveHandState;
+  label: string;
+  state: Exclude<LiveHandState, "waiting">;
+}) {
+  const isActive = activeState === state;
+
+  return (
+    <div
+      aria-current={isActive ? "true" : undefined}
+      className="live-hand-state__item"
+      data-active={isActive}
+      data-state={state}
+      role="listitem"
+    >
+      <strong>{label}</strong>
+      <StatusBadge tone={isActive ? getLiveHandStateTone(state) : "neutral"}>
+        {isActive ? copy.liveHandActive : copy.liveHandInactive}
+      </StatusBadge>
+    </div>
   );
 }
 
@@ -1674,6 +1722,32 @@ function getLiveRecognizerStatusTone(
 
 function getLiveObservationReasonLabel(reason: LiveGestureObservation["reason"]): string {
   return copy.liveObservationReasonText[reason];
+}
+
+function getLiveHandState(observation: LiveGestureObservation | null): LiveHandState {
+  if (!observation) {
+    return "waiting";
+  }
+
+  if (observation.reason === "recognized" && observation.token) {
+    return "recognized";
+  }
+
+  if (observation.reason === "unstable") {
+    return "unstable";
+  }
+
+  if (observation.reason === "no_hand") {
+    return "no_hand";
+  }
+
+  return "waiting";
+}
+
+function getLiveHandStateTone(
+  state: Exclude<LiveHandState, "waiting">
+): "neutral" | "success" | "warning" {
+  return state === "recognized" ? "success" : "warning";
 }
 
 function formatStabilityMs(stabilityMs: number): string {

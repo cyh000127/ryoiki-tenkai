@@ -30,11 +30,12 @@ Use this document for local v2 handoff verification. Skill names, skill effects,
 
 ### Frontend Changes
 
-- [ ] `pnpm --dir FE/app typecheck`
-- [ ] `pnpm --dir FE/app test`
-- [ ] `pnpm --dir FE/app smoke:camera`
-- [ ] `pnpm --dir FE/app build`
-- [ ] Camera state, hand state, local sequence state, and server confirmation state remain separate.
+- [x] `pnpm --dir FE/app typecheck`
+- [x] `pnpm --dir FE/app test -- BattleGameWorkspace.test.tsx`
+- [x] `pnpm --dir FE/app smoke:camera`
+- [x] `pnpm --dir FE/app build`
+- [x] Camera state, hand state, local sequence state, and server confirmation state remain separate.
+  - Evidence: `docs/implementation-artifacts/v2-4-recognition-ui-state.en.md`
 
 ### Backend Changes
 
@@ -69,8 +70,8 @@ Use this document for local v2 handoff verification. Skill names, skill effects,
   - Evidence: `docs/implementation-artifacts/v2-2-camera-permission-smoke.en.md`
 - [x] Denied permission does not enter action submission.
   - Evidence: `pnpm --dir FE/app smoke:camera`
-- [ ] No-hand, unstable-hand, and recognized-token states are visually separated.
-  - Planned story: `V2-E1-ST03`
+- [x] No-hand, unstable-hand, and recognized-token states are visually separated.
+  - Evidence: `docs/implementation-artifacts/v2-4-recognition-ui-state.en.md`
 - [ ] Stop/start/unmount cleanup and permission recovery are locked by regression tests.
   - Planned story: `V2-E1-ST04`
 - Blocked: concrete frame recognizer adapter lifecycle smoke.

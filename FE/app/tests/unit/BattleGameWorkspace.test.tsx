@@ -322,6 +322,61 @@ function emitSocketEvent(event: BattleSocketEvent) {
   });
 }
 
+async function enterActiveBattle(user: ReturnType<typeof createUser>) {
+  await user.clear(screen.getByRole("textbox", { name: "닉네임" }));
+  await user.type(screen.getByRole("textbox", { name: "닉네임" }), "rookie");
+  await user.click(screen.getByRole("button", { name: "게스트 시작" }));
+  await user.click(await screen.findByRole("button", { name: "로드아웃 저장" }));
+  await user.click(await screen.findByRole("button", { name: "랭크 1대1 매칭" }));
+
+  emitSocketEvent({
+    type: "battle.match_ready",
+    payload: {
+      queueStatus: "SEARCHING",
+      queuedAt: "2026-04-27T00:00:00Z"
+    }
+  });
+  emitSocketEvent({
+    type: "battle.match_found",
+    payload: {
+      matchId: "match_test",
+      battleSessionId: "battle_test",
+      playerSeat: "PLAYER_ONE"
+    }
+  });
+  emitSocketEvent({
+    type: "battle.started",
+    payload: {
+      battleSessionId: "battle_test",
+      playerSeat: "PLAYER_ONE",
+      battle: {
+        battleSessionId: "battle_test",
+        matchId: "match_test",
+        status: "ACTIVE",
+        turnNumber: 1,
+        turnOwnerPlayerId: "pl_guest",
+        actionDeadlineAt: "2026-04-27T00:00:30Z",
+        self: {
+          playerId: "pl_guest",
+          hp: 100,
+          mana: 100,
+          cooldowns: {}
+        },
+        opponent: {
+          playerId: "pl_practice",
+          hp: 100,
+          mana: 100,
+          cooldowns: {}
+        },
+        battleLog: [],
+        winnerPlayerId: null,
+        loserPlayerId: null,
+        endedReason: null
+      }
+    }
+  });
+}
+
 describe("BattleGameWorkspace", () => {
   beforeEach(() => {
     storedSession = null;
@@ -968,6 +1023,101 @@ describe("BattleGameWorkspace", () => {
     await user.click(within(liveCameraPanel!).getByRole("button", { name: "카메라 중지" }));
 
     expect(liveRecognizerMock.stop).toHaveBeenCalledTimes(1);
+  });
+
+  it("separates live no-hand, unstable-hand, and recognized-token states", async () => {
+    const user = createUser();
+    installGameApiMock();
+
+    renderWorkspace();
+    await enterActiveBattle(user);
+
+    const liveCameraPanel = screen
+      .getByRole("heading", { name: "라이브 카메라 입력" })
+      .closest("section");
+
+    expect(liveCameraPanel).not.toBeNull();
+
+    await user.click(within(liveCameraPanel!).getByRole("button", { name: "카메라 시작" }));
+
+    act(() => {
+      liveRecognizerMock.options?.onStatusChange?.("ready");
+    });
+
+    const handStateList = within(liveCameraPanel!).getByRole("list", { name: "손 상태" });
+    const noHandState = within(handStateList).getByText("손 없음").closest(".live-hand-state__item");
+    const unstableState = within(handStateList).getByText("안정화").closest(".live-hand-state__item");
+    const recognizedState = within(handStateList)
+      .getByText("인식 토큰")
+      .closest(".live-hand-state__item");
+
+    expect(noHandState).not.toBeNull();
+    expect(unstableState).not.toBeNull();
+    expect(recognizedState).not.toBeNull();
+
+    act(() => {
+      liveRecognizerMock.options?.onObservation(
+        {
+          token: null,
+          confidence: 0,
+          handDetected: false,
+          stabilityMs: 0,
+          reason: "no_hand"
+        },
+        null
+      );
+    });
+
+    await waitFor(() => {
+      expect(noHandState).toHaveAttribute("data-active", "true");
+    });
+    expect(unstableState).toHaveAttribute("data-active", "false");
+    expect(recognizedState).toHaveAttribute("data-active", "false");
+    expect(within(liveCameraPanel!).getAllByText("손 없음").length).toBeGreaterThan(0);
+
+    act(() => {
+      liveRecognizerMock.options?.onObservation(
+        {
+          token: null,
+          confidence: 0.48,
+          handDetected: true,
+          stabilityMs: 240,
+          reason: "unstable"
+        },
+        null
+      );
+    });
+
+    await waitFor(() => {
+      expect(unstableState).toHaveAttribute("data-active", "true");
+    });
+    expect(noHandState).toHaveAttribute("data-active", "false");
+    expect(recognizedState).toHaveAttribute("data-active", "false");
+    expect(within(liveCameraPanel!).getByText("안정화 중")).toBeInTheDocument();
+
+    act(() => {
+      liveRecognizerMock.options?.onObservation(
+        {
+          token: "seal_1",
+          confidence: 0.92,
+          handDetected: true,
+          stabilityMs: 700,
+          reason: "recognized"
+        },
+        {
+          gesture: "seal_1",
+          confidence: 0.92,
+          source: "live_camera"
+        }
+      );
+    });
+
+    await waitFor(() => {
+      expect(recognizedState).toHaveAttribute("data-active", "true");
+    });
+    expect(noHandState).toHaveAttribute("data-active", "false");
+    expect(unstableState).toHaveAttribute("data-active", "false");
+    expect(within(liveCameraPanel!).getByText("seal_1")).toBeInTheDocument();
   });
 
   it("shows blocked live camera state without entering action submission", async () => {

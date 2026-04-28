@@ -87,3 +87,5 @@
    - 구현 기록: `docs/implementation-artifacts/v2-storage-failure-policy.ko.md`
 11. [x] compact audit retention boundary를 문서화합니다.
    - 구현 기록: `docs/implementation-artifacts/v2-audit-retention-boundary.ko.md`
+12. [x] no-hand, unstable-hand, recognized-token UI 상태를 분리합니다.
+   - 구현 기록: `docs/implementation-artifacts/v2-4-recognition-ui-state.ko.md`

@@ -31,12 +31,12 @@ Status values:
 
 ### V2-E1-ST03: Separate no-hand, unstable-hand, and recognized-token UI states
 
-- Status: planned
+- Status: done
 - User story: the player can distinguish missing hand, stabilizing hand, and recognized token states.
 - Scope: visual state, status copy, progress interaction, failed/reset feedback.
 - Acceptance criteria: the three states are not collapsed under the same label. Sequence progress and server rejection feedback remain separate.
 - Dependencies: V2-E1-ST01.
-- Verification: frontend component test.
+- Verification: `docs/implementation-artifacts/v2-4-recognition-ui-state.en.md`, `FE/app/tests/unit/BattleGameWorkspace.test.tsx`.
 
 ### V2-E1-ST04: Harden recognizer restart, cleanup, and permission recovery
 

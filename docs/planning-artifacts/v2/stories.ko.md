@@ -31,12 +31,12 @@
 
 ### V2-E1-ST03: no-hand/unstable/recognized-token UI 상태 분리
 
-- Status: planned
+- Status: done
 - User story: player는 손이 없는 상태, 안정화 중인 상태, token 인식 상태를 구분할 수 있다.
 - Scope: visual state, status copy, progress interaction, failed/reset feedback.
 - Acceptance criteria: 세 상태가 같은 label로 뭉치지 않는다. sequence progress와 server rejection feedback이 분리된다.
 - Dependencies: V2-E1-ST01.
-- Verification: frontend component test.
+- Verification: `docs/implementation-artifacts/v2-4-recognition-ui-state.ko.md`, `FE/app/tests/unit/BattleGameWorkspace.test.tsx`.
 
 ### V2-E1-ST04: recognizer restart, cleanup, permission recovery hardening
 

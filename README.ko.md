@@ -16,6 +16,7 @@
 - v2 SQL migration smoke 절차가 작성되었습니다.
 - v2 storage failure/fallback policy가 작성되었습니다.
 - v2 compact audit retention boundary가 작성되었습니다.
+- v2 recognition UI state hardening이 완료되었습니다.
 - 스킬명, 스킬 효과, 손동작 리소스, 시각 자산은 별도 domain source 확정 후 진행합니다.
 - 구체 frame recognizer 바인딩은 v2 follow-up 범위입니다.
 - 최종 릴리스 점검 문서: `docs/implementation-artifacts/v1-release-readiness.ko.md`
@@ -54,6 +55,7 @@
 - 전적, 레이팅, leaderboard 조회
 - battle result, compact action audit, rating, history의 storage adapter 영속화
 - live camera adapter의 시작/중지/상태 표시와 recognized token의 normalized input boundary 연결
+- no-hand, unstable-hand, recognized-token live camera UI 상태 분리
 - result/history/rating persistence를 storage adapter 경계 뒤로 전환
 - v2 에픽, 스토리, 구현 순서, 선행조건, 기술스택 문서화
 - v2 camera/runtime/storage/matching smoke checklist 문서화
@@ -61,6 +63,7 @@
 - SQL migration apply/reset/rollback smoke 절차 문서화
 - storage failure/fallback policy 문서화와 손상된 JSON state 거부
 - compact audit retention boundary 문서화와 raw recognition data 저장 제외 기준
+- no-hand, unstable-hand, recognized-token UI 상태 분리
 
 ## 실행 방법
 
@@ -146,12 +149,13 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - SQL migration smoke script와 절차 문서화
 - storage failure/fallback policy 작성과 JSON 손상 파일 거부 테스트
 - compact audit retention boundary 작성과 retained/excluded field 기준 정리
+- recognition UI state hardening과 no-hand/unstable/recognized 상태 회귀 테스트
 
 ## 남은 작업
 
 - v1 릴리스 차단 작업 없음
 - v2 또는 follow-up 범위
-  구체 frame recognizer 바인딩, recognition UI state hardening, real two-player match hardening, 스킬 domain source 확정 후 skill/resource 구현
+  구체 frame recognizer 바인딩, recognizer restart/cleanup hardening, real two-player match hardening, 스킬 domain source 확정 후 skill/resource 구현
 
 ## 경계
 
@@ -179,6 +183,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v1-release-readiness.ko.md`: v1 릴리스 준비 완료 판정과 검증 근거.
 - `docs/implementation-artifacts/v2-1-live-recognizer-adapter.ko.md`: live recognizer adapter 연결 구현 기록.
 - `docs/implementation-artifacts/v2-2-camera-permission-smoke.ko.md`: 카메라 권한 smoke 자동화 구현 기록.
+- `docs/implementation-artifacts/v2-4-recognition-ui-state.ko.md`: recognition UI state hardening 구현 기록.
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.ko.md`: storage adapter persistence 구현 기록.
 - `docs/implementation-artifacts/v2-planning-baseline.ko.md`: v2 planning baseline 구현 기록.
 - `docs/implementation-artifacts/v2-smoke-checklist.ko.md`: v2 smoke checklist와 blocked 항목.
@@ -206,6 +211,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v1-release-readiness.en.md`
 - `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`
 - `docs/implementation-artifacts/v2-2-camera-permission-smoke.en.md`
+- `docs/implementation-artifacts/v2-4-recognition-ui-state.en.md`
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`
 - `docs/implementation-artifacts/v2-planning-baseline.en.md`
 - `docs/implementation-artifacts/v2-smoke-checklist.en.md`

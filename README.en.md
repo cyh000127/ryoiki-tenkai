@@ -16,6 +16,7 @@ Korean documentation is available in `README.md`. `README.ko.md` keeps the same 
 - The v2 SQL migration smoke procedure is written.
 - The v2 storage failure/fallback policy is written.
 - The v2 compact audit retention boundary is written.
+- The v2 recognition UI state hardening is complete.
 - Skill names, skill effects, hand-motion resources, and visual assets will proceed only after a separate domain source is approved.
 - Concrete frame recognizer binding remains v2 follow-up scope.
 - Final release readiness document: `docs/implementation-artifacts/v1-release-readiness.en.md`
@@ -44,6 +45,7 @@ The repository is currently wired through the following playable flow:
 - automatic practice rival turns
 - `HP_ZERO`, `TIMEOUT`, and `SURRENDER` resolution with result screen rendering
 - live camera adapter start/stop/status display and recognized-token dispatch through the normalized input boundary
+- no-hand, unstable-hand, and recognized-token live camera UI states separated
 - result/history/rating persistence moved behind the storage adapter boundary
 - v2 epics, stories, implementation order, prerequisites, and technology stack documented
 - v2 camera/runtime/storage/matching smoke checklist documented
@@ -51,6 +53,7 @@ The repository is currently wired through the following playable flow:
 - SQL migration apply/reset/rollback smoke procedure documented
 - storage failure/fallback policy documented, with corrupted JSON state rejection
 - compact audit retention boundary documented, including raw recognition data exclusion rules
+- no-hand, unstable-hand, and recognized-token UI states separated
 
 ## Run Locally
 
@@ -150,12 +153,13 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - SQL migration smoke script and procedure are documented
 - storage failure/fallback policy is documented and corrupted JSON state is tested
 - compact audit retention boundary is documented with retained/excluded field rules
+- recognition UI state hardening is covered by no-hand/unstable/recognized regression tests
 
 ## Remaining Work
 
 - no v1 release blockers
 - v2 or follow-up scope
-  concrete frame recognizer binding, recognition UI state hardening, real two-player match hardening, and skill/resource implementation after the skill domain source is approved
+  concrete frame recognizer binding, recognizer restart/cleanup hardening, real two-player match hardening, and skill/resource implementation after the skill domain source is approved
 
 ## MVP Planning and QA
 
@@ -163,6 +167,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v1-release-readiness.en.md`: v1 release readiness decision and verification evidence.
 - `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`: live recognizer adapter integration record.
 - `docs/implementation-artifacts/v2-2-camera-permission-smoke.en.md`: camera permission smoke automation record.
+- `docs/implementation-artifacts/v2-4-recognition-ui-state.en.md`: recognition UI state hardening record.
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`: storage adapter persistence record.
 - `docs/implementation-artifacts/v2-planning-baseline.en.md`: v2 planning baseline record.
 - `docs/implementation-artifacts/v2-smoke-checklist.en.md`: v2 smoke checklist and blocked items.
