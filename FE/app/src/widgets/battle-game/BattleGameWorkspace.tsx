@@ -1263,7 +1263,7 @@ export function BattleGameWorkspace() {
               <Metric label={copy.playerStatus} value={state.player.nickname} />
               <Metric label={copy.playerRating} value={state.player.rating} />
               <Metric label={copy.record} value={`${state.player.wins}W / ${state.player.losses}L`} />
-              <Metric label={copy.skillDetail} value={equippedSkill.name} />
+              <Metric label={copy.skillDetail} value={getSkillDisplayName(equippedSkill)} />
             </Panel>
             <Panel title={copy.matchmaking}>
               <div className="field-stack">
@@ -1344,21 +1344,13 @@ export function BattleGameWorkspace() {
                     onClick={() => handleSelectSkill(skill.skillId)}
                     type="button"
                   >
-                    <strong>{skill.name}</strong>
-                    <div>{skill.description}</div>
-                    <div>{skill.gestureSequence.join(" -> ")}</div>
-                    <div>
-                      {copy.mana} {skill.manaCost} / {skill.damage}
-                    </div>
+                    <SkillCardContent skill={skill} />
                   </button>
                 ))}
               </div>
             </Panel>
             <Panel title={copy.skillDetail}>
-              <Metric label={copy.skillDescription} value={selectedSkill.description} />
-              <Metric label={copy.targetSequence} value={selectedSkill.gestureSequence.join(" -> ")} />
-              <Metric label={copy.mana} value={selectedSkill.manaCost} />
-              <Metric label={copy.cooldown} value={selectedSkill.cooldownTurn} />
+              <SkillDetailContent skill={selectedSkill} />
               <div className="field-stack">
                 <span className="field__label">{copy.animsetCatalog}</span>
                 <div className="skill-list">
@@ -1453,8 +1445,8 @@ export function BattleGameWorkspace() {
                     ))}
                   </div>
                   <div className="metric-list">
-                    <Metric label={copy.skillDetail} value={selectedSkill.name} />
-                    <Metric label={copy.skillDescription} value={selectedSkill.description} />
+                    <Metric label={copy.skillDetail} value={getSkillDisplayName(selectedSkill)} />
+                    <Metric label={copy.skillDescription} value={getSkillPresentation(selectedSkill).summary} />
                     <Metric label={copy.practiceRounds} value={practiceProgress.completedRounds} />
                     <Metric label={copy.liveCameraStatus} value={getLiveRecognizerStatusLabel(practiceRecognizerStatus)} />
                     <Metric
@@ -1507,16 +1499,7 @@ export function BattleGameWorkspace() {
                     onClick={() => handleSelectSkill(skill.skillId)}
                     type="button"
                   >
-                    <strong>{skill.name}</strong>
-                    <div>{skill.description}</div>
-                    <div>{skill.gestureSequence.join(" -> ")}</div>
-                    <div className="skill-card__guide">
-                      {skill.gestureSequence.map((gesture) => (
-                        <span key={`${skill.skillId}-${gesture}`}>
-                          {gesture}: {getPracticeGestureGuide(gesture)}
-                        </span>
-                      ))}
-                    </div>
+                    <SkillCardContent skill={skill} showGestureGuide />
                   </button>
                 ))}
               </div>
@@ -1582,13 +1565,9 @@ export function BattleGameWorkspace() {
             </div>
             <div className="surface-grid">
               <Panel title={copy.selectedSkillStatus}>
-                <Metric label={copy.skillDetail} value={selectedSkill.name} />
-                <Metric label={copy.skillDescription} value={selectedSkill.description} />
-                <Metric label={copy.mana} value={selectedSkill.manaCost} />
-                <Metric label={copy.damage} value={selectedSkill.damage} />
-                <Metric
-                  label={copy.skillCooldownStatus}
-                  value={formatCooldownTurns(selectedSkillCooldownTurns)}
+                <SkillDetailContent
+                  skill={selectedSkill}
+                  selectedCooldownTurns={selectedSkillCooldownTurns}
                 />
                 {deadlinePresentation ? (
                   <Metric label={copy.turnDeadline} value={deadlinePresentation.label} />
@@ -1923,6 +1902,23 @@ function formatSignedNumber(value: number): string {
   return value > 0 ? `+${value}` : String(value);
 }
 
+function getSkillDisplayName(skill: Skill): string {
+  return getSkillPresentation(skill).displayName;
+}
+
+function getSkillPresentation(skill: Skill): SkillPresentation {
+  const koreanNameMatch = /^한국어명:\s*([^.]*)\.\s*(.*)$/u.exec(skill.description);
+  const koreanName = koreanNameMatch?.[1]?.trim() || skill.name;
+  const summary = koreanNameMatch?.[2]?.trim() || skill.description;
+
+  return {
+    japaneseName: skill.name,
+    koreanName,
+    summary,
+    displayName: `${skill.name} - ${koreanName}`
+  };
+}
+
 type PanelProps = {
   title: string;
   children: ReactNode;
@@ -1942,6 +1938,99 @@ function Metric({ label, value }: { label: string; value: string | number }) {
     <div className="metric-row">
       <span>{label}</span>
       <strong>{value}</strong>
+    </div>
+  );
+}
+
+type SkillPresentation = {
+  japaneseName: string;
+  koreanName: string;
+  summary: string;
+  displayName: string;
+};
+
+function SkillCardContent({
+  skill,
+  showGestureGuide = false
+}: {
+  skill: Skill;
+  showGestureGuide?: boolean;
+}) {
+  const presentation = getSkillPresentation(skill);
+
+  return (
+    <>
+      <strong>{presentation.displayName}</strong>
+      <div className="skill-card__summary">{presentation.summary}</div>
+      <div className="skill-card__meta">
+        <span>
+          {copy.damage} {skill.damage}
+        </span>
+        <span>
+          {copy.mana} {skill.manaCost}
+        </span>
+        <span>
+          {copy.cooldown} {skill.cooldownTurn}
+        </span>
+      </div>
+      <div className="skill-card__sequence">{skill.gestureSequence.join(" -> ")}</div>
+      {showGestureGuide ? (
+        <div className="skill-card__guide">
+          {skill.gestureSequence.map((gesture) => (
+            <span key={`${skill.skillId}-${gesture}`}>
+              {gesture}: {getPracticeGestureGuide(gesture)}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function SkillDetailContent({
+  skill,
+  selectedCooldownTurns
+}: {
+  skill: Skill;
+  selectedCooldownTurns?: number;
+}) {
+  const presentation = getSkillPresentation(skill);
+
+  return (
+    <div className="skill-detail">
+      <div className="skill-detail__header">
+        <strong>{presentation.displayName}</strong>
+        <span>{skill.skillId}</span>
+      </div>
+      <div className="metric-list">
+        <Metric label={copy.skillJapaneseName} value={presentation.japaneseName} />
+        <Metric label={copy.skillKoreanName} value={presentation.koreanName} />
+        <Metric label={copy.skillEffectSummary} value={presentation.summary} />
+        <Metric label={copy.targetSequence} value={skill.gestureSequence.join(" -> ")} />
+        <Metric label={copy.skillGestureCount} value={skill.gestureSequence.length} />
+        <Metric label={copy.mana} value={skill.manaCost} />
+        <Metric label={copy.damage} value={skill.damage} />
+        <Metric label={copy.cooldown} value={skill.cooldownTurn} />
+        {typeof selectedCooldownTurns === "number" ? (
+          <Metric
+            label={copy.skillCooldownStatus}
+            value={formatCooldownTurns(selectedCooldownTurns)}
+          />
+        ) : null}
+      </div>
+      <div className="skill-detail__section">
+        <span className="field__label">{copy.skillGestureGuide}</span>
+        <div className="skill-detail__gesture-list">
+          {skill.gestureSequence.map((gesture, index) => (
+            <div className="skill-detail__gesture" key={`${skill.skillId}-${gesture}-${index}`}>
+              <strong>
+                {index + 1}. {gesture}
+              </strong>
+              <span>{getPracticeGestureGuide(gesture)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
