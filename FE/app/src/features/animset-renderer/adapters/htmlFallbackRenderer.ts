@@ -208,7 +208,7 @@ function getMetricPairs(state: HtmlFallbackSceneState): Array<[string, string]> 
       ["Step", formatPracticeStep(state.practice)],
       ["Expected", state.practice?.expectedToken ?? "-"],
       ["Observed", state.practice?.observedToken ?? "-"],
-      ["Rounds", String(state.practice?.completedRounds ?? 0)],
+      ["Activation", state.completed ? "Triggered" : "Waiting"],
       ["Status", state.practice?.status ?? "idle"]
     ];
   }

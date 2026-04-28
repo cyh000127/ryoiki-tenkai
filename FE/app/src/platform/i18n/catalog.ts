@@ -112,7 +112,14 @@ export const copy = {
   practiceLoadoutSynced: "현재 연습 중인 술식이 저장된 매칭 로드아웃과 동일합니다.",
   practiceLoadoutUnsynced: "현재 연습 중인 술식은 저장된 매칭 로드아웃과 다릅니다.",
   practiceCompletionHelp:
-    "연습이 끝났습니다. 다시 연습하거나 로드아웃 저장 후 바로 매칭을 시작할 수 있습니다.",
+    "술식 발동을 확인했습니다. 다시 발동을 보려면 연습 초기화를 누르거나 로드아웃 저장 후 바로 매칭을 시작할 수 있습니다.",
+  practiceActivationState: "술식 상태",
+  practiceActivationGuide:
+    "모든 손동작이 완성되어 술식이 발동되었습니다. 연출이 끝난 뒤에도 이 상태를 유지합니다.",
+  practiceActivationHoldHelp:
+    "지금은 발동 완료 상태입니다. 다시 시연하려면 연습 초기화를 누르거나 다른 술식을 선택하세요.",
+  practiceActivationTriggered: "술식이 발동되었습니다. 다시 보려면 연습 초기화를 누르세요.",
+  practiceActivationTriggeredBadge: "술식 발동 완료",
   practiceRuntimeIdleHelp: "연습 시작을 눌러 카메라와 MediaPipe 손 추적기를 켜세요.",
   practiceRuntimeStartingHelp:
     "카메라 권한과 MediaPipe 모델을 준비하는 중입니다. 브라우저 권한 요청이 보이면 허용해야 합니다.",
@@ -131,16 +138,13 @@ export const copy = {
     "현재 단계 손모양이 인식되었습니다. 잠시 후 다음 단계로 넘어갑니다.",
   practiceSkillReady: "연습 준비",
   practiceSkillRunning: "연습 중",
-  practiceSkillComplete: "연습 완료",
+  practiceSkillComplete: "술식 발동 완료",
   practiceStart: "연습 시작",
   practiceStop: "연습 중지",
   practiceReset: "연습 초기화",
   practiceGestureReady: "인식 완료",
   practiceGestureWaiting: "동작 대기",
   practiceExpectedGesture: "이번 단계",
-  practiceRounds: "완료 횟수",
-  practiceRoundComplete: "연습 1회 완료.",
-  practiceRoundUnit: "회째 반복을 시작합니다.",
   practiceSelectSkill: "연습할 술식",
   practiceProgress: "연습 진행률",
   practiceContinueMatch: "매칭 시작",

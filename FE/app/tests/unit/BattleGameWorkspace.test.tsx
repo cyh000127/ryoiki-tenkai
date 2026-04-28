@@ -599,13 +599,13 @@ describe("BattleGameWorkspace", () => {
 
     await waitFor(
       () => {
-        expect(screen.getByText("연습 1회 완료. 1회째 반복을 시작합니다.")).toBeInTheDocument();
+        expect(screen.getByText("술식이 발동되었습니다. 다시 보려면 연습 초기화를 누르세요.")).toBeInTheDocument();
       },
       { timeout: 1500 }
     );
-    expect(screen.getByText("완료 횟수")).toBeInTheDocument();
-    expect(screen.getAllByText("1").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("0/1").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("술식 발동 완료").length).toBeGreaterThan(0);
+    expect(screen.queryByText("완료 횟수")).not.toBeInTheDocument();
+    expect(screen.getAllByText("1/1").length).toBeGreaterThan(0);
     expect(liveRecognizerMock.stop).not.toHaveBeenCalled();
   });
 

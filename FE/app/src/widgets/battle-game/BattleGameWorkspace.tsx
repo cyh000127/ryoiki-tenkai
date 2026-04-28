@@ -647,6 +647,9 @@ export function BattleGameWorkspace() {
     practiceProgress.currentStep,
     practiceProgress.targetSequence.length
   );
+  const practiceCompleted =
+    practiceProgress.targetSequence.length > 0 &&
+    practiceProgress.currentStep >= practiceProgress.targetSequence.length;
   const practiceProgressPercent = getSequenceProgress(
     practiceCompletedStepCount,
     practiceProgress.targetSequence.length
@@ -662,10 +665,13 @@ export function BattleGameWorkspace() {
     practiceRecognizerStatus !== "starting" &&
     practiceRecognizerStatus !== "ready";
   const practiceExpectedGesture =
-    practiceProgress.targetSequence[practiceProgress.currentStep] ??
-    practiceProgress.targetSequence[0] ??
-    null;
+    practiceCompleted
+      ? null
+      : practiceProgress.targetSequence[practiceProgress.currentStep] ??
+        practiceProgress.targetSequence[0] ??
+        null;
   const isPracticeGestureRecognized =
+    !practiceCompleted &&
     practiceObservation?.reason === "recognized" &&
     practiceProgress.handDetected &&
     practiceProgress.currentGesture === practiceExpectedGesture &&
@@ -674,7 +680,6 @@ export function BattleGameWorkspace() {
   const hasResultAvailable = state.battle?.status === "ENDED";
   const isMatchSearching = state.queueStatus === "SEARCHING";
   const isMatchFoundWaiting = state.queueStatus === "MATCHED" && !hasActiveBattle;
-  const practiceCompleted = practiceProgress.completedRounds > 0;
   const isPracticeLoadoutSynced =
     draftSkillsetId === state.equippedSkillsetId && draftSkillId === state.selectedSkillId;
   const savedLoadoutLabel = hasConfiguredLoadout ? getSkillDisplayName(equippedSkill) : copy.loadoutPending;
@@ -1303,7 +1308,7 @@ export function BattleGameWorkspace() {
       return;
     }
 
-    const key = `${progress.completedRounds}:${progress.currentStep}:${expectedGesture}`;
+    const key = `${progress.currentStep}:${expectedGesture}`;
     if (practiceAutoAdvanceRef.current?.key === key) {
       return;
     }
@@ -1349,21 +1354,23 @@ export function BattleGameWorkspace() {
     }
     const nextProgress = {
       ...progress,
-      currentStep: didCompleteRound ? 0 : nextStep,
-      completedRounds: didCompleteRound
-        ? progress.completedRounds + 1
-        : progress.completedRounds,
-      confidence: 0,
-      handDetected: false,
-      currentGesture: null
+      currentStep: didCompleteRound ? progress.targetSequence.length : nextStep,
+      completedRounds: didCompleteRound ? 1 : progress.completedRounds,
+      confidence: didCompleteRound ? observation.confidence : 0,
+      handDetected: didCompleteRound ? observation.handDetected : false,
+      currentGesture: didCompleteRound ? observation.token : null
     };
 
     practiceProgressRef.current = nextProgress;
     setPracticeProgress(nextProgress);
-    setPracticeObservation(null);
+    if (didCompleteRound) {
+      setPracticeObservation(observation);
+    } else {
+      setPracticeObservation(null);
+    }
     setStatusMessage(
       didCompleteRound
-        ? `${copy.practiceRoundComplete} ${nextProgress.completedRounds}${copy.practiceRoundUnit}`
+        ? copy.practiceActivationTriggered
         : null
     );
   }
@@ -1961,18 +1968,30 @@ export function BattleGameWorkspace() {
                     />
                   </div>
                   <div className="practice-guide">
-                    <StatusBadge tone={isPracticeGestureRecognized ? "success" : "neutral"}>
-                      {isPracticeGestureRecognized
+                    <StatusBadge tone={practiceCompleted || isPracticeGestureRecognized ? "success" : "neutral"}>
+                      {practiceCompleted
+                        ? copy.practiceActivationTriggeredBadge
+                        : isPracticeGestureRecognized
                         ? copy.practiceGestureReady
                         : copy.practiceGestureWaiting}
                     </StatusBadge>
                     <div>
-                      <strong>{copy.practiceExpectedGesture}</strong>
-                      <span>{practiceExpectedGesture ?? copy.noGesture}</span>
+                      <strong>{practiceCompleted ? copy.practiceActivationState : copy.practiceExpectedGesture}</strong>
+                      <span>
+                        {practiceCompleted
+                          ? copy.practiceSkillComplete
+                          : practiceExpectedGesture ?? copy.noGesture}
+                      </span>
                     </div>
-                    <p>{getPracticeGestureGuide(practiceExpectedGesture)}</p>
+                    <p>
+                      {practiceCompleted
+                        ? copy.practiceActivationGuide
+                        : getPracticeGestureGuide(practiceExpectedGesture)}
+                    </p>
                     <p className="helper-text">
-                      {getPracticeRuntimeHelp(practiceRecognizerStatus, practiceObservation)}
+                      {practiceCompleted
+                        ? copy.practiceActivationHoldHelp
+                        : getPracticeRuntimeHelp(practiceRecognizerStatus, practiceObservation)}
                     </p>
                   </div>
                   <ProgressMeter
@@ -1995,7 +2014,10 @@ export function BattleGameWorkspace() {
                   <div className="metric-list">
                     <Metric label={copy.skillDetail} value={getSkillDisplayName(selectedSkill)} />
                     <Metric label={copy.skillDescription} value={getSkillPresentation(selectedSkill).summary} />
-                    <Metric label={copy.practiceRounds} value={practiceProgress.completedRounds} />
+                    <Metric
+                      label={copy.practiceActivationState}
+                      value={practiceCompleted ? copy.practiceSkillComplete : copy.practiceSkillRunning}
+                    />
                     <Metric label={copy.liveCameraStatus} value={getLiveRecognizerStatusLabel(practiceRecognizerStatus)} />
                     <Metric
                       label={copy.handStatus}
@@ -2054,7 +2076,7 @@ export function BattleGameWorkspace() {
               </div>
               {practiceCompleted ? (
                 <div className="practice-completion-actions">
-                  <strong>{copy.practiceSkillComplete}</strong>
+                  <strong>{copy.practiceActivationTriggeredBadge}</strong>
                   <p className="helper-text">{copy.practiceCompletionHelp}</p>
                   <div className="action-row">
                     <Button onClick={() => resetPracticeProgress()}>{copy.practiceReset}</Button>
