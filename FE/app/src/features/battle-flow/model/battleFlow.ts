@@ -8,7 +8,14 @@ import {
 } from "../../../entities/game/model";
 import type { GestureInputSource } from "../../gesture-session/model/gestureInput";
 
-export type ScreenKey = "home" | "loadout" | "matchmaking" | "battle" | "result" | "history";
+export type ScreenKey =
+  | "home"
+  | "loadout"
+  | "practice"
+  | "matchmaking"
+  | "battle"
+  | "result"
+  | "history";
 
 export type InputFailureReason =
   | "confidence_low"

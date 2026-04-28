@@ -714,6 +714,37 @@ textarea {
   margin-top: 12px;
 }
 
+.practice-room {
+  display: grid;
+  gap: 12px;
+}
+
+.practice-camera {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1px solid rgba(83, 215, 255, 0.34);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(83, 215, 255, 0.08), rgba(255, 208, 89, 0.06)),
+    #05080d;
+}
+
+.practice-camera__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.practice-camera__overlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
 .input-feedback,
 .confirmation-strip {
   display: grid;

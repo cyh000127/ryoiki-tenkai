@@ -532,6 +532,61 @@ describe("BattleGameWorkspace", () => {
     expect(await screen.findByRole("button", { name: "로드아웃 저장" })).toBeInTheDocument();
   });
 
+  it("blocks practice room navigation until a player session exists", async () => {
+    const user = createUser();
+    installGameApiMock();
+
+    renderWorkspace();
+
+    await user.click(screen.getByRole("button", { name: "연습장" }));
+
+    expect(screen.getByText("계정 생성 후 연습장에 들어갈 수 있습니다.")).toBeInTheDocument();
+    expect(screen.queryByText("술식 연습장")).not.toBeInTheDocument();
+  });
+
+  it("lets a signed-in player practice a skill with the camera preview", async () => {
+    const user = createUser();
+    installGameApiMock();
+
+    renderWorkspace();
+
+    await user.click(screen.getByRole("button", { name: "게스트 시작" }));
+    await screen.findByRole("button", { name: "로드아웃 저장" });
+    await user.click(screen.getByRole("button", { name: "연습장" }));
+
+    expect(screen.getByText("술식 연습장")).toBeInTheDocument();
+    expect(screen.getByLabelText("캠 프리뷰")).toBeInTheDocument();
+    expect(screen.getAllByText(defaultSkill.description).length).toBeGreaterThan(0);
+
+    await user.click(screen.getByRole("button", { name: "연습 시작" }));
+
+    expect(liveRecognizerMock.createBrowserLiveGestureRecognizer).toHaveBeenCalledTimes(1);
+    expect(liveRecognizerMock.options?.getExpectedToken()).toBe(defaultGesture);
+    expect(liveRecognizerMock.options?.getTargetSequence()).toEqual(defaultGestureSequence);
+
+    act(() => {
+      liveRecognizerMock.options?.onStatusChange?.("ready");
+      liveRecognizerMock.options?.onObservation(
+        {
+          token: defaultGesture,
+          confidence: 0.92,
+          handDetected: true,
+          stabilityMs: 700,
+          reason: "recognized"
+        },
+        {
+          gesture: defaultGesture,
+          confidence: 0.92,
+          source: "live_camera"
+        }
+      );
+    });
+
+    expect(screen.getByText("연습 완료")).toBeInTheDocument();
+    expect(screen.getAllByText("1/1").length).toBeGreaterThan(0);
+    expect(liveRecognizerMock.stop).toHaveBeenCalledTimes(1);
+  });
+
   it("renders server-backed history and leaderboard on the history screen", async () => {
     const user = createUser();
     storedSession = {

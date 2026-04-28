@@ -5,6 +5,7 @@ import {
   DEFAULT_ANIMSETS,
   DEFAULT_SKILLSET,
   type BattleState,
+  type Skill,
   type Skillset
 } from "../../entities/game/model";
 import {
@@ -69,9 +70,25 @@ import { Button } from "../../platform/ui/Button";
 import { StatusBadge } from "../../platform/ui/StatusBadge";
 import { formatLatency } from "../../shared/time/formatLatency";
 
-const screenOrder: ScreenKey[] = ["home", "loadout", "matchmaking", "battle", "result", "history"];
+const screenOrder: ScreenKey[] = [
+  "home",
+  "loadout",
+  "practice",
+  "matchmaking",
+  "battle",
+  "result",
+  "history"
+];
 
 type SkillInputMode = "gesture_only" | "voice_then_gesture";
+
+type PracticeProgress = {
+  targetSequence: string[];
+  currentStep: number;
+  confidence: number;
+  handDetected: boolean;
+  currentGesture: string | null;
+};
 
 type PendingAction = {
   actionId: string;
@@ -89,8 +106,17 @@ export function BattleGameWorkspace() {
   });
   const socketConnectionRef = useRef<BattleSocketConnection | null>(null);
   const liveRecognizerRef = useRef<LiveGestureRecognizer | null>(null);
+  const practiceRecognizerRef = useRef<LiveGestureRecognizer | null>(null);
+  const practiceVideoRef = useRef<HTMLVideoElement | null>(null);
   const startupVoiceRecognizerRef = useRef<StartupVoiceCommandRecognizer | null>(null);
   const skillVoiceRecognizerRef = useRef<StartupVoiceCommandRecognizer | null>(null);
+  const practiceProgressRef = useRef<PracticeProgress>({
+    targetSequence: DEFAULT_SKILLSET.skills[0].gestureSequence,
+    currentStep: 0,
+    confidence: 0,
+    handDetected: false,
+    currentGesture: null
+  });
   const pendingActionRef = useRef<PendingAction | null>(null);
   const reconnectInFlightRef = useRef(false);
   const ignoreSocketCloseRef = useRef(false);
@@ -103,6 +129,13 @@ export function BattleGameWorkspace() {
   const [liveRecognizerStatus, setLiveRecognizerStatus] =
     useState<LiveGestureRecognizerStatus>("idle");
   const [liveObservation, setLiveObservation] = useState<LiveGestureObservation | null>(null);
+  const [practiceRecognizerStatus, setPracticeRecognizerStatus] =
+    useState<LiveGestureRecognizerStatus>("idle");
+  const [practiceObservation, setPracticeObservation] =
+    useState<LiveGestureObservation | null>(null);
+  const [practiceProgress, setPracticeProgress] = useState<PracticeProgress>(
+    practiceProgressRef.current
+  );
   const [startupVoiceStatus, setStartupVoiceStatus] =
     useState<StartupVoiceRecognitionStatus>("idle");
   const [startupVoiceTranscript, setStartupVoiceTranscript] = useState("");
@@ -250,16 +283,28 @@ export function BattleGameWorkspace() {
   }, [skillInputMode, skillVoiceArmed]);
 
   useEffect(() => {
+    resetPracticeProgress(selectedSkill);
+  }, [selectedSkill.skillId]);
+
+  useEffect(() => {
     return () => {
       closeBattleSocket(true);
       liveRecognizerRef.current?.stop();
       liveRecognizerRef.current = null;
+      practiceRecognizerRef.current?.stop();
+      practiceRecognizerRef.current = null;
       startupVoiceRecognizerRef.current?.stop();
       startupVoiceRecognizerRef.current = null;
       skillVoiceRecognizerRef.current?.stop();
       skillVoiceRecognizerRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (state.screen !== "practice") {
+      stopPracticeRecognizer();
+    }
+  }, [state.screen]);
 
   useEffect(() => {
     if (state.screen === "battle" && state.battle?.status === "ACTIVE") {
@@ -420,6 +465,25 @@ export function BattleGameWorkspace() {
     state.input.serverConfirmationStatus,
     state.input.serverRejectionReason
   );
+  const practiceCompletedStepCount = Math.min(
+    practiceProgress.currentStep,
+    practiceProgress.targetSequence.length
+  );
+  const practiceProgressPercent = getSequenceProgress(
+    practiceCompletedStepCount,
+    practiceProgress.targetSequence.length
+  );
+  const practiceState = getPracticeState(
+    practiceRecognizerStatus,
+    practiceCompletedStepCount,
+    practiceProgress.targetSequence.length
+  );
+  const canStartPractice =
+    session !== null &&
+    state.screen === "practice" &&
+    practiceRecognizerStatus !== "starting" &&
+    practiceRecognizerStatus !== "ready" &&
+    practiceCompletedStepCount < practiceProgress.targetSequence.length;
 
   function handleOpenLoadout() {
     if (!session) {
@@ -648,6 +712,17 @@ export function BattleGameWorkspace() {
     dispatch({ type: "go", screen: "history" });
   }
 
+  function handleNavigate(screen: ScreenKey) {
+    if (screen === "practice" && !session) {
+      setStatusMessage(copy.practiceAccountRequired);
+      dispatch({ type: "go", screen: "home" });
+      return;
+    }
+
+    setStatusMessage(null);
+    dispatch({ type: "go", screen });
+  }
+
   function handleSubmitAction() {
     const failureReason = getSubmitFailureReason(state);
 
@@ -816,6 +891,95 @@ export function BattleGameWorkspace() {
         source: input.source
       });
     }
+  }
+
+  function resetPracticeProgress(skill = selectedSkill) {
+    const nextProgress = {
+      targetSequence: [...skill.gestureSequence],
+      currentStep: 0,
+      confidence: 0,
+      handDetected: false,
+      currentGesture: null
+    };
+    practiceProgressRef.current = nextProgress;
+    setPracticeProgress(nextProgress);
+    setPracticeObservation(null);
+  }
+
+  async function handleStartPractice() {
+    if (!session) {
+      setStatusMessage(copy.practiceAccountRequired);
+      return;
+    }
+
+    if (practiceRecognizerRef.current) {
+      return;
+    }
+
+    setStatusMessage(null);
+    const recognizer = createBrowserLiveGestureRecognizer({
+      getTargetSequence: () => practiceProgressRef.current.targetSequence,
+      getExpectedToken: () =>
+        practiceProgressRef.current.targetSequence[practiceProgressRef.current.currentStep] ?? null,
+      onObservation: handlePracticeObservation,
+      onStatusChange: handlePracticeRecognizerStatusChange,
+      createVideoElement: () => {
+        const video = practiceVideoRef.current ?? document.createElement("video");
+        video.muted = true;
+        video.playsInline = true;
+        return video;
+      }
+    });
+
+    practiceRecognizerRef.current = recognizer;
+    await recognizer.start();
+  }
+
+  function handlePracticeRecognizerStatusChange(status: LiveGestureRecognizerStatus) {
+    setPracticeRecognizerStatus(status);
+
+    if (status === "blocked" || status === "unsupported" || status === "error" || status === "stopped") {
+      practiceRecognizerRef.current = null;
+    }
+  }
+
+  function handlePracticeObservation(
+    observation: LiveGestureObservation,
+    input: ReturnType<typeof createLiveCameraInput> | null
+  ) {
+    setPracticeObservation(observation);
+
+    const progress = practiceProgressRef.current;
+    const expectedGesture = progress.targetSequence[progress.currentStep] ?? null;
+    const shouldAdvance =
+      input !== null && expectedGesture !== null && input.gesture === expectedGesture;
+    const nextStep = shouldAdvance
+      ? Math.min(progress.currentStep + 1, progress.targetSequence.length)
+      : progress.currentStep;
+    const nextProgress = {
+      ...progress,
+      currentStep: nextStep,
+      confidence: observation.confidence,
+      handDetected: observation.handDetected,
+      currentGesture: observation.token
+    };
+
+    practiceProgressRef.current = nextProgress;
+    setPracticeProgress(nextProgress);
+
+    if (nextStep >= progress.targetSequence.length && progress.targetSequence.length > 0) {
+      stopPracticeRecognizer();
+    }
+  }
+
+  function stopPracticeRecognizer() {
+    const recognizer = practiceRecognizerRef.current;
+    if (!recognizer) {
+      return;
+    }
+
+    recognizer.stop();
+    practiceRecognizerRef.current = null;
   }
 
   function handleSurrender() {
@@ -1035,7 +1199,7 @@ export function BattleGameWorkspace() {
             aria-current={state.screen === screen ? "page" : undefined}
             className="play-nav__button"
             key={screen}
-            onClick={() => dispatch({ type: "go", screen })}
+            onClick={() => handleNavigate(screen)}
             type="button"
           >
             {copy[screen]}
@@ -1173,6 +1337,102 @@ export function BattleGameWorkspace() {
                 <Button onClick={() => dispatch({ type: "go", screen: "home" })}>
                   {copy.home}
                 </Button>
+              </div>
+            </Panel>
+          </div>
+        ) : null}
+
+        {state.screen === "practice" ? (
+          <div className="surface-grid surface-grid--two">
+            <Panel title={copy.practiceRoom}>
+              {!session ? (
+                <p className="status-text">{copy.practiceAccountRequired}</p>
+              ) : (
+                <div className="practice-room">
+                  <div className="practice-camera">
+                    <video
+                      aria-label={copy.practiceCameraPreview}
+                      className="practice-camera__video"
+                      muted
+                      playsInline
+                      ref={practiceVideoRef}
+                    />
+                    <div className="practice-camera__overlay">
+                      <StatusBadge tone={getPracticeStatusTone(practiceState)}>
+                        {getPracticeStatusLabel(practiceState)}
+                      </StatusBadge>
+                    </div>
+                  </div>
+                  <p className="helper-text">{copy.practiceHelp}</p>
+                  <ProgressMeter
+                    current={practiceCompletedStepCount}
+                    label={copy.practiceProgress}
+                    percent={practiceProgressPercent}
+                    total={practiceProgress.targetSequence.length}
+                  />
+                  <div className="sequence" aria-label={copy.targetSequence}>
+                    {practiceProgress.targetSequence.map((gesture, index) => (
+                      <span
+                        className="sequence__item sequence__item--display"
+                        data-state={getGestureStepState(index, practiceProgress.currentStep)}
+                        key={`${gesture}-${index}`}
+                      >
+                        {gesture}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="metric-list">
+                    <Metric label={copy.skillDetail} value={selectedSkill.name} />
+                    <Metric label={copy.skillDescription} value={selectedSkill.description} />
+                    <Metric label={copy.liveCameraStatus} value={getLiveRecognizerStatusLabel(practiceRecognizerStatus)} />
+                    <Metric
+                      label={copy.handStatus}
+                      value={practiceProgress.handDetected ? copy.detected : copy.notDetected}
+                    />
+                    <Metric
+                      label={copy.liveObservationReason}
+                      value={
+                        practiceObservation
+                          ? getLiveObservationReasonLabel(practiceObservation.reason)
+                          : copy.inputSourceWaiting
+                      }
+                    />
+                    <Metric label={copy.currentGesture} value={practiceProgress.currentGesture ?? copy.noGesture} />
+                    <Metric label={copy.confidence} value={`${Math.round(practiceProgress.confidence * 100)}%`} />
+                  </div>
+                  {statusMessage ? <p className="status-text">{statusMessage}</p> : null}
+                  <div className="action-row">
+                    <Button disabled={!canStartPractice} onClick={handleStartPractice} variant="primary">
+                      {practiceRecognizerStatus === "starting"
+                        ? getLiveRecognizerStatusLabel(practiceRecognizerStatus)
+                        : copy.practiceStart}
+                    </Button>
+                    <Button
+                      disabled={practiceRecognizerStatus !== "ready"}
+                      onClick={stopPracticeRecognizer}
+                    >
+                      {copy.practiceStop}
+                    </Button>
+                    <Button onClick={() => resetPracticeProgress()}>{copy.practiceReset}</Button>
+                  </div>
+                </div>
+              )}
+            </Panel>
+            <Panel title={copy.practiceSelectSkill}>
+              <div className="skill-list">
+                {activeSkillset.skills.map((skill) => (
+                  <button
+                    aria-pressed={draftSkillId === skill.skillId}
+                    className="skill-card"
+                    key={skill.skillId}
+                    onClick={() => handleSelectSkill(skill.skillId)}
+                    type="button"
+                  >
+                    <strong>{skill.name}</strong>
+                    <div>{skill.description}</div>
+                    <div>{skill.gestureSequence.join(" -> ")}</div>
+                  </button>
+                ))}
               </div>
             </Panel>
           </div>
@@ -2100,6 +2360,48 @@ function getLiveRecognizerStatusTone(
   }
 
   if (status === "blocked" || status === "unsupported" || status === "error") {
+    return "warning";
+  }
+
+  return "neutral";
+}
+
+type PracticeState = "ready" | "running" | "complete";
+
+function getPracticeState(
+  status: LiveGestureRecognizerStatus,
+  completedStepCount: number,
+  totalStepCount: number
+): PracticeState {
+  if (totalStepCount > 0 && completedStepCount >= totalStepCount) {
+    return "complete";
+  }
+
+  if (status === "starting" || status === "ready") {
+    return "running";
+  }
+
+  return "ready";
+}
+
+function getPracticeStatusLabel(state: PracticeState): string {
+  if (state === "complete") {
+    return copy.practiceSkillComplete;
+  }
+
+  if (state === "running") {
+    return copy.practiceSkillRunning;
+  }
+
+  return copy.practiceSkillReady;
+}
+
+function getPracticeStatusTone(state: PracticeState): "neutral" | "success" | "warning" {
+  if (state === "complete") {
+    return "success";
+  }
+
+  if (state === "running") {
     return "warning";
   }
 
