@@ -24,6 +24,7 @@ Korean documentation is available in `README.md`. `README.ko.md` keeps the same 
 - The v2 recognizer lifecycle hardening is complete.
 - The v2 recognizer runtime port boundary is separated.
 - The v2 recognizer runtime port smoke is hardened.
+- The v3 planning baseline is written.
 - Skill names, skill effects, hand-motion resources, and visual assets will proceed only after a separate domain source is approved.
 - Concrete frame recognizer binding remains v2 follow-up scope.
 - Final release readiness document: `docs/implementation-artifacts/v1-release-readiness.en.md`
@@ -59,6 +60,7 @@ The repository is currently wired through the following playable flow:
 - live camera adapter runtime session port separated
 - camera permission smoke verifies runtime port start/stop
 - no-hand, unstable-hand, and recognized-token live camera UI states separated
+- v3 epics, stories, implementation order, prerequisites, and technology stack documented
 - result/history/rating persistence moved behind the storage adapter boundary
 - v2 epics, stories, implementation order, prerequisites, and technology stack documented
 - v2 camera/runtime/storage/matching smoke checklist documented
@@ -194,12 +196,15 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - recognizer stop/start, permission recovery, and unmount cleanup are covered by regression tests
 - recognizer runtime session start/stop and startup failure cleanup are covered by regression tests
 - camera permission smoke verifies the fake runtime port lifecycle
+- v3 planning baseline is written while blocked domain/runtime scope is preserved
 
 ## Remaining Work
 
 - no v1 release blockers
 - v2 or follow-up scope
   concrete frame recognizer binding and skill/resource implementation after the skill domain source is approved
+- v3 scope
+  handoff verification automation, runtime health summary, and v3 smoke/readiness documentation
 
 ## MVP Planning and QA
 
@@ -216,6 +221,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v2-10-recognizer-runtime-port.en.md`: recognizer runtime port record.
 - `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.en.md`: recognizer runtime port smoke record.
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`: storage adapter persistence record.
+- `docs/implementation-artifacts/v3-planning-baseline.en.md`: v3 planning baseline record.
 - `docs/implementation-artifacts/v2-planning-baseline.en.md`: v2 planning baseline record.
 - `docs/implementation-artifacts/v2-smoke-checklist.en.md`: v2 smoke checklist and blocked items.
 - `docs/implementation-artifacts/v2-release-readiness.en.md`: v2 checkpoint decision and full v2 release blockers.
@@ -227,6 +233,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/planning-artifacts/v2/stories.en.md`: v2 story status and blocked conditions.
 - `docs/planning-artifacts/v2/implementation-order.en.md`: v2 implementation order and commit units.
 - `docs/planning-artifacts/v2/prerequisites.en.md`: v2 prerequisites and stop conditions.
+- `docs/planning-artifacts/v3/technology-stack.en.md`: v3 technology keep/defer decisions.
+- `docs/planning-artifacts/v3/epics.en.md`: v3 epics, boundaries, and acceptance signals.
+- `docs/planning-artifacts/v3/stories.en.md`: v3 story status and blocked conditions.
+- `docs/planning-artifacts/v3/implementation-order.en.md`: v3 implementation order and commit units.
+- `docs/planning-artifacts/v3/prerequisites.en.md`: v3 prerequisites and stop conditions.
 - `docs/implementation-artifacts/mvp-v1-implementation-plan.en.md`: MVP implementation baseline for WebSocket flow, server authoritative rules, client hand recognition, and excluded scope.
 - `docs/planning-artifacts/mvp-v1/technology-stack.en.md`: selected MVP technology stack, boundaries, deferred choices, and dependency rules.
 - `docs/planning-artifacts/mvp-v1/epics.en.md`: MVP implementation plan split into epic-level outcomes, boundaries, stories, and acceptance signals.

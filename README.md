@@ -24,6 +24,7 @@
 - v2 recognizer lifecycle hardening이 완료되었습니다.
 - v2 recognizer runtime port boundary가 분리되었습니다.
 - v2 recognizer runtime port smoke가 강화되었습니다.
+- v3 planning baseline이 작성되었습니다.
 - 스킬명, 스킬 효과, 손동작 리소스, 시각 자산은 별도 domain source 확정 후 진행합니다.
 - 구체 frame recognizer 바인딩은 v2 follow-up 범위입니다.
 - 최종 릴리스 점검 문서: `docs/implementation-artifacts/v1-release-readiness.ko.md`
@@ -68,6 +69,7 @@
 - live camera adapter 내부 runtime session port 분리
 - camera permission smoke의 runtime port start/stop 경로 검증
 - no-hand, unstable-hand, recognized-token live camera UI 상태 분리
+- v3 에픽, 스토리, 구현 순서, 선행조건, 기술스택 문서화
 - result/history/rating persistence를 storage adapter 경계 뒤로 전환
 - v2 에픽, 스토리, 구현 순서, 선행조건, 기술스택 문서화
 - v2 camera/runtime/storage/matching smoke checklist 문서화
@@ -189,12 +191,15 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - recognizer stop/start, permission recovery, unmount cleanup 회귀 테스트
 - recognizer runtime session start/stop과 startup failure cleanup 회귀 테스트
 - camera permission smoke의 fake runtime port lifecycle 검증
+- v3 planning baseline 작성과 blocked domain/runtime 범위 유지
 
 ## 남은 작업
 
 - v1 릴리스 차단 작업 없음
 - v2 또는 follow-up 범위
   구체 frame recognizer 바인딩, 스킬 domain source 확정 후 skill/resource 구현
+- v3 범위
+  handoff 검증 자동화, runtime health summary, v3 smoke/readiness 문서화
 
 ## 경계
 
@@ -231,6 +236,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v2-10-recognizer-runtime-port.ko.md`: recognizer runtime port 구현 기록.
 - `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.ko.md`: recognizer runtime port smoke 구현 기록.
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.ko.md`: storage adapter persistence 구현 기록.
+- `docs/implementation-artifacts/v3-planning-baseline.ko.md`: v3 planning baseline 구현 기록.
 - `docs/implementation-artifacts/v2-planning-baseline.ko.md`: v2 planning baseline 구현 기록.
 - `docs/implementation-artifacts/v2-smoke-checklist.ko.md`: v2 smoke checklist와 blocked 항목.
 - `docs/implementation-artifacts/v2-release-readiness.ko.md`: v2 checkpoint 판정과 full v2 release blocker.
@@ -242,6 +248,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/planning-artifacts/v2/stories.ko.md`: v2 스토리 상태와 blocked 조건.
 - `docs/planning-artifacts/v2/implementation-order.ko.md`: v2 구현 순서와 커밋 단위.
 - `docs/planning-artifacts/v2/prerequisites.ko.md`: v2 선행조건과 구현 중단 조건.
+- `docs/planning-artifacts/v3/technology-stack.ko.md`: v3에서 유지/보류할 기술스택 결정.
+- `docs/planning-artifacts/v3/epics.ko.md`: v3 에픽, 경계, 수용 신호.
+- `docs/planning-artifacts/v3/stories.ko.md`: v3 스토리 상태와 blocked 조건.
+- `docs/planning-artifacts/v3/implementation-order.ko.md`: v3 구현 순서와 커밋 단위.
+- `docs/planning-artifacts/v3/prerequisites.ko.md`: v3 선행조건과 구현 중단 조건.
 - `docs/planning-artifacts/mvp-v1/technology-stack.ko.md`: 선택한 MVP 기술스택, 경계, 보류 항목, 의존성 추가 규칙.
 - `docs/planning-artifacts/mvp-v1/epics.ko.md`: MVP 구현 계획을 에픽 단위로 분리한 문서.
 - `docs/planning-artifacts/mvp-v1/stories.ko.md`: 스토리 단위 구현 항목, 상태, 범위, 의존성, 검증 메모.
@@ -266,6 +277,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/v2-10-recognizer-runtime-port.en.md`
 - `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.en.md`
 - `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`
+- `docs/implementation-artifacts/v3-planning-baseline.en.md`
 - `docs/implementation-artifacts/v2-planning-baseline.en.md`
 - `docs/implementation-artifacts/v2-smoke-checklist.en.md`
 - `docs/implementation-artifacts/v2-release-readiness.en.md`
@@ -277,6 +289,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/planning-artifacts/v2/stories.en.md`
 - `docs/planning-artifacts/v2/implementation-order.en.md`
 - `docs/planning-artifacts/v2/prerequisites.en.md`
+- `docs/planning-artifacts/v3/technology-stack.en.md`
+- `docs/planning-artifacts/v3/epics.en.md`
+- `docs/planning-artifacts/v3/stories.en.md`
+- `docs/planning-artifacts/v3/implementation-order.en.md`
+- `docs/planning-artifacts/v3/prerequisites.en.md`
 - `docs/planning-artifacts/mvp-v1/technology-stack.en.md`
 - `docs/planning-artifacts/mvp-v1/epics.en.md`
 - `docs/planning-artifacts/mvp-v1/stories.en.md`
