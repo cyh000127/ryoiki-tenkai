@@ -21,6 +21,12 @@ from gesture_api.repositories.game_state_storage import (
     NullGameStateStorageAdapter,
     SqlGameStateStorageAdapter,
 )
+from gesture_api.repositories.runtime_state import (
+    BattleRuntimeStore,
+    InMemoryBattleRuntimeStore,
+    InMemoryMatchQueueStore,
+    MatchQueueStore,
+)
 from gesture_api.settings import get_settings
 
 DEFAULT_GAME_STATE_PATH = Path(__file__).resolve().parents[3] / ".runtime" / "game-state.json"
@@ -31,27 +37,33 @@ class InMemoryGameStateRepository:
         self,
         persistence_path: Path | None = None,
         storage_adapter: GameStateStorageAdapter | None = None,
+        queue_store: MatchQueueStore | None = None,
+        battle_runtime_store: BattleRuntimeStore | None = None,
     ) -> None:
         self.storage_adapter = self._resolve_storage_adapter(
             persistence_path=persistence_path,
             storage_adapter=storage_adapter,
         )
-        self.reset_runtime_state(storage_adapter=self.storage_adapter)
+        self.reset_runtime_state(
+            storage_adapter=self.storage_adapter,
+            queue_store=queue_store,
+            battle_runtime_store=battle_runtime_store,
+        )
 
     def reset_runtime_state(
         self,
         persistence_path: Path | None = None,
         storage_adapter: GameStateStorageAdapter | None = None,
+        queue_store: MatchQueueStore | None = None,
+        battle_runtime_store: BattleRuntimeStore | None = None,
     ) -> None:
         self.storage_adapter = self._resolve_storage_adapter(
             persistence_path=persistence_path,
             storage_adapter=storage_adapter,
         )
+        self.queue_store = self._resolve_queue_store(queue_store)
+        self.battle_runtime_store = self._resolve_battle_runtime_store(battle_runtime_store)
         self.players: dict[str, PlayerRecord] = {}
-        self.queue: dict[str, datetime] = {}
-        self.battles: dict[str, BattleSession] = {}
-        self.player_battle_ids: dict[str, str] = {}
-        self.latest_player_battle_ids: dict[str, str] = {}
         self.match_history: list[dict[str, object]] = []
         self.match_audits: dict[str, list[dict[str, object]]] = {}
         self._load_persisted_state()
@@ -129,36 +141,36 @@ class InMemoryGameStateRepository:
         battle = self.get_player_battle(player_id)
         if battle is not None:
             return "MATCHED", None, battle
-        queued_at = self.queue.get(player_id)
+        queued_at = self.queue_store.get(player_id)
         if queued_at is not None:
             return "SEARCHING", queued_at, None
         queued_at = datetime.now(UTC)
-        self.queue[player_id] = queued_at
+        self.queue_store.add(player_id, queued_at)
         return "SEARCHING", queued_at, None
 
     def leave_queue(self, player_id: str) -> bool:
-        return self.queue.pop(player_id, None) is not None
+        return self.queue_store.remove(player_id) is not None
 
     def get_queue_entry(self, player_id: str) -> datetime | None:
-        return self.queue.get(player_id)
+        return self.queue_store.get(player_id)
 
     def get_player_battle(self, player_id: str) -> BattleSession | None:
-        battle_id = self.player_battle_ids.get(player_id)
+        battle_id = self.battle_runtime_store.get_active_battle_id(player_id)
         if battle_id is None:
             return None
-        battle = self.battles.get(battle_id)
+        battle = self.battle_runtime_store.get(battle_id)
         if battle is None or battle.status != "ACTIVE":
             return None
         return battle
 
     def get_battle(self, battle_session_id: str) -> BattleSession | None:
-        return self.battles.get(battle_session_id)
+        return self.battle_runtime_store.get(battle_session_id)
 
     def get_latest_player_battle(self, player_id: str) -> BattleSession | None:
-        battle_id = self.latest_player_battle_ids.get(player_id)
+        battle_id = self.battle_runtime_store.get_latest_battle_id(player_id)
         if battle_id is None:
             return None
-        return self.battles.get(battle_id)
+        return self.battle_runtime_store.get(battle_id)
 
     def create_match_for_player(
         self,
@@ -169,15 +181,15 @@ class InMemoryGameStateRepository:
         battle = self.get_player_battle(player_id)
         if battle is not None:
             return battle
-        if player_id not in self.queue:
+        if self.queue_store.get(player_id) is None:
             return None
         queued_opponent_id = self._pick_queued_opponent(player_id)
         if queued_opponent_id is None and not allow_practice:
             return None
         opponent_id = queued_opponent_id if queued_opponent_id is not None else "pl_practice"
-        self.queue.pop(player_id, None)
-        if opponent_id in self.queue:
-            self.queue.pop(opponent_id, None)
+        self.queue_store.remove(player_id)
+        if self.queue_store.get(opponent_id) is not None:
+            self.queue_store.remove(opponent_id)
         if queued_opponent_id is not None:
             return self._create_battle(queued_opponent_id, player_id)
         return self._create_battle(player_id, opponent_id)
@@ -212,9 +224,9 @@ class InMemoryGameStateRepository:
             return "rejected", battle, "INVALID_GESTURE_SEQUENCE"
 
         actor = battle.participants[player_id]
-        if actor.mana < skill.mana_cost:
+        if not self._has_enough_mana(actor, skill):
             return "rejected", battle, "INSUFFICIENT_MANA"
-        if actor.cooldowns.get(skill.skill_id, 0) > 0:
+        if self._is_skill_on_cooldown(actor, skill):
             return "rejected", battle, "SKILL_ON_COOLDOWN"
 
         battle.processed_action_ids.add(action_id)
@@ -294,7 +306,7 @@ class InMemoryGameStateRepository:
         return True, battle, timed_out_player_id
 
     def _pick_queued_opponent(self, player_id: str) -> str | None:
-        for queued_id in self.queue:
+        for queued_id in self.queue_store.list_player_ids():
             if queued_id != player_id:
                 return queued_id
         return None
@@ -312,11 +324,11 @@ class InMemoryGameStateRepository:
             },
             turn_owner_player_id=player_id,
         )
-        self.battles[battle_session_id] = battle
-        self.player_battle_ids[player_id] = battle_session_id
-        self.player_battle_ids[opponent_id] = battle_session_id
-        self.latest_player_battle_ids[player_id] = battle_session_id
-        self.latest_player_battle_ids[opponent_id] = battle_session_id
+        self.battle_runtime_store.save(battle)
+        self.battle_runtime_store.set_active_battle_id(player_id, battle_session_id)
+        self.battle_runtime_store.set_active_battle_id(opponent_id, battle_session_id)
+        self.battle_runtime_store.set_latest_battle_id(player_id, battle_session_id)
+        self.battle_runtime_store.set_latest_battle_id(opponent_id, battle_session_id)
         return battle
 
     def _advance_turn(self, battle: BattleSession, next_player_id: str) -> None:
@@ -345,6 +357,10 @@ class InMemoryGameStateRepository:
 
         skill = skillset.skills[0]
         actor = battle.participants[opponent_id]
+        if not self._can_cast_skill(actor, skill):
+            self._advance_turn(battle, next_player_id=target_player_id)
+            return
+
         target = battle.participants[target_player_id]
         actor.mana = max(0, actor.mana - skill.mana_cost)
         actor.cooldowns[skill.skill_id] = skill.cooldown_turn
@@ -369,6 +385,17 @@ class InMemoryGameStateRepository:
 
         self._advance_turn(battle, next_player_id=target_player_id)
 
+    @staticmethod
+    def _has_enough_mana(actor: BattleParticipant, skill) -> bool:
+        return actor.mana >= skill.mana_cost
+
+    @staticmethod
+    def _is_skill_on_cooldown(actor: BattleParticipant, skill) -> bool:
+        return actor.cooldowns.get(skill.skill_id, 0) > 0
+
+    def _can_cast_skill(self, actor: BattleParticipant, skill) -> bool:
+        return self._has_enough_mana(actor, skill) and not self._is_skill_on_cooldown(actor, skill)
+
     def _finish_battle(
         self,
         battle: BattleSession,
@@ -383,8 +410,8 @@ class InMemoryGameStateRepository:
         loser.rating -= rating_delta
         winner.wins += 1
         loser.losses += 1
-        self.player_battle_ids.pop(winner_player_id, None)
-        self.player_battle_ids.pop(loser_player_id, None)
+        self.battle_runtime_store.clear_active_battle_id(winner_player_id)
+        self.battle_runtime_store.clear_active_battle_id(loser_player_id)
         battle.status = "ENDED"
         battle.winner_player_id = winner_player_id
         battle.loser_player_id = loser_player_id
@@ -452,6 +479,21 @@ class InMemoryGameStateRepository:
         if persistence_path is not None:
             return JsonGameStateStorageAdapter(persistence_path)
         return NullGameStateStorageAdapter()
+
+    def _resolve_queue_store(self, queue_store: MatchQueueStore | None) -> MatchQueueStore:
+        if queue_store is not None:
+            queue_store.reset()
+            return queue_store
+        return InMemoryMatchQueueStore()
+
+    def _resolve_battle_runtime_store(
+        self,
+        battle_runtime_store: BattleRuntimeStore | None,
+    ) -> BattleRuntimeStore:
+        if battle_runtime_store is not None:
+            battle_runtime_store.reset()
+            return battle_runtime_store
+        return InMemoryBattleRuntimeStore()
 
 
 def create_default_game_state_storage_adapter() -> GameStateStorageAdapter:

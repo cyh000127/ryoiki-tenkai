@@ -88,6 +88,7 @@ def test_animset_catalog_and_loadout_validation_are_stable() -> None:
     assert [item["animsetId"] for item in animsets_response.json()["data"]] == [
         "animset_basic_2d",
         "animset_impact_2d",
+        "animset_unity_jjk",
     ]
 
     invalid_response = client.post(
@@ -215,6 +216,83 @@ def test_rejects_duplicate_action_id() -> None:
     assert duplicate_response.status_code == 202
     assert duplicate_response.json()["data"]["status"] == "REJECTED"
     assert duplicate_response.json()["data"]["reason"] == "DUPLICATE_ACTION"
+
+
+def test_rejects_invalid_gesture_sequence() -> None:
+    client = TestClient(create_app())
+    player_id = create_configured_guest(client, "player-invalid-sequence")
+    battle_session_id = create_started_battle(client, player_id)
+
+    response = client.post(
+        f"/api/v1/battles/{battle_session_id}/actions",
+        json={
+            "playerId": player_id,
+            "turnNumber": 1,
+            "actionId": "act-invalid-sequence",
+            "gestureSequence": ["wrong", "sequence"],
+            "submittedAt": "2026-04-27T00:00:00Z",
+        },
+    )
+
+    assert response.status_code == 202
+    assert response.json()["data"]["status"] == "REJECTED"
+    assert response.json()["data"]["reason"] == "INVALID_GESTURE_SEQUENCE"
+    assert response.json()["data"]["battle"]["status"] == "ACTIVE"
+    assert response.json()["data"]["battle"]["turnNumber"] == 1
+
+
+def test_rejects_action_when_mana_is_insufficient() -> None:
+    client = TestClient(create_app())
+    player_id = create_configured_guest(client, "player-low-mana")
+    battle_session_id = create_started_battle(client, player_id)
+
+    battle = game_state_repository.get_battle(battle_session_id)
+    assert battle is not None
+    battle.participants[player_id].mana = DEFAULT_SKILL.mana_cost - 1
+
+    response = client.post(
+        f"/api/v1/battles/{battle_session_id}/actions",
+        json={
+            "playerId": player_id,
+            "turnNumber": 1,
+            "actionId": "act-low-mana",
+            "gestureSequence": DEFAULT_SKILL.gesture_sequence,
+            "submittedAt": "2026-04-27T00:00:00Z",
+        },
+    )
+
+    assert response.status_code == 202
+    assert response.json()["data"]["status"] == "REJECTED"
+    assert response.json()["data"]["reason"] == "INSUFFICIENT_MANA"
+    assert response.json()["data"]["battle"]["self"]["mana"] == DEFAULT_SKILL.mana_cost - 1
+    assert response.json()["data"]["battle"]["turnNumber"] == 1
+
+
+def test_rejects_action_when_skill_is_on_cooldown() -> None:
+    client = TestClient(create_app())
+    player_id = create_configured_guest(client, "player-cooldown")
+    battle_session_id = create_started_battle(client, player_id)
+
+    battle = game_state_repository.get_battle(battle_session_id)
+    assert battle is not None
+    battle.participants[player_id].cooldowns[DEFAULT_SKILL.skill_id] = 1
+
+    response = client.post(
+        f"/api/v1/battles/{battle_session_id}/actions",
+        json={
+            "playerId": player_id,
+            "turnNumber": 1,
+            "actionId": "act-cooldown",
+            "gestureSequence": DEFAULT_SKILL.gesture_sequence,
+            "submittedAt": "2026-04-27T00:00:00Z",
+        },
+    )
+
+    assert response.status_code == 202
+    assert response.json()["data"]["status"] == "REJECTED"
+    assert response.json()["data"]["reason"] == "SKILL_ON_COOLDOWN"
+    assert response.json()["data"]["battle"]["self"]["cooldowns"][DEFAULT_SKILL.skill_id] == 1
+    assert response.json()["data"]["battle"]["turnNumber"] == 1
 
 
 def test_submit_action_after_deadline_returns_turn_timeout() -> None:
