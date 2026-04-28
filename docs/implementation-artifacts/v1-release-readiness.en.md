@@ -65,8 +65,9 @@ These items are not v1 release blockers and should be handled in v2 or follow-up
 
 ## Post-Release Priorities
 
-1. Connect the live recognizer adapter to the current normalized gesture input boundary.
-2. Automate real-device browser camera smoke scenarios.
-3. Replace runtime-store persistence with the formal storage adapter.
-4. Replace skill names, visual assets, and hand-motion resources from the separate source.
-5. Draft the v2 planning documents.
+1. [x] Connect the live recognizer adapter to the current normalized gesture input boundary.
+   - Implementation record: `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`
+2. [ ] Automate real-device browser camera smoke scenarios.
+3. [ ] Replace runtime-store persistence with the formal storage adapter.
+4. [ ] Replace skill names, visual assets, and hand-motion resources from the separate source.
+5. [ ] Draft the v2 planning documents.

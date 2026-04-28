@@ -8,8 +8,10 @@
 
 - v1 기능 MVP는 릴리스 준비 완료 상태입니다.
 - 릴리스 차단 항목은 없습니다.
-- 정식 스킬명, 스킬 이미지, 손동작 리소스, live recognizer adapter 완전 결합, production persistence 전환은 v2 또는 follow-up 범위입니다.
+- v2-1 live recognizer adapter boundary 연결이 완료되었습니다.
+- 정식 스킬명, 스킬 이미지, 손동작 리소스, 구체 frame recognizer 바인딩, production persistence 전환은 v2 또는 follow-up 범위입니다.
 - 최종 릴리스 점검 문서: `docs/implementation-artifacts/v1-release-readiness.ko.md`
+- v2-1 구현 기록: `docs/implementation-artifacts/v2-1-live-recognizer-adapter.ko.md`
 
 ## 명세 점검
 
@@ -41,6 +43,7 @@
 - delayed/duplicate socket event 정합성 처리
 - 전적, 레이팅, leaderboard 조회
 - battle result, compact action audit, rating, history의 runtime store 영속화
+- live camera adapter의 시작/중지/상태 표시와 recognized token의 normalized input boundary 연결
 
 ## 실행 방법
 
@@ -109,6 +112,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
   pending, rejected, confirmed, timeout, surrender, result 화면 반영
 - live camera 입력 surface와 debug fallback 입력 panel 분리
   deterministic sequence replay와 manual token 입력을 debug 전용 경계로 유지
+- live recognizer adapter를 battle 화면에 연결
+  camera observation-only feedback과 recognized token dispatch를 분리
 - battle deadline countdown, fighter cooldown detail, selected skill 상태 표시
 - sequence progress, submission readiness, local input 상태와 server rejection feedback 분리 표시
 - winner/loser, 종료 사유, rating delta, rematch/history/home을 포함한 결과 화면
@@ -122,7 +127,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 
 - v1 릴리스 차단 작업 없음
 - v2 또는 follow-up 범위
-  live recognizer adapter 연결, 실기기 카메라 smoke 자동화, production persistence 전환, 정식 리소스 교체
+  실기기 카메라 smoke 자동화, 구체 frame recognizer 바인딩, production persistence 전환, 정식 리소스 교체
 
 ## 경계
 
@@ -148,6 +153,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/mvp-v1-implementation-plan.ko.md`: WebSocket 흐름, 서버 권위 규칙, 클라이언트 손 인식, 제외 범위를 포함한 MVP 구현 기준.
 - `docs/implementation-artifacts/mvp-v1-spec-review.ko.md`: 현재 구현과 스토리 명세를 대조한 점검 문서.
 - `docs/implementation-artifacts/v1-release-readiness.ko.md`: v1 릴리스 준비 완료 판정과 검증 근거.
+- `docs/implementation-artifacts/v2-1-live-recognizer-adapter.ko.md`: live recognizer adapter 연결 구현 기록.
 - `docs/planning-artifacts/mvp-v1/technology-stack.ko.md`: 선택한 MVP 기술스택, 경계, 보류 항목, 의존성 추가 규칙.
 - `docs/planning-artifacts/mvp-v1/epics.ko.md`: MVP 구현 계획을 에픽 단위로 분리한 문서.
 - `docs/planning-artifacts/mvp-v1/stories.ko.md`: 스토리 단위 구현 항목, 상태, 범위, 의존성, 검증 메모.
@@ -161,6 +167,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 - `docs/implementation-artifacts/mvp-v1-implementation-plan.en.md`
 - `docs/implementation-artifacts/mvp-v1-spec-review.en.md`
 - `docs/implementation-artifacts/v1-release-readiness.en.md`
+- `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`
 - `docs/planning-artifacts/mvp-v1/technology-stack.en.md`
 - `docs/planning-artifacts/mvp-v1/epics.en.md`
 - `docs/planning-artifacts/mvp-v1/stories.en.md`

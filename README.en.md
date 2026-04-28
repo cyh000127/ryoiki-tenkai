@@ -8,8 +8,10 @@ Korean documentation is available in `README.md`. `README.ko.md` keeps the same 
 
 - The v1 functional MVP is release-ready.
 - There are no release blockers.
-- Final skill names, skill images, hand-motion assets, full live recognizer adapter integration, and production persistence are v2 or follow-up scope.
+- The v2-1 live recognizer adapter boundary integration is complete.
+- Final skill names, skill images, hand-motion assets, concrete frame recognizer binding, and production persistence are v2 or follow-up scope.
 - Final release readiness document: `docs/implementation-artifacts/v1-release-readiness.en.md`
+- v2-1 implementation record: `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`
 
 ## Current Status
 
@@ -31,6 +33,7 @@ The repository is currently wired through the following playable flow:
 - server-authoritative battle action validation and state mutation
 - automatic practice rival turns
 - `HP_ZERO`, `TIMEOUT`, and `SURRENDER` resolution with result screen rendering
+- live camera adapter start/stop/status display and recognized-token dispatch through the normalized input boundary
 
 ## Run Locally
 
@@ -113,6 +116,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
   pending, rejected, confirmed, timeout, surrender, and result handling
 - live camera input surface and debug fallback controls are now separated
   deterministic sequence replay and manual token input stay in a debug-only panel
+- the live recognizer adapter is connected to the battle screen
+  camera observation-only feedback and recognized-token dispatch remain separate
 - battle deadline countdown, fighter cooldown detail, and selected skill state are rendered from server snapshots
 - sequence progress, submission readiness, local input status, and server rejection feedback are rendered as separate battle UI states
 - result screen renders winner/loser, end reason, rating delta, and rematch/history/home follow-up actions
@@ -126,12 +131,13 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.p
 
 - no v1 release blockers
 - v2 or follow-up scope
-  live recognizer adapter integration, real-device camera smoke automation, production persistence, and final asset replacement
+  real-device camera smoke automation, concrete frame recognizer binding, production persistence, and final asset replacement
 
 ## MVP Planning and QA
 
 - `docs/implementation-artifacts/mvp-v1-spec-review.en.md`: spec review snapshot that compares current implementation against the MVP stories.
 - `docs/implementation-artifacts/v1-release-readiness.en.md`: v1 release readiness decision and verification evidence.
+- `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`: live recognizer adapter integration record.
 - `docs/implementation-artifacts/mvp-v1-implementation-plan.en.md`: MVP implementation baseline for WebSocket flow, server authoritative rules, client hand recognition, and excluded scope.
 - `docs/planning-artifacts/mvp-v1/technology-stack.en.md`: selected MVP technology stack, boundaries, deferred choices, and dependency rules.
 - `docs/planning-artifacts/mvp-v1/epics.en.md`: MVP implementation plan split into epic-level outcomes, boundaries, stories, and acceptance signals.
