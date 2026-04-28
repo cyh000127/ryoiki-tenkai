@@ -970,6 +970,86 @@ describe("BattleGameWorkspace", () => {
     expect(liveRecognizerMock.stop).toHaveBeenCalledTimes(1);
   });
 
+  it("shows blocked live camera state without entering action submission", async () => {
+    const user = createUser();
+    installGameApiMock();
+
+    renderWorkspace();
+
+    await user.clear(screen.getByRole("textbox", { name: "닉네임" }));
+    await user.type(screen.getByRole("textbox", { name: "닉네임" }), "rookie");
+    await user.click(screen.getByRole("button", { name: "게스트 시작" }));
+    await user.click(await screen.findByRole("button", { name: "로드아웃 저장" }));
+    await user.click(await screen.findByRole("button", { name: "랭크 1대1 매칭" }));
+
+    emitSocketEvent({
+      type: "battle.match_ready",
+      payload: {
+        queueStatus: "SEARCHING",
+        queuedAt: "2026-04-27T00:00:00Z"
+      }
+    });
+    emitSocketEvent({
+      type: "battle.match_found",
+      payload: {
+        matchId: "match_test",
+        battleSessionId: "battle_test",
+        playerSeat: "PLAYER_ONE"
+      }
+    });
+    emitSocketEvent({
+      type: "battle.started",
+      payload: {
+        battleSessionId: "battle_test",
+        playerSeat: "PLAYER_ONE",
+        battle: {
+          battleSessionId: "battle_test",
+          matchId: "match_test",
+          status: "ACTIVE",
+          turnNumber: 1,
+          turnOwnerPlayerId: "pl_guest",
+          actionDeadlineAt: "2026-04-27T00:00:30Z",
+          self: {
+            playerId: "pl_guest",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          opponent: {
+            playerId: "pl_practice",
+            hp: 100,
+            mana: 100,
+            cooldowns: {}
+          },
+          battleLog: [],
+          winnerPlayerId: null,
+          loserPlayerId: null,
+          endedReason: null
+        }
+      }
+    });
+
+    const liveCameraPanel = screen
+      .getByRole("heading", { name: "라이브 카메라 입력" })
+      .closest("section");
+    const inputPanel = screen.getByRole("heading", { name: "입력 콘솔" }).closest("section");
+
+    expect(liveCameraPanel).not.toBeNull();
+    expect(inputPanel).not.toBeNull();
+
+    await user.click(within(liveCameraPanel!).getByRole("button", { name: "카메라 시작" }));
+
+    act(() => {
+      liveRecognizerMock.options?.onStatusChange?.("blocked");
+    });
+
+    await waitFor(() => {
+      expect(within(liveCameraPanel!).getAllByText("권한 차단").length).toBeGreaterThan(0);
+    });
+    expect(within(inputPanel!).getByText("순서 입력 중")).toBeInTheDocument();
+    expect(submittedSocketActions).toHaveLength(0);
+  });
+
   it("renders timeout reason on the result screen when the server ends the battle", async () => {
     const user = createUser();
     mockMatchHistory = [
