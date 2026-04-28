@@ -11,11 +11,11 @@ Status values:
 
 ### V3-E1-ST01: Write the unified handoff verification script
 
-- Status: planned
+- Status: done
 - Scope: PowerShell entrypoint for frontend typecheck/test/smoke/build, backend lint/test, boundary check, compose config, and provider-neutral scan.
 - Acceptance criteria: fast/full modes exist and failed commands are clearly printed.
 - Dependencies: existing npm, uv, compose, and check-boundaries commands.
-- Verification: script fast mode, script plan mode.
+- Verification: `docs/implementation-artifacts/v3-1-handoff-check.en.md`, script fast mode, script plan mode.
 
 ### V3-E1-ST02: Document script usage and failure handling
 

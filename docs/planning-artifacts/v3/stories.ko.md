@@ -11,11 +11,11 @@
 
 ### V3-E1-ST01: 통합 handoff 검증 스크립트 작성
 
-- Status: planned
+- Status: done
 - Scope: frontend typecheck/test/smoke/build, backend lint/test, boundary check, compose config, provider-neutral scan을 실행하는 PowerShell entrypoint.
 - Acceptance criteria: fast/full mode를 제공하고 실패 command를 명확히 출력한다.
 - Dependencies: 기존 npm, uv, compose, check-boundaries command.
-- Verification: script fast mode, script plan mode.
+- Verification: `docs/implementation-artifacts/v3-1-handoff-check.ko.md`, script fast mode, script plan mode.
 
 ### V3-E1-ST02: 검증 스크립트 사용법과 실패 대응 문서화
 
