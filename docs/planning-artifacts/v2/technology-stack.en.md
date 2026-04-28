@@ -1,6 +1,6 @@
 # v2 Technology Stack Decision Record
 
-This document records the technology boundaries to keep or choose in v2. The stack already selected in v1 remains in place, and unselected runtimes are marked as blocked or planned.
+This document records the technology boundaries to keep or choose in v2. The stack already selected in v1 remains in place, unselected runtimes are marked as blocked, and completed operation topology decisions are fixed as done.
 
 ## Stack We Keep
 
@@ -17,14 +17,22 @@ This document records the technology boundaries to keep or choose in v2. The sta
 | Frontend tests | Vitest + component tests + browser smoke | Run unit/component/smoke checks according to affected scope. |
 | Backend tests | pytest + ruff | Continue covering rule paths, storage adapter, and socket flow. |
 
-## v2 Pending Choices
+## v2 Selection Status
 
 | Area | Status | Conditions Before Decision |
 | --- | --- | --- |
 | Concrete frame recognizer runtime | blocked | Compare browser support, lifecycle cleanup, bundle impact, and local smoke feasibility. |
 | Skill domain source format | blocked | Approve skill id/name/effect/cost/cooldown/gesture/resource/version format. |
-| Production storage topology | planned | Document SQL migration smoke and failure policy. |
+| Production storage topology | done | SQL migration smoke, failure policy, and audit retention boundaries are documented, and the compose dependency startup boundary is fixed. |
 | Real two-player matchmaking policy | done | Queue pairing, reconnect latest snapshot recovery, delayed/duplicate reconciliation, and timeout/surrender fanout hardening are complete. |
+
+## Completed Storage Topology Baseline
+
+- Local host execution starts the SQL database and cache through `scripts/dev-deps.ps1` before applying migrations.
+- Full container execution uses `docker compose up --build`; the API starts after database health checks and migrations pass.
+- Direct backend execution on the host uses a localhost database URL instead of the compose-container database host.
+- The JSON development adapter and SQL adapter remain behind the same storage protocol.
+- SQL migration apply/reset/rollback smoke steps and the storage failure/fallback policy are recorded in separate implementation artifacts.
 
 ## Recognition Runtime Selection Criteria
 

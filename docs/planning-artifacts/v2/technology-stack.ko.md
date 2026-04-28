@@ -1,6 +1,6 @@
 # v2 기술스택 결정 기록
 
-이 문서는 v2에서 유지하거나 새로 선택해야 할 기술 경계를 정리합니다. v1에서 이미 선택된 스택은 유지하고, 아직 선택되지 않은 runtime은 보류로 표시합니다.
+이 문서는 v2에서 유지하거나 새로 선택해야 할 기술 경계를 정리합니다. v1에서 이미 선택된 스택은 유지하고, 아직 선택되지 않은 runtime은 보류로 표시하며, 완료된 운영 토폴로지는 `done`으로 고정합니다.
 
 ## 유지하는 스택
 
@@ -17,14 +17,22 @@
 | Frontend tests | Vitest + component tests + browser smoke | unit/component/smoke를 영향 범위에 맞춰 실행합니다. |
 | Backend tests | pytest + ruff | rule path, storage adapter, socket flow를 계속 검증합니다. |
 
-## v2에서 보류 중인 선택
+## v2 선택 상태
 
 | 영역 | 상태 | 결정 전 조건 |
 | --- | --- | --- |
 | Concrete frame recognizer runtime | blocked | browser support, lifecycle cleanup, bundle impact, local smoke 가능 여부를 비교해야 합니다. |
 | Skill domain source format | blocked | skill id/name/effect/cost/cooldown/gesture/resource/version 형식이 승인되어야 합니다. |
-| Production storage topology | planned | SQL migration smoke와 failure policy가 문서화되어야 합니다. |
+| Production storage topology | done | SQL migration smoke, failure policy, audit retention boundary가 문서화되었고 compose 의존성 기동 경계가 고정되었습니다. |
 | Real two-player matchmaking policy | done | queue pairing, reconnect latest snapshot 복구, delayed/duplicate reconciliation, timeout/surrender fanout hardening이 완료되었습니다. |
+
+## 완료된 Storage Topology 기준
+
+- 로컬 호스트 실행은 `scripts/dev-deps.ps1`로 SQL database와 cache를 먼저 기동하고 migration을 적용합니다.
+- 전체 container 실행은 `docker compose up --build`를 사용하며, API는 database health check와 migration 완료 후 시작합니다.
+- 백엔드를 호스트에서 직접 실행할 때는 compose container용 database host를 사용하지 않고 localhost database URL을 사용합니다.
+- JSON 개발 adapter와 SQL adapter는 같은 storage protocol 뒤에 유지합니다.
+- SQL migration apply/reset/rollback smoke 절차와 storage failure/fallback policy는 구현 기록에 분리해 둡니다.
 
 ## Recognition Runtime 선택 기준
 
