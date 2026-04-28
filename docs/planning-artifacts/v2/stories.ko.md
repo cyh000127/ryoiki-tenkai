@@ -27,7 +27,7 @@
 - Scope: package/runtime 선택, adapter implementation, confidence/stability normalization, resource cleanup.
 - Acceptance criteria: 선택 근거가 technology-stack 문서에 반영된다. adapter가 raw frame을 backend로 보내지 않는다. local unit 또는 smoke test가 recognizer lifecycle을 커버한다.
 - Dependencies: runtime 선택, browser support 기준.
-- Preparation: runtime port는 `docs/implementation-artifacts/v2-10-recognizer-runtime-port.ko.md`에서 분리됨. concrete runtime 선택 전까지 status는 blocked로 유지한다.
+- Preparation: runtime port는 `docs/implementation-artifacts/v2-10-recognizer-runtime-port.ko.md`에서 분리되었고, fake runtime port smoke는 `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.ko.md`에서 검증됨. concrete runtime 선택 전까지 status는 blocked로 유지한다.
 - Verification: adapter unit test, smoke test.
 
 ### V2-E1-ST03: no-hand/unstable/recognized-token UI 상태 분리

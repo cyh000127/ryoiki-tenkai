@@ -101,3 +101,5 @@
    - 구현 기록: `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.ko.md`
 18. [x] recognizer runtime session port를 분리합니다.
    - 구현 기록: `docs/implementation-artifacts/v2-10-recognizer-runtime-port.ko.md`
+19. [x] recognizer runtime port smoke를 강화합니다.
+   - 구현 기록: `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.ko.md`

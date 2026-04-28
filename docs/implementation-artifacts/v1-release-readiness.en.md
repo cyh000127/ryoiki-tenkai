@@ -101,3 +101,5 @@ These items are not v1 release blockers and should be handled in v2 or follow-up
    - Implementation record: `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.en.md`
 18. [x] Separate the recognizer runtime session port.
    - Implementation record: `docs/implementation-artifacts/v2-10-recognizer-runtime-port.en.md`
+19. [x] Harden the recognizer runtime port smoke.
+   - Implementation record: `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.en.md`

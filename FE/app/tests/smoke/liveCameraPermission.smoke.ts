@@ -28,6 +28,9 @@ type CameraSmokeResult = {
   statuses: SmokeStatus[];
   observations: SmokeObservation[];
   inputs: SmokeInput[];
+  runtimeStarts: number;
+  runtimeStops: number;
+  recognitionCalls: number;
 };
 
 test.describe("live camera permission smoke", () => {
@@ -53,6 +56,9 @@ test.describe("live camera permission smoke", () => {
       confidence: 0.91,
       source: "live_camera"
     });
+    expect(result.runtimeStarts).toBe(1);
+    expect(result.runtimeStops).toBe(1);
+    expect(result.recognitionCalls).toBeGreaterThanOrEqual(1);
   });
 
   test("denied camera permission emits blocked status without gesture input", async ({
@@ -76,6 +82,9 @@ test.describe("live camera permission smoke", () => {
     expect(result.statuses).toEqual(["starting", "blocked"]);
     expect(result.observations).toEqual([]);
     expect(result.inputs).toEqual([]);
+    expect(result.runtimeStarts).toBe(0);
+    expect(result.runtimeStops).toBe(0);
+    expect(result.recognitionCalls).toBe(0);
   });
 });
 
@@ -87,17 +96,35 @@ async function runAllowedCameraSmoke(): Promise<CameraSmokeResult> {
   const statuses: SmokeStatus[] = [];
   const observations: SmokeObservation[] = [];
   const inputs: SmokeInput[] = [];
+  let runtimeStarts = 0;
+  let runtimeStops = 0;
+  let recognitionCalls = 0;
   const recognizer = liveRecognizerModule.createBrowserLiveGestureRecognizer({
     getTargetSequence: () => ["seal_1", "seal_3"],
     getExpectedToken: () => "seal_1",
     pollIntervalMs: 50,
-    frameRecognizer: () => ({
-      token: "seal_1",
-      confidence: 0.91,
-      handDetected: true,
-      stabilityMs: 600,
-      reason: "recognized"
-    }),
+    runtime: {
+      start: () => {
+        runtimeStarts += 1;
+
+        return {
+          recognizeFrame: () => {
+            recognitionCalls += 1;
+
+            return {
+              token: "seal_1",
+              confidence: 0.91,
+              handDetected: true,
+              stabilityMs: 600,
+              reason: "recognized"
+            };
+          },
+          stop: () => {
+            runtimeStops += 1;
+          }
+        };
+      }
+    },
     onObservation: (observation: SmokeObservation, input: SmokeInput) => {
       observations.push({
         token: observation.token,
@@ -121,7 +148,10 @@ async function runAllowedCameraSmoke(): Promise<CameraSmokeResult> {
     hasMediaDevices: Boolean(navigator.mediaDevices?.getUserMedia),
     statuses,
     observations,
-    inputs
+    inputs,
+    runtimeStarts,
+    runtimeStops,
+    recognitionCalls
   };
 }
 
@@ -157,6 +187,9 @@ async function runDeniedCameraSmoke(): Promise<CameraSmokeResult> {
     hasMediaDevices: Boolean(navigator.mediaDevices?.getUserMedia),
     statuses,
     observations,
-    inputs
+    inputs,
+    runtimeStarts: 0,
+    runtimeStops: 0,
+    recognitionCalls: 0
   };
 }

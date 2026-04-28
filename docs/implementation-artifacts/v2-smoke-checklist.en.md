@@ -81,6 +81,8 @@ Use this document for local v2 handoff verification. Skill names, skill effects,
   - Evidence: `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.en.md`
 - [x] The runtime port lifecycle for later concrete runtime binding is separated.
   - Evidence: `docs/implementation-artifacts/v2-10-recognizer-runtime-port.en.md`
+- [x] Camera permission smoke verifies the fake runtime port start/stop path.
+  - Evidence: `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.en.md`
 - Blocked: concrete frame recognizer adapter lifecycle smoke.
   - Blocker: recognizer runtime selection is not approved yet.
   - Related story: `V2-E1-ST02`

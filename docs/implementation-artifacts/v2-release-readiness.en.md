@@ -22,6 +22,7 @@ This document records the current v2 readiness decision. The current branch is r
 | Recognition UI state separation | PASS | `docs/implementation-artifacts/v2-4-recognition-ui-state.en.md` |
 | Recognizer lifecycle hardening | PASS | `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.en.md` |
 | Recognizer runtime port boundary | PASS | `docs/implementation-artifacts/v2-10-recognizer-runtime-port.en.md` |
+| Recognizer runtime port smoke | PASS | `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.en.md` |
 | Two-player queue pairing | PASS | `docs/implementation-artifacts/v2-5-two-player-queue-pairing.en.md` |
 | Socket reconnect latest snapshot resync | PASS | `docs/implementation-artifacts/v2-6-socket-reconnect-resync.en.md` |
 | Delayed/duplicate event reconciliation | PASS | `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.en.md` |
@@ -39,7 +40,7 @@ This document records the current v2 readiness decision. The current branch is r
 
 | Epic | Current Status | Notes |
 | --- | --- | --- |
-| V2-E1 Live Recognition Runtime Hardening | partial | Adapter boundary, camera smoke, no-hand/unstable/recognized UI separation, restart/cleanup hardening, and runtime port boundary are complete; concrete runtime selection remains. |
+| V2-E1 Live Recognition Runtime Hardening | partial | Adapter boundary, camera smoke, no-hand/unstable/recognized UI separation, restart/cleanup hardening, runtime port boundary, and fake runtime port smoke are complete; concrete runtime selection remains. |
 | V2-E2 Persistence and Runtime Operation Readiness | done | Storage adapter transition, migration smoke, failure policy, and audit retention boundary are complete. |
 | V2-E3 Real Match Flow and Session Robustness | done | Two-player queue pairing, reconnect latest snapshot recovery, delayed/duplicate reconciliation, and timeout/surrender fanout hardening are complete. |
 | V2-E4 Skill and Resource Domain Intake | blocked | An approved skill domain source is required. |
@@ -58,7 +59,7 @@ Skill names, skill effects, gesture sequence changes, hand-motion resources, vis
 
 ## Verification
 
-This readiness review reflects recognizer runtime port boundary and documentation updates.
+This readiness review reflects recognizer runtime port smoke and documentation updates.
 
 | Check | Status | Notes |
 | --- | --- | --- |
@@ -73,7 +74,7 @@ This readiness review reflects recognizer runtime port boundary and documentatio
 | `git diff --check` | PASS | whitespace/error check |
 | Provider-neutral targeted text scan | PASS | no matches outside ignored files |
 | README link review | PASS | Korean and English links include the v2 readiness document |
-| Story status review | PASS | `V2-E1-ST02` remains blocked; only runtime port preparation is recorded |
+| Story status review | PASS | `V2-E1-ST02` remains blocked; only runtime port preparation and fake smoke are recorded |
 
 ## Next Implementation Order
 
