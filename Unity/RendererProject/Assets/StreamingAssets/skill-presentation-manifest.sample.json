@@ -1,0 +1,42 @@
+{
+  "animsetId": "animset_unity_jjk",
+  "version": "prototype-v1",
+  "entries": [
+    {
+      "skillId": "jjk_gojo_red",
+      "timelineId": "timeline.gojo.red",
+      "clipId": "gojo_red_cast",
+      "cameraPresetId": "projectile_closeup",
+      "impactVfxId": "red_burst",
+      "fallbackMode": "unity",
+      "tier": "hero"
+    },
+    {
+      "skillId": "jjk_gojo_hollow_purple",
+      "timelineId": "timeline.gojo.hollow_purple",
+      "clipId": "gojo_hollow_purple_cast",
+      "cameraPresetId": "beam_finisher",
+      "impactVfxId": "purple_impact",
+      "fallbackMode": "unity",
+      "tier": "hero"
+    },
+    {
+      "skillId": "jjk_gojo_infinite_void",
+      "timelineId": "timeline.gojo.infinite_void",
+      "clipId": "gojo_infinite_void_domain",
+      "cameraPresetId": "domain_expansion",
+      "impactVfxId": "void_crush",
+      "fallbackMode": "unity",
+      "tier": "hero"
+    },
+    {
+      "skillId": "jjk_sukuna_malevolent_shrine",
+      "timelineId": "timeline.sukuna.malevolent_shrine",
+      "clipId": "",
+      "cameraPresetId": "shrine_panorama",
+      "impactVfxId": "cleave_barrage",
+      "fallbackMode": "html-only",
+      "tier": "standard"
+    }
+  ]
+}

@@ -136,5 +136,6 @@ export const DEFAULT_SKILLSET: Skillset = {
 
 export const DEFAULT_ANIMSETS: Animset[] = [
   { animsetId: "animset_basic_2d", name: "기본 2D 연출" },
-  { animsetId: "animset_impact_2d", name: "타격 강조 연출" }
+  { animsetId: "animset_impact_2d", name: "타격 강조 연출" },
+  { animsetId: "animset_unity_jjk", name: "Unity WebGL 프로토타입" }
 ];
