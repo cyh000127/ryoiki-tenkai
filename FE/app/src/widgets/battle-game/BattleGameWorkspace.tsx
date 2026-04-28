@@ -81,6 +81,7 @@ const screenOrder: ScreenKey[] = [
   "result",
   "history"
 ];
+const PRACTICE_AUTO_ADVANCE_DELAY_MS = 650;
 
 type SkillInputMode = "gesture_only" | "voice_then_gesture";
 
@@ -112,6 +113,10 @@ export function BattleGameWorkspace() {
   const practiceRecognizerRef = useRef<LiveGestureRecognizer | null>(null);
   const practiceVideoRef = useRef<HTMLVideoElement | null>(null);
   const practiceMeshCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const practiceAutoAdvanceRef = useRef<{
+    key: string;
+    timeoutId: number | null;
+  } | null>(null);
   const startupVoiceRecognizerRef = useRef<StartupVoiceCommandRecognizer | null>(null);
   const skillVoiceRecognizerRef = useRef<StartupVoiceCommandRecognizer | null>(null);
   const practiceProgressRef = useRef<PracticeProgress>({
@@ -298,6 +303,7 @@ export function BattleGameWorkspace() {
       liveRecognizerRef.current = null;
       practiceRecognizerRef.current?.stop();
       practiceRecognizerRef.current = null;
+      clearPracticeAutoAdvance();
       startupVoiceRecognizerRef.current?.stop();
       startupVoiceRecognizerRef.current = null;
       skillVoiceRecognizerRef.current?.stop();
@@ -501,7 +507,7 @@ export function BattleGameWorkspace() {
     practiceProgress.targetSequence[practiceProgress.currentStep] ??
     practiceProgress.targetSequence[0] ??
     null;
-  const canConfirmPracticeGesture =
+  const isPracticeGestureRecognized =
     practiceObservation?.reason === "recognized" &&
     practiceProgress.handDetected &&
     practiceProgress.currentGesture === practiceExpectedGesture &&
@@ -916,6 +922,7 @@ export function BattleGameWorkspace() {
   }
 
   function resetPracticeProgress(skill = selectedSkill) {
+    clearPracticeAutoAdvance();
     const nextProgress = {
       targetSequence: [...skill.gestureSequence],
       currentStep: 0,
@@ -979,21 +986,59 @@ export function BattleGameWorkspace() {
 
     practiceProgressRef.current = nextProgress;
     setPracticeProgress(nextProgress);
+    schedulePracticeAutoAdvance(observation);
   }
 
-  function handleConfirmPracticeGesture() {
+  function schedulePracticeAutoAdvance(observation: LiveGestureObservation) {
     const progress = practiceProgressRef.current;
     const expectedGesture = progress.targetSequence[progress.currentStep] ?? null;
 
     if (
-      !practiceObservation ||
-      practiceObservation.reason !== "recognized" ||
-      !practiceObservation.handDetected ||
-      practiceObservation.confidence < LIVE_GESTURE_MIN_CONFIDENCE ||
+      observation.reason !== "recognized" ||
+      !observation.handDetected ||
+      observation.confidence < LIVE_GESTURE_MIN_CONFIDENCE ||
       !expectedGesture ||
-      practiceObservation.token !== expectedGesture
+      observation.token !== expectedGesture
     ) {
-      setStatusMessage(copy.practiceConfirmRequired);
+      clearPracticeAutoAdvance();
+      return;
+    }
+
+    const key = `${progress.completedRounds}:${progress.currentStep}:${expectedGesture}`;
+    if (practiceAutoAdvanceRef.current?.key === key) {
+      return;
+    }
+
+    clearPracticeAutoAdvance();
+    practiceAutoAdvanceRef.current = {
+      key,
+      timeoutId: window.setTimeout(() => {
+        advanceRecognizedPracticeGesture(observation, key);
+      }, PRACTICE_AUTO_ADVANCE_DELAY_MS)
+    };
+  }
+
+  function advanceRecognizedPracticeGesture(
+    observation: LiveGestureObservation,
+    key: string
+  ) {
+    const scheduledAdvance = practiceAutoAdvanceRef.current;
+    if (!scheduledAdvance || scheduledAdvance.key !== key) {
+      return;
+    }
+
+    scheduledAdvance.timeoutId = null;
+    const progress = practiceProgressRef.current;
+    const expectedGesture = progress.targetSequence[progress.currentStep] ?? null;
+
+    if (
+      observation.reason !== "recognized" ||
+      !observation.handDetected ||
+      observation.confidence < LIVE_GESTURE_MIN_CONFIDENCE ||
+      !expectedGesture ||
+      observation.token !== expectedGesture
+    ) {
+      clearPracticeAutoAdvance();
       return;
     }
 
@@ -1020,6 +1065,14 @@ export function BattleGameWorkspace() {
     );
   }
 
+  function clearPracticeAutoAdvance() {
+    const scheduledAdvance = practiceAutoAdvanceRef.current;
+    if (scheduledAdvance?.timeoutId !== null && scheduledAdvance?.timeoutId !== undefined) {
+      window.clearTimeout(scheduledAdvance.timeoutId);
+    }
+    practiceAutoAdvanceRef.current = null;
+  }
+
   function stopPracticeRecognizer() {
     const recognizer = practiceRecognizerRef.current;
     if (!recognizer) {
@@ -1028,6 +1081,7 @@ export function BattleGameWorkspace() {
 
     recognizer.stop();
     practiceRecognizerRef.current = null;
+    clearPracticeAutoAdvance();
   }
 
   function handleSurrender() {
@@ -1413,8 +1467,8 @@ export function BattleGameWorkspace() {
                   </div>
                   <p className="helper-text">{copy.practiceHelp}</p>
                   <div className="practice-guide">
-                    <StatusBadge tone={canConfirmPracticeGesture ? "success" : "neutral"}>
-                      {canConfirmPracticeGesture
+                    <StatusBadge tone={isPracticeGestureRecognized ? "success" : "neutral"}>
+                      {isPracticeGestureRecognized
                         ? copy.practiceGestureReady
                         : copy.practiceGestureWaiting}
                     </StatusBadge>
@@ -1476,13 +1530,6 @@ export function BattleGameWorkspace() {
                       onClick={stopPracticeRecognizer}
                     >
                       {copy.practiceStop}
-                    </Button>
-                    <Button
-                      disabled={!canConfirmPracticeGesture}
-                      onClick={handleConfirmPracticeGesture}
-                      variant={canConfirmPracticeGesture ? "primary" : "default"}
-                    >
-                      {copy.practiceConfirmStep}
                     </Button>
                     <Button onClick={() => resetPracticeProgress()}>{copy.practiceReset}</Button>
                   </div>

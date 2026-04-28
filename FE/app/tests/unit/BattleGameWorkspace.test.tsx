@@ -589,13 +589,17 @@ describe("BattleGameWorkspace", () => {
       );
     });
 
-    expect(screen.getByText("확인 가능")).toBeInTheDocument();
+    expect(screen.getByText("인식 완료")).toBeInTheDocument();
     expect(screen.getAllByText("0/1").length).toBeGreaterThan(0);
     expect(liveRecognizerMock.stop).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: "현재 동작 확인" })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "현재 동작 확인" }));
-
-    expect(screen.getByText("연습 1회 완료. 1회째 반복을 시작합니다.")).toBeInTheDocument();
+    await waitFor(
+      () => {
+        expect(screen.getByText("연습 1회 완료. 1회째 반복을 시작합니다.")).toBeInTheDocument();
+      },
+      { timeout: 1500 }
+    );
     expect(screen.getByText("완료 횟수")).toBeInTheDocument();
     expect(screen.getAllByText("1").length).toBeGreaterThan(0);
     expect(screen.getAllByText("0/1").length).toBeGreaterThan(0);
