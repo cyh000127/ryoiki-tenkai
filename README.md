@@ -36,6 +36,7 @@
 - v4 캐릭터/스킬/STT 후보 카탈로그가 작성되었습니다.
 - v4 Phase 1 주술회전 캐릭터/술식/STT 카탈로그가 작성되었습니다.
 - game state persistence 기본 backend가 PostgreSQL storage adapter로 전환되었습니다.
+- v5 연습모드/매칭 플로우 재기획 문서가 작성되었습니다.
 - 스킬명, 스킬 효과, 손동작 리소스, 시각 자산은 별도 domain source 확정 후 진행합니다.
 - 최종 릴리스 점검 문서: `docs/implementation-artifacts/v1-release-readiness.ko.md`
 - v2-1 구현 기록: `docs/implementation-artifacts/v2-1-live-recognizer-adapter.ko.md`
@@ -51,6 +52,7 @@
 - v4 캐릭터/스킬/STT 정리 기록: `docs/implementation-artifacts/v4-3-character-skill-stt-intake.ko.md`
 - v4 Phase 1 주술회전 카탈로그: `docs/product/jujutsu-character-skill-stt-catalog.ko.md`
 - PostgreSQL game state storage 전환 기록: `docs/implementation-artifacts/v4-4-postgres-game-state-storage.ko.md`
+- v5 연습모드/매칭 플로우: `docs/planning-artifacts/v5/practice-match-flow.ko.md`
 
 ## 명세 점검
 
@@ -108,6 +110,7 @@
 - compact audit retention boundary 문서화와 raw recognition data 저장 제외 기준
 - no-hand, unstable-hand, recognized-token UI 상태 분리
 - two-player queue pairing과 practice path 분리
+- v5 연습모드와 매칭의 목적지/진행 상태 분리 기획 문서화
 
 ## 실행 방법
 
@@ -361,6 +364,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check
 - `docs/planning-artifacts/v4/stories.ko.md`: v4 스토리 상태와 검증 기준.
 - `docs/planning-artifacts/v4/implementation-order.ko.md`: v4 구현 순서와 커밋 단위.
 - `docs/planning-artifacts/v4/prerequisites.ko.md`: v4 선행조건과 구현 중단 조건.
+- `docs/implementation-artifacts/v5-flow-planning-review.ko.md`: v5 연습모드/매칭 플로우 기획 검토 기록.
+- `docs/planning-artifacts/v5/practice-match-flow.ko.md`: v5 연습모드/매칭 제품 플로우.
+- `docs/planning-artifacts/v5/stories.ko.md`: v5 스토리 상태와 검증 기준.
+- `docs/planning-artifacts/v5/implementation-order.ko.md`: v5 구현 순서와 커밋 단위.
+- `docs/planning-artifacts/v5/prerequisites.ko.md`: v5 선행조건과 구현 중단 조건.
 - `docs/implementation-artifacts/v2-planning-baseline.ko.md`: v2 planning baseline 구현 기록.
 - `docs/implementation-artifacts/v2-smoke-checklist.ko.md`: v2 smoke checklist와 blocked 항목.
 - `docs/implementation-artifacts/v2-release-readiness.ko.md`: v2 checkpoint 판정과 full v2 release blocker.
