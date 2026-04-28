@@ -87,6 +87,7 @@ export function createBrowserLiveGestureRecognizer(
   let intervalId: number | null = null;
   let status: LiveGestureRecognizerStatus = "idle";
   let lastObservationFingerprint: string | null = null;
+  let lifecycleVersion = 0;
 
   function setStatus(nextStatus: LiveGestureRecognizerStatus) {
     if (status === nextStatus) {
@@ -143,6 +144,16 @@ export function createBrowserLiveGestureRecognizer(
     lastObservationFingerprint = null;
   }
 
+  function stopStream(targetStream: MediaStream) {
+    for (const track of targetStream.getTracks()) {
+      track.stop();
+    }
+  }
+
+  function isCurrentStart(version: number): boolean {
+    return lifecycleVersion === version && status === "starting";
+  }
+
   return {
     async start() {
       if (status === "starting" || status === "ready") {
@@ -154,33 +165,52 @@ export function createBrowserLiveGestureRecognizer(
         return;
       }
 
+      const startVersion = lifecycleVersion + 1;
+      lifecycleVersion = startVersion;
       setStatus("starting");
 
       try {
-        stream = await mediaDevices.getUserMedia({
+        const nextStream = await mediaDevices.getUserMedia({
           audio: false,
           video: {
             facingMode: "user"
           }
         });
-        video = createVideoElement();
-        video.muted = true;
-        video.playsInline = true;
-        video.srcObject = stream;
 
-        if (typeof video.play === "function") {
-          await video.play();
+        if (!isCurrentStart(startVersion)) {
+          stopStream(nextStream);
+          return;
+        }
+
+        const nextVideo = createVideoElement();
+        nextVideo.muted = true;
+        nextVideo.playsInline = true;
+        nextVideo.srcObject = nextStream;
+        stream = nextStream;
+        video = nextVideo;
+
+        if (typeof nextVideo.play === "function") {
+          await nextVideo.play();
+        }
+
+        if (!isCurrentStart(startVersion)) {
+          cleanup();
+          return;
         }
 
         setStatus("ready");
         observeFrame();
         intervalId = window.setInterval(observeFrame, pollIntervalMs);
       } catch (error) {
+        if (!isCurrentStart(startVersion)) {
+          return;
+        }
         cleanup();
         setStatus(getCameraErrorStatus(error));
       }
     },
     stop() {
+      lifecycleVersion += 1;
       cleanup();
       setStatus("stopped");
     }

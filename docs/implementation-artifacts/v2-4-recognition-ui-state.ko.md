@@ -46,4 +46,3 @@
 ## 남은 v2 선행조건
 
 - `V2-E1-ST02`: concrete frame recognizer runtime 선택 및 adapter 결합.
-- `V2-E1-ST04`: recognizer restart, cleanup, permission recovery hardening.

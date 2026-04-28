@@ -1112,6 +1112,26 @@ describe("BattleGameWorkspace", () => {
     expect(liveRecognizerMock.stop).toHaveBeenCalledTimes(1);
   });
 
+  it("stops the live recognizer when the battle workspace unmounts", async () => {
+    const user = createUser();
+    installGameApiMock();
+
+    const { unmount } = renderWorkspace();
+    await enterActiveBattle(user);
+
+    const liveCameraPanel = screen
+      .getByRole("heading", { name: "라이브 카메라 입력" })
+      .closest("section");
+    expect(liveCameraPanel).not.toBeNull();
+
+    await user.click(within(liveCameraPanel!).getByRole("button", { name: "카메라 시작" }));
+    expect(liveRecognizerMock.start).toHaveBeenCalledTimes(1);
+
+    unmount();
+
+    expect(liveRecognizerMock.stop).toHaveBeenCalledTimes(1);
+  });
+
   it("separates live no-hand, unstable-hand, and recognized-token states", async () => {
     const user = createUser();
     installGameApiMock();

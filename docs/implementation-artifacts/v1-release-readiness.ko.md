@@ -97,3 +97,5 @@
    - 구현 기록: `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.ko.md`
 16. [x] timeout/surrender fanout과 disconnected participant replay를 강화합니다.
    - 구현 기록: `docs/implementation-artifacts/v2-8-timeout-surrender-fanout.ko.md`
+17. [x] recognizer stop/start, permission recovery, unmount cleanup을 강화합니다.
+   - 구현 기록: `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.ko.md`

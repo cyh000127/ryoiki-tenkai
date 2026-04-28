@@ -77,8 +77,8 @@ Use this document for local v2 handoff verification. Skill names, skill effects,
   - Evidence: `pnpm --dir FE/app smoke:camera`
 - [x] No-hand, unstable-hand, and recognized-token states are visually separated.
   - Evidence: `docs/implementation-artifacts/v2-4-recognition-ui-state.en.md`
-- [ ] Stop/start/unmount cleanup and permission recovery are locked by regression tests.
-  - Planned story: `V2-E1-ST04`
+- [x] Stop/start/unmount cleanup and permission recovery are locked by regression tests.
+  - Evidence: `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.en.md`
 - Blocked: concrete frame recognizer adapter lifecycle smoke.
   - Blocker: recognizer runtime selection is not approved yet.
   - Related story: `V2-E1-ST02`

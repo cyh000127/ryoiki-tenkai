@@ -43,5 +43,4 @@ This document is the implementation record for `V2-E3-ST03`. The frontend regres
 ## Remaining v2 Prerequisites
 
 - `V2-E1-ST02`: select and bind the concrete frame recognizer runtime.
-- `V2-E1-ST04`: harden recognizer restart, cleanup, and permission recovery.
 - `V2-E4-ST01` and later: obtain an approved skill domain source.

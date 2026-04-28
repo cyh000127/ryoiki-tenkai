@@ -40,12 +40,12 @@
 
 ### V2-E1-ST04: recognizer restart, cleanup, permission recovery hardening
 
-- Status: planned
+- Status: done
 - User story: player는 camera permission 또는 runtime 오류 후 앱을 새로고침하지 않고 복구를 시도할 수 있다.
 - Scope: stop/start idempotency, stream cleanup, blocked/error recovery UI, unmount cleanup.
 - Acceptance criteria: repeated start/stop이 중복 stream을 만들지 않는다. permission denied 후 action submission으로 넘어가지 않는다.
-- Dependencies: V2-E1-ST02.
-- Verification: frontend unit test, smoke test.
+- Dependencies: V2-E1-ST01, V2-E1-ST03.
+- Verification: `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.ko.md`, `FE/app/tests/unit/liveGestureRecognizer.test.ts`, `FE/app/tests/unit/BattleGameWorkspace.test.tsx`, camera smoke test.
 
 ## V2-E2: Persistence and Runtime Operation Readiness
 

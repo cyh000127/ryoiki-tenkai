@@ -77,8 +77,8 @@
   - 근거: `pnpm --dir FE/app smoke:camera`
 - [x] no-hand, unstable-hand, recognized-token 상태가 시각적으로 분리되어 있다.
   - 근거: `docs/implementation-artifacts/v2-4-recognition-ui-state.ko.md`
-- [ ] stop/start/unmount cleanup과 permission recovery가 회귀 테스트로 고정되어 있다.
-  - 계획 story: `V2-E1-ST04`
+- [x] stop/start/unmount cleanup과 permission recovery가 회귀 테스트로 고정되어 있다.
+  - 근거: `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.ko.md`
 - Blocked: concrete frame recognizer adapter lifecycle smoke.
   - blocker: recognizer runtime 선택이 아직 확정되지 않음.
   - 관련 story: `V2-E1-ST02`

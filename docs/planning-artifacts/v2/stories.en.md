@@ -40,12 +40,12 @@ Status values:
 
 ### V2-E1-ST04: Harden recognizer restart, cleanup, and permission recovery
 
-- Status: planned
+- Status: done
 - User story: the player can recover from camera permission or runtime errors without refreshing the app.
 - Scope: stop/start idempotency, stream cleanup, blocked/error recovery UI, unmount cleanup.
 - Acceptance criteria: repeated start/stop does not create duplicate streams. Permission denied does not enter action submission.
-- Dependencies: V2-E1-ST02.
-- Verification: frontend unit test, smoke test.
+- Dependencies: V2-E1-ST01, V2-E1-ST03.
+- Verification: `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.en.md`, `FE/app/tests/unit/liveGestureRecognizer.test.ts`, `FE/app/tests/unit/BattleGameWorkspace.test.tsx`, camera smoke test.
 
 ## V2-E2: Persistence and Runtime Operation Readiness
 

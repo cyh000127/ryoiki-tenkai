@@ -116,4 +116,100 @@ describe("createBrowserLiveGestureRecognizer", () => {
 
     expect(statuses).toEqual(["unsupported"]);
   });
+
+  it("cancels a pending camera start when stopped before permission resolves", async () => {
+    const track = {
+      stop: vi.fn()
+    } as unknown as MediaStreamTrack;
+    const stream = {
+      getTracks: () => [track]
+    } as unknown as MediaStream;
+    let resolveStream: (stream: MediaStream) => void = () => undefined;
+    const mediaDevices = {
+      getUserMedia: vi.fn(
+        () =>
+          new Promise<MediaStream>((resolve) => {
+            resolveStream = resolve;
+          })
+      )
+    };
+    const video = {
+      muted: false,
+      playsInline: false,
+      srcObject: null,
+      play: vi.fn(async () => undefined)
+    } as unknown as HTMLVideoElement;
+    const statuses: LiveGestureRecognizerStatus[] = [];
+    const onObservation = vi.fn();
+
+    const recognizer = createBrowserLiveGestureRecognizer({
+      getTargetSequence: () => ["seal_1"],
+      getExpectedToken: () => "seal_1",
+      mediaDevices,
+      createVideoElement: () => video,
+      onObservation,
+      onStatusChange: (status) => {
+        statuses.push(status);
+      }
+    });
+
+    const startPromise = recognizer.start();
+    expect(statuses).toEqual(["starting"]);
+
+    recognizer.stop();
+    resolveStream(stream);
+    await startPromise;
+
+    expect(statuses).toEqual(["starting", "stopped"]);
+    expect(track.stop).toHaveBeenCalledTimes(1);
+    expect(video.play).not.toHaveBeenCalled();
+    expect(onObservation).not.toHaveBeenCalled();
+  });
+
+  it("can retry after permission is denied and later recover to ready", async () => {
+    const deniedError = Object.assign(new Error("denied"), {
+      name: "NotAllowedError"
+    });
+    const track = {
+      stop: vi.fn()
+    } as unknown as MediaStreamTrack;
+    const stream = {
+      getTracks: () => [track]
+    } as unknown as MediaStream;
+    const mediaDevices = {
+      getUserMedia: vi.fn()
+        .mockRejectedValueOnce(deniedError)
+        .mockResolvedValueOnce(stream)
+    };
+    const video = {
+      muted: false,
+      playsInline: false,
+      srcObject: null,
+      play: vi.fn(async () => undefined)
+    } as unknown as HTMLVideoElement;
+    const statuses: LiveGestureRecognizerStatus[] = [];
+
+    const recognizer = createBrowserLiveGestureRecognizer({
+      getTargetSequence: () => ["seal_1"],
+      getExpectedToken: () => "seal_1",
+      mediaDevices,
+      createVideoElement: () => video,
+      onObservation: vi.fn(),
+      onStatusChange: (status) => {
+        statuses.push(status);
+      }
+    });
+
+    await recognizer.start();
+    await recognizer.start();
+
+    expect(mediaDevices.getUserMedia).toHaveBeenCalledTimes(2);
+    expect(statuses).toEqual(["starting", "blocked", "starting", "ready"]);
+    expect(video.srcObject).toBe(stream);
+
+    recognizer.stop();
+
+    expect(track.stop).toHaveBeenCalledTimes(1);
+    expect(statuses.at(-1)).toBe("stopped");
+  });
 });

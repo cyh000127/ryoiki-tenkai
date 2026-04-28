@@ -20,6 +20,7 @@ This document records the current v2 readiness decision. The current branch is r
 | Live recognizer adapter boundary | PASS | `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md` |
 | Camera permission smoke automation | PASS | `docs/implementation-artifacts/v2-2-camera-permission-smoke.en.md` |
 | Recognition UI state separation | PASS | `docs/implementation-artifacts/v2-4-recognition-ui-state.en.md` |
+| Recognizer lifecycle hardening | PASS | `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.en.md` |
 | Two-player queue pairing | PASS | `docs/implementation-artifacts/v2-5-two-player-queue-pairing.en.md` |
 | Socket reconnect latest snapshot resync | PASS | `docs/implementation-artifacts/v2-6-socket-reconnect-resync.en.md` |
 | Delayed/duplicate event reconciliation | PASS | `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.en.md` |
@@ -37,7 +38,7 @@ This document records the current v2 readiness decision. The current branch is r
 
 | Epic | Current Status | Notes |
 | --- | --- | --- |
-| V2-E1 Live Recognition Runtime Hardening | partial | Adapter boundary, camera smoke, and no-hand/unstable/recognized UI separation are complete; concrete runtime selection and restart/cleanup hardening remain. |
+| V2-E1 Live Recognition Runtime Hardening | partial | Adapter boundary, camera smoke, no-hand/unstable/recognized UI separation, and restart/cleanup hardening are complete; concrete runtime selection remains. |
 | V2-E2 Persistence and Runtime Operation Readiness | done | Storage adapter transition, migration smoke, failure policy, and audit retention boundary are complete. |
 | V2-E3 Real Match Flow and Session Robustness | done | Two-player queue pairing, reconnect latest snapshot recovery, delayed/duplicate reconciliation, and timeout/surrender fanout hardening are complete. |
 | V2-E4 Skill and Resource Domain Intake | blocked | An approved skill domain source is required. |
@@ -48,7 +49,6 @@ This document records the current v2 readiness decision. The current branch is r
 The full v2 feature release should not be considered ready until the following items are complete.
 
 - `V2-E1-ST02`: concrete frame recognizer runtime selection and adapter binding.
-- `V2-E1-ST04`: recognizer restart, cleanup, and permission recovery hardening.
 - `V2-E4-ST01` through `V2-E4-ST04`: skill/resource intake after an approved skill domain source exists.
 
 ## Deferral Rule
@@ -57,27 +57,26 @@ Skill names, skill effects, gesture sequence changes, hand-motion resources, vis
 
 ## Verification
 
-This readiness review reflects timeout/surrender fanout hardening and documentation updates.
+This readiness review reflects recognizer lifecycle hardening and documentation updates.
 
 | Check | Status | Notes |
 | --- | --- | --- |
 | `pnpm --dir FE/app typecheck` | PASS | frontend type check |
-| `pnpm --dir FE/app test` | PASS | 39 tests |
+| `pnpm --dir FE/app test` | PASS | 42 tests |
 | `pnpm --dir FE/app smoke:camera` | PASS | 2 tests |
 | `pnpm --dir FE/app build` | PASS | production build |
 | `uv run ruff check BE` | PASS | backend lint |
 | `uv run pytest BE` | PASS | 38 tests |
 | `uv run pytest BE/api/tests/unit/test_battle_websocket_events.py` | PASS | 12 tests |
-| `pnpm --dir FE/app exec vitest run tests/unit/battleFlow.test.ts tests/unit/BattleGameWorkspace.test.tsx` | PASS | 28 tests |
+| `pnpm --dir FE/app exec vitest run tests/unit/liveGestureRecognizer.test.ts tests/unit/BattleGameWorkspace.test.tsx` | PASS | 20 tests |
 | `git diff --check` | PASS | whitespace/error check |
 | Provider-neutral targeted text scan | PASS | no matches outside ignored files |
 | README link review | PASS | Korean and English links include the v2 readiness document |
-| Story status review | PASS | `V2-E3-ST04` is marked complete |
+| Story status review | PASS | `V2-E1-ST04` is marked complete |
 
 ## Next Implementation Order
 
 Because the skill domain source is not available yet, the next safe implementation units stay inside the approved existing runtime boundary.
 
 1. `V2-E1-ST02`: select and bind the concrete frame recognizer runtime after the runtime choice is approved.
-2. `V2-E1-ST04`: harden recognizer restart, cleanup, and permission recovery after the runtime choice is approved.
-3. `V2-E4-ST01`: define the skill domain source format after an approved source exists.
+2. `V2-E4-ST01`: define the skill domain source format after an approved source exists.
