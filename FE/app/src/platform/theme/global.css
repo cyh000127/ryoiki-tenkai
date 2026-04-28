@@ -310,7 +310,7 @@ textarea {
 }
 
 .surface-grid--practice {
-  grid-template-columns: minmax(0, 2fr) minmax(320px, 0.9fr);
+  grid-template-columns: minmax(0, 3.4fr) minmax(260px, 0.6fr);
   align-items: start;
 }
 
@@ -908,7 +908,8 @@ textarea {
   position: relative;
   overflow: hidden;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  min-height: clamp(520px, 68vh, 980px);
+  aspect-ratio: 4 / 3;
   border: 1px solid rgba(83, 215, 255, 0.34);
   border-radius: 8px;
   background:
@@ -1337,5 +1338,9 @@ textarea {
 
   .gesture-console__preview {
     min-height: 320px;
+  }
+
+  .practice-camera {
+    min-height: 360px;
   }
 }

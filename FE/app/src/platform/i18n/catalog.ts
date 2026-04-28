@@ -120,7 +120,7 @@ export const copy = {
     "지금은 발동 완료 상태입니다. 다시 시연하려면 연습 초기화를 누르거나 다른 술식을 선택하세요.",
   practiceActivationTriggered: "술식이 발동되었습니다. 다시 보려면 연습 초기화를 누르세요.",
   practiceActivationTriggeredBadge: "술식 발동 완료",
-  practiceRuntimeIdleHelp: "연습 시작을 눌러 카메라와 MediaPipe 손 추적기를 켜세요.",
+  practiceRuntimeIdleHelp: "연습 화면에 들어오면 카메라와 MediaPipe 손 추적기가 자동으로 켜집니다.",
   practiceRuntimeStartingHelp:
     "카메라 권한과 MediaPipe 모델을 준비하는 중입니다. 브라우저 권한 요청이 보이면 허용해야 합니다.",
   practiceRuntimeReadyHelp: "카메라가 연결되었습니다. 이번 단계 손모양을 화면 중앙에서 잠시 유지하세요.",
@@ -130,7 +130,8 @@ export const copy = {
     "현재 브라우저가 카메라 입력을 지원하지 않습니다. Chrome 또는 Edge 계열 브라우저에서 실행하세요.",
   practiceRuntimeErrorHelp:
     "카메라 또는 MediaPipe 모델 로딩 중 오류가 발생했습니다. 네트워크와 카메라 사용 여부를 확인한 뒤 다시 시작하세요.",
-  practiceRuntimeStoppedHelp: "연습 카메라가 중지되었습니다. 다시 연습하려면 연습 시작을 누르세요.",
+  practiceRuntimeStoppedHelp:
+    "연습 카메라가 중지되었습니다. 화면을 다시 열거나 권한을 허용하면 자동으로 다시 연결됩니다.",
   practiceRuntimeNoHandHelp: "손이 검출되지 않았습니다. 손 전체가 캠 화면 안에 들어오게 해주세요.",
   practiceRuntimeUnstableHelp:
     "손은 보이지만 목표 손모양으로 아직 안정화되지 않았습니다. 가이드와 같은 자세를 유지하세요.",

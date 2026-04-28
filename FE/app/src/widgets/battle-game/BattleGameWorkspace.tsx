@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useReducer, useRef, useState } from "react";
 import {
   DEFAULT_ANIMSETS,
   DEFAULT_SKILLSET,
+  type Animset,
   type BattleState,
   type Skill,
   type Skillset
@@ -390,6 +391,26 @@ export function BattleGameWorkspace() {
   }, [state.screen]);
 
   useEffect(() => {
+    if (state.screen !== "practice" || !session) {
+      return;
+    }
+
+    if (practiceRecognizerRef.current || practiceRecognizerStatus === "starting" || practiceRecognizerStatus === "ready") {
+      return;
+    }
+
+    if (
+      practiceRecognizerStatus === "blocked" ||
+      practiceRecognizerStatus === "unsupported" ||
+      practiceRecognizerStatus === "error"
+    ) {
+      return;
+    }
+
+    void handleStartPractice();
+  }, [practiceRecognizerStatus, session, state.screen]);
+
+  useEffect(() => {
     drawHandMeshOverlay(
       practiceMeshCanvasRef.current,
       practiceRecognizerStatus === "ready"
@@ -659,17 +680,17 @@ export function BattleGameWorkspace() {
     practiceCompletedStepCount,
     practiceProgress.targetSequence.length
   );
-  const canStartPractice =
-    session !== null &&
-    state.screen === "practice" &&
-    practiceRecognizerStatus !== "starting" &&
-    practiceRecognizerStatus !== "ready";
   const practiceExpectedGesture =
     practiceCompleted
       ? null
       : practiceProgress.targetSequence[practiceProgress.currentStep] ??
         practiceProgress.targetSequence[0] ??
         null;
+  const practicePreviewAnimsetId = resolvePracticePreviewAnimsetId({
+    animsets,
+    selectedAnimsetId,
+    selectedSkillId: selectedSkill.skillId
+  });
   const isPracticeGestureRecognized =
     !practiceCompleted &&
     practiceObservation?.reason === "recognized" &&
@@ -693,7 +714,7 @@ export function BattleGameWorkspace() {
   });
   const practiceRendererEvents = session
     ? buildPracticeRendererEvents({
-        animsetId: selectedAnimsetId,
+        animsetId: practicePreviewAnimsetId,
         completedAtMs: practiceCompletedAtMs,
         playerId: state.player.playerId,
         practiceExpectedGesture,
@@ -1946,7 +1967,7 @@ export function BattleGameWorkspace() {
                     />
                     <div className="practice-camera__renderer">
                       <AnimsetRendererSurface
-                        animsetId={selectedAnimsetId}
+                        animsetId={practicePreviewAnimsetId}
                         events={practiceRendererEvents}
                         layout="overlay"
                         scene="practice"
@@ -2036,17 +2057,6 @@ export function BattleGameWorkspace() {
                   </div>
                   {statusMessage ? <p className="status-text">{statusMessage}</p> : null}
                   <div className="action-row">
-                    <Button disabled={!canStartPractice} onClick={handleStartPractice} variant="primary">
-                      {practiceRecognizerStatus === "starting"
-                        ? getLiveRecognizerStatusLabel(practiceRecognizerStatus)
-                        : copy.practiceStart}
-                    </Button>
-                    <Button
-                      disabled={practiceRecognizerStatus !== "ready"}
-                      onClick={stopPracticeRecognizer}
-                    >
-                      {copy.practiceStop}
-                    </Button>
                     <Button onClick={() => resetPracticeProgress()}>{copy.practiceReset}</Button>
                   </div>
                 </div>
@@ -3680,6 +3690,33 @@ function getPracticeRuntimeHelp(
 
 function getLiveObservationReasonLabel(reason: LiveGestureObservation["reason"]): string {
   return copy.liveObservationReasonText[reason];
+}
+
+function resolvePracticePreviewAnimsetId({
+  animsets,
+  selectedAnimsetId,
+  selectedSkillId
+}: {
+  animsets: readonly Animset[];
+  selectedAnimsetId: string;
+  selectedSkillId: string;
+}): string {
+  const unityPreviewAnimsetId = "animset_unity_jjk";
+  const hasSelectedAnimset = animsets.some((animset) => animset.animsetId === selectedAnimsetId);
+  const fallbackAnimsetId = hasSelectedAnimset
+    ? selectedAnimsetId
+    : animsets[0]?.animsetId ?? selectedAnimsetId;
+
+  if (!animsets.some((animset) => animset.animsetId === unityPreviewAnimsetId)) {
+    return fallbackAnimsetId;
+  }
+
+  const unityPresentation = resolveSkillPresentationEntry(selectedSkillId, unityPreviewAnimsetId);
+  if (unityPresentation.fallbackMode === "unity") {
+    return unityPreviewAnimsetId;
+  }
+
+  return fallbackAnimsetId;
 }
 
 function drawHandMeshOverlay(

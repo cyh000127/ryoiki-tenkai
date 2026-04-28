@@ -572,10 +572,10 @@ describe("BattleGameWorkspace", () => {
     expect(
       screen.getAllByText("검지를 세우고 손목을 고정해 정면을 향하게 합니다.").length
     ).toBeGreaterThan(0);
-
-    await user.click(screen.getByRole("button", { name: "연습 시작" }));
-
-    expect(liveRecognizerMock.createBrowserLiveGestureRecognizer).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(liveRecognizerMock.createBrowserLiveGestureRecognizer).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.queryByRole("button", { name: "연습 시작" })).not.toBeInTheDocument();
     expect(liveRecognizerMock.options?.getExpectedToken()).toBe(defaultGesture);
     expect(liveRecognizerMock.options?.getTargetSequence()).toEqual(defaultGestureSequence);
 
