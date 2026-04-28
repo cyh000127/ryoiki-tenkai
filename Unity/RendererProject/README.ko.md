@@ -8,6 +8,7 @@
 - 대신 브리지 스크립트와 timeline routing 스크립트를 먼저 넣어 두었습니다.
 - 실제 Unity 프로젝트를 만들 때는 이 폴더를 기준으로 새 WebGL 프로젝트를 생성하거나, 새 프로젝트에 이 스크립트들을 복사하면 됩니다.
 - `RendererRuntimeBootstrap`이 빈 씬에서도 `CodexBridge`, `RendererSceneState`, `SkillTimelineRouter`, `ProceduralSkillVfxPlayer`를 자동으로 올립니다.
+- 현재 웹 프론트는 practice camera 안에 renderer overlay를 붙인 상태이며, Unity 자산이 없는 환경에서는 `FE/app/public/unity/ryoiki-tenkai-renderer/prototype-v1/Build/mock.loader.js`의 mock WebGL runtime으로 placeholder 연출을 보여줍니다.
 
 ## 권장 시작 순서
 
@@ -35,6 +36,7 @@ Unity 쪽은 이 문자열 payload를 받아:
 - practice progress 반영
 - battle snapshot 반영
 - result highlight 반영
+- practice overlay preview 재생
 
 만 처리하면 됩니다.
 
@@ -48,6 +50,13 @@ Unity 쪽은 이 문자열 payload를 받아:
 - battle scene skeleton
 - result scene skeleton
 - 코드 기반 placeholder VFX 3종
+
+## 현재 웹앱 연결 상태
+
+- practice 화면 renderer는 별도 패널이 아니라 camera 영역 안 overlay로 mount 됩니다.
+- practice 화면에 들어오면 React recognizer가 자동으로 시작됩니다.
+- 선택한 practice 스킬에 Unity presentation이 있으면, 저장된 loadout animset과 별개로 practice preview는 `animset_unity_jjk`를 우선 사용합니다.
+- 현재 mock WebGL runtime은 진짜 Unity build 대신 animated placeholder를 그립니다.
 
 ## 현재 포함된 placeholder VFX
 
@@ -67,6 +76,12 @@ Unity 쪽은 이 문자열 payload를 받아:
 이 연출들은 전부 `Unity 기본 primitive`, `LineRenderer`, `ParticleSystem`, `Camera`만으로 생성됩니다.
 즉 지금은 외부 모델, prefab, timeline asset이 없어도 React 브리지와 실제 재생 흐름을 검증할 수 있습니다.
 
+현재 프론트에서 바로 보이는 placeholder preview는 아래 3종입니다.
+
+- `jjk_gojo_red`
+- `jjk_gojo_hollow_purple`
+- `jjk_gojo_infinite_void`
+
 ## 다음에 실제 자산을 붙일 때
 
 1. `SkillTimelineRouter`의 `playableKey`를 유지한다.
@@ -79,6 +94,12 @@ Unity 쪽은 이 문자열 payload를 받아:
 - 고급 VFX
 - camera preset tuning
 - 나머지 스킬 timeline
+- mock WebGL runtime을 실제 Unity WebGL build 산출물로 교체
+- battle/result scene의 실제 Unity smoke 검증
+
+## 남은 TODO 문서
+
+- `/Users/hyeok127/Desktop/project/ryoiki-tenkai/docs/planning-artifacts/v6/todo.ko.md`
 
 ## 자산 manifest 샘플
 
