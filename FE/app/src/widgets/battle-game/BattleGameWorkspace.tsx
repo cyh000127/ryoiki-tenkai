@@ -1944,6 +1944,14 @@ export function BattleGameWorkspace() {
                       playsInline
                       ref={practiceVideoRef}
                     />
+                    <div className="practice-camera__renderer">
+                      <AnimsetRendererSurface
+                        animsetId={selectedAnimsetId}
+                        events={practiceRendererEvents}
+                        layout="overlay"
+                        scene="practice"
+                      />
+                    </div>
                     <canvas
                       aria-hidden="true"
                       className="practice-camera__mesh"
@@ -1958,14 +1966,6 @@ export function BattleGameWorkspace() {
                   <div className="field-stack">
                     <p className="helper-text">{copy.practiceHelp}</p>
                     <p className="helper-text">{copy.practiceLoadoutSeparation}</p>
-                  </div>
-                  <div className="renderer-section">
-                    <span className="field__label">{copy.rendererPanelPractice}</span>
-                    <AnimsetRendererSurface
-                      animsetId={selectedAnimsetId}
-                      events={practiceRendererEvents}
-                      scene="practice"
-                    />
                   </div>
                   <div className="practice-guide">
                     <StatusBadge tone={practiceCompleted || isPracticeGestureRecognized ? "success" : "neutral"}>

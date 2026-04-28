@@ -19,12 +19,14 @@ import type {
 type AnimsetRendererSurfaceProps = {
   animsetId: string;
   events: RendererEventEnvelope[];
+  layout?: "overlay" | "panel";
   scene: RendererScene;
 };
 
 export function AnimsetRendererSurface({
   animsetId,
   events,
+  layout = "panel",
   scene
 }: AnimsetRendererSurfaceProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -136,6 +138,39 @@ export function AnimsetRendererSurface({
     setRuntimeStatus(renderer.getStatus());
   }, [eventSignature, effectiveDefinition.animsetId, scene]);
 
+  if (layout === "overlay") {
+    return (
+      <div
+        className="animset-surface animset-surface--overlay"
+        aria-label={`${copy.rendererSceneText[scene]} ${copy.animset}`}
+      >
+        <div className="animset-surface__viewport" ref={hostRef} />
+        <div className="animset-surface__chrome">
+          <div className="animset-surface__status">
+            <StatusBadge tone={getRendererStatusTone(runtimeStatus)}>
+              {copy.rendererStatusText[runtimeStatus]}
+            </StatusBadge>
+            <StatusBadge
+              tone={effectiveDefinition.rendererKind === "unity-webgl" ? "success" : "neutral"}
+            >
+              {copy.rendererKindText[effectiveDefinition.rendererKind]}
+            </StatusBadge>
+          </div>
+          <div className="animset-surface__overlay-footer">
+            <span className="animset-surface__overlay-label">
+              {`${copy.rendererMode}: ${copy.rendererKindText[effectiveDefinition.rendererKind]}`}
+            </span>
+            {requiresPresentationFallback || loadFailure ? (
+              <p className="helper-text animset-surface__helper">
+                {loadFailure ?? copy.rendererAssetMissing}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="animset-surface" aria-label={`${copy.rendererSceneText[scene]} ${copy.animset}`}>
       <div className="animset-surface__status">
@@ -152,8 +187,8 @@ export function AnimsetRendererSurface({
         <span>{`${copy.rendererBuild}: ${requestedDefinition.buildVersion}`}</span>
       </div>
       <div className="animset-surface__viewport" ref={hostRef} />
-      <p className="helper-text">{helperText}</p>
-      {loadFailure ? <p className="helper-text">{loadFailure}</p> : null}
+      <p className="helper-text animset-surface__helper">{helperText}</p>
+      {loadFailure ? <p className="helper-text animset-surface__helper">{loadFailure}</p> : null}
     </div>
   );
 }

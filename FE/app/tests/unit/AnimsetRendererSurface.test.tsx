@@ -76,4 +76,19 @@ describe("AnimsetRendererSurface", () => {
       )
     ).toBeInTheDocument();
   });
+
+  it("supports overlay layout for camera compositing", async () => {
+    render(
+      <AnimsetRendererSurface
+        animsetId="animset_unity_jjk"
+        events={buildPracticeEvents("jjk_gojo_red", "unity")}
+        layout="overlay"
+        scene="practice"
+      />
+    );
+
+    const surface = screen.getByLabelText("연습 애니셋");
+    expect(surface).toHaveClass("animset-surface--overlay");
+    expect(await screen.findByText("Unity WebGL")).toBeInTheDocument();
+  });
 });

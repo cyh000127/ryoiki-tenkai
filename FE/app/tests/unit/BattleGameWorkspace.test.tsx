@@ -559,6 +559,11 @@ describe("BattleGameWorkspace", () => {
 
     expect(screen.getByText("술식 연습")).toBeInTheDocument();
     expect(screen.getByLabelText("캠 프리뷰")).toBeInTheDocument();
+    expect(
+      within(screen.getByLabelText("캠 프리뷰").closest(".practice-camera") as HTMLElement).getByLabelText(
+        "연습 애니셋"
+      )
+    ).toBeInTheDocument();
     expect(screen.getAllByText("赫(혁)").length).toBeGreaterThan(0);
     expect(
       screen.getAllByText("문서 기준 고죠 사토루 무하한주술의 밀어내는 폭발 피해.").length
