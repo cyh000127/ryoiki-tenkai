@@ -276,6 +276,11 @@ textarea {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.surface-grid--practice {
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 0.9fr);
+  align-items: start;
+}
+
 .panel {
   position: relative;
   overflow: hidden;
@@ -496,6 +501,15 @@ textarea {
 .skill-card:hover {
   border-color: var(--cyan);
   transform: translateY(-1px);
+}
+
+.skill-card__guide {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .battle-board {
@@ -751,6 +765,38 @@ textarea {
   left: 10px;
 }
 
+.practice-guide {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px 14px;
+  align-items: center;
+  border: 1px solid rgba(83, 215, 255, 0.28);
+  border-radius: 8px;
+  background: rgba(15, 22, 32, 0.94);
+  padding: 12px;
+}
+
+.practice-guide div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.practice-guide strong,
+.practice-guide span {
+  color: var(--text);
+}
+
+.practice-guide p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
 .input-feedback,
 .confirmation-strip {
   display: grid;
@@ -821,6 +867,7 @@ textarea {
   .play-workspace,
   .surface-grid,
   .surface-grid--two,
+  .surface-grid--practice,
   .battle-board,
   .live-hand-state {
     grid-template-columns: 1fr;

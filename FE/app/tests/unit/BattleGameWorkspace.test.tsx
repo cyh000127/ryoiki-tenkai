@@ -557,6 +557,10 @@ describe("BattleGameWorkspace", () => {
     expect(screen.getByText("술식 연습모드")).toBeInTheDocument();
     expect(screen.getByLabelText("캠 프리뷰")).toBeInTheDocument();
     expect(screen.getAllByText(defaultSkill.description).length).toBeGreaterThan(0);
+    expect(screen.getByText("이번 단계")).toBeInTheDocument();
+    expect(
+      screen.getAllByText("검지를 세우고 손목을 고정해 정면을 향하게 합니다.").length
+    ).toBeGreaterThan(0);
 
     await user.click(screen.getByRole("button", { name: "연습 시작" }));
 
@@ -582,9 +586,17 @@ describe("BattleGameWorkspace", () => {
       );
     });
 
-    expect(screen.getByText("연습 완료")).toBeInTheDocument();
-    expect(screen.getAllByText("1/1").length).toBeGreaterThan(0);
-    expect(liveRecognizerMock.stop).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("확인 가능")).toBeInTheDocument();
+    expect(screen.getAllByText("0/1").length).toBeGreaterThan(0);
+    expect(liveRecognizerMock.stop).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "현재 동작 확인" }));
+
+    expect(screen.getByText("연습 1회 완료. 1회째 반복을 시작합니다.")).toBeInTheDocument();
+    expect(screen.getByText("완료 횟수")).toBeInTheDocument();
+    expect(screen.getAllByText("1").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("0/1").length).toBeGreaterThan(0);
+    expect(liveRecognizerMock.stop).not.toHaveBeenCalled();
   });
 
   it("renders server-backed history and leaderboard on the history screen", async () => {

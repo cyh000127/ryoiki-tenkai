@@ -27,6 +27,7 @@ import {
   type GestureInputSource
 } from "../../features/gesture-session/model/gestureInput";
 import {
+  LIVE_GESTURE_MIN_CONFIDENCE,
   createBrowserLiveGestureRecognizer,
   type LiveGestureObservation,
   type LiveGestureRecognizer,
@@ -85,6 +86,7 @@ type SkillInputMode = "gesture_only" | "voice_then_gesture";
 type PracticeProgress = {
   targetSequence: string[];
   currentStep: number;
+  completedRounds: number;
   confidence: number;
   handDetected: boolean;
   currentGesture: string | null;
@@ -113,6 +115,7 @@ export function BattleGameWorkspace() {
   const practiceProgressRef = useRef<PracticeProgress>({
     targetSequence: DEFAULT_SKILLSET.skills[0].gestureSequence,
     currentStep: 0,
+    completedRounds: 0,
     confidence: 0,
     handDetected: false,
     currentGesture: null
@@ -482,8 +485,16 @@ export function BattleGameWorkspace() {
     session !== null &&
     state.screen === "practice" &&
     practiceRecognizerStatus !== "starting" &&
-    practiceRecognizerStatus !== "ready" &&
-    practiceCompletedStepCount < practiceProgress.targetSequence.length;
+    practiceRecognizerStatus !== "ready";
+  const practiceExpectedGesture =
+    practiceProgress.targetSequence[practiceProgress.currentStep] ??
+    practiceProgress.targetSequence[0] ??
+    null;
+  const canConfirmPracticeGesture =
+    practiceObservation?.reason === "recognized" &&
+    practiceProgress.handDetected &&
+    practiceProgress.currentGesture === practiceExpectedGesture &&
+    practiceProgress.confidence >= LIVE_GESTURE_MIN_CONFIDENCE;
 
   function handleOpenLoadout() {
     if (!session) {
@@ -897,6 +908,7 @@ export function BattleGameWorkspace() {
     const nextProgress = {
       targetSequence: [...skill.gestureSequence],
       currentStep: 0,
+      completedRounds: 0,
       confidence: 0,
       handDetected: false,
       currentGesture: null
@@ -943,22 +955,12 @@ export function BattleGameWorkspace() {
     }
   }
 
-  function handlePracticeObservation(
-    observation: LiveGestureObservation,
-    input: ReturnType<typeof createLiveCameraInput> | null
-  ) {
+  function handlePracticeObservation(observation: LiveGestureObservation) {
     setPracticeObservation(observation);
 
     const progress = practiceProgressRef.current;
-    const expectedGesture = progress.targetSequence[progress.currentStep] ?? null;
-    const shouldAdvance =
-      input !== null && expectedGesture !== null && input.gesture === expectedGesture;
-    const nextStep = shouldAdvance
-      ? Math.min(progress.currentStep + 1, progress.targetSequence.length)
-      : progress.currentStep;
     const nextProgress = {
       ...progress,
-      currentStep: nextStep,
       confidence: observation.confidence,
       handDetected: observation.handDetected,
       currentGesture: observation.token
@@ -966,10 +968,45 @@ export function BattleGameWorkspace() {
 
     practiceProgressRef.current = nextProgress;
     setPracticeProgress(nextProgress);
+  }
 
-    if (nextStep >= progress.targetSequence.length && progress.targetSequence.length > 0) {
-      stopPracticeRecognizer();
+  function handleConfirmPracticeGesture() {
+    const progress = practiceProgressRef.current;
+    const expectedGesture = progress.targetSequence[progress.currentStep] ?? null;
+
+    if (
+      !practiceObservation ||
+      practiceObservation.reason !== "recognized" ||
+      !practiceObservation.handDetected ||
+      practiceObservation.confidence < LIVE_GESTURE_MIN_CONFIDENCE ||
+      !expectedGesture ||
+      practiceObservation.token !== expectedGesture
+    ) {
+      setStatusMessage(copy.practiceConfirmRequired);
+      return;
     }
+
+    const nextStep = progress.currentStep + 1;
+    const didCompleteRound = nextStep >= progress.targetSequence.length;
+    const nextProgress = {
+      ...progress,
+      currentStep: didCompleteRound ? 0 : nextStep,
+      completedRounds: didCompleteRound
+        ? progress.completedRounds + 1
+        : progress.completedRounds,
+      confidence: 0,
+      handDetected: false,
+      currentGesture: null
+    };
+
+    practiceProgressRef.current = nextProgress;
+    setPracticeProgress(nextProgress);
+    setPracticeObservation(null);
+    setStatusMessage(
+      didCompleteRound
+        ? `${copy.practiceRoundComplete} ${nextProgress.completedRounds}${copy.practiceRoundUnit}`
+        : null
+    );
   }
 
   function stopPracticeRecognizer() {
@@ -1346,7 +1383,7 @@ export function BattleGameWorkspace() {
         ) : null}
 
         {state.screen === "practice" ? (
-          <div className="surface-grid surface-grid--two">
+          <div className="surface-grid surface-grid--practice">
             <Panel title={copy.practiceRoom}>
               {!session ? (
                 <p className="status-text">{copy.practiceAccountRequired}</p>
@@ -1367,6 +1404,18 @@ export function BattleGameWorkspace() {
                     </div>
                   </div>
                   <p className="helper-text">{copy.practiceHelp}</p>
+                  <div className="practice-guide">
+                    <StatusBadge tone={canConfirmPracticeGesture ? "success" : "neutral"}>
+                      {canConfirmPracticeGesture
+                        ? copy.practiceGestureReady
+                        : copy.practiceGestureWaiting}
+                    </StatusBadge>
+                    <div>
+                      <strong>{copy.practiceExpectedGesture}</strong>
+                      <span>{practiceExpectedGesture ?? copy.noGesture}</span>
+                    </div>
+                    <p>{getPracticeGestureGuide(practiceExpectedGesture)}</p>
+                  </div>
                   <ProgressMeter
                     current={practiceCompletedStepCount}
                     label={copy.practiceProgress}
@@ -1387,6 +1436,7 @@ export function BattleGameWorkspace() {
                   <div className="metric-list">
                     <Metric label={copy.skillDetail} value={selectedSkill.name} />
                     <Metric label={copy.skillDescription} value={selectedSkill.description} />
+                    <Metric label={copy.practiceRounds} value={practiceProgress.completedRounds} />
                     <Metric label={copy.liveCameraStatus} value={getLiveRecognizerStatusLabel(practiceRecognizerStatus)} />
                     <Metric
                       label={copy.handStatus}
@@ -1416,6 +1466,13 @@ export function BattleGameWorkspace() {
                     >
                       {copy.practiceStop}
                     </Button>
+                    <Button
+                      disabled={!canConfirmPracticeGesture}
+                      onClick={handleConfirmPracticeGesture}
+                      variant={canConfirmPracticeGesture ? "primary" : "default"}
+                    >
+                      {copy.practiceConfirmStep}
+                    </Button>
                     <Button onClick={() => resetPracticeProgress()}>{copy.practiceReset}</Button>
                   </div>
                 </div>
@@ -1434,6 +1491,13 @@ export function BattleGameWorkspace() {
                     <strong>{skill.name}</strong>
                     <div>{skill.description}</div>
                     <div>{skill.gestureSequence.join(" -> ")}</div>
+                    <div className="skill-card__guide">
+                      {skill.gestureSequence.map((gesture) => (
+                        <span key={`${skill.skillId}-${gesture}`}>
+                          {gesture}: {getPracticeGestureGuide(gesture)}
+                        </span>
+                      ))}
+                    </div>
                   </button>
                 ))}
               </div>
@@ -2409,6 +2473,31 @@ function getPracticeStatusTone(state: PracticeState): "neutral" | "success" | "w
   }
 
   return "neutral";
+}
+
+function getPracticeGestureGuide(gesture: string | null): string {
+  switch (gesture) {
+    case "index_up":
+      return "검지를 세우고 손목을 고정해 정면을 향하게 합니다.";
+    case "pinch":
+      return "엄지와 검지를 모아 집는 모양을 안정적으로 유지합니다.";
+    case "blue_orb":
+      return "손바닥을 살짝 오므려 구체를 받치는 자세를 만듭니다.";
+    case "red_orb":
+      return "손을 바깥으로 밀어내듯 펴고 중심을 유지합니다.";
+    case "orb_collision":
+      return "양손 또는 손의 중심을 모아 충돌시키는 느낌으로 마무리합니다.";
+    case "two_finger_cross":
+      return "두 손가락 또는 양손 손가락을 교차해 결계 시작 자세를 만듭니다.";
+    case "flat_prayer":
+      return "양손을 납작하게 모아 기도 자세처럼 중앙에 둡니다.";
+    case "shadow_seal":
+      return "손을 낮게 두고 그림자를 누르는 듯한 봉인 자세를 유지합니다.";
+    case "domain_seal":
+      return "마지막 결계 인장 자세를 흔들림 없이 유지합니다.";
+    default:
+      return "가이드가 준비되지 않은 동작입니다. 화면의 현재 입력 상태를 확인하세요.";
+  }
 }
 
 function getLiveObservationReasonLabel(reason: LiveGestureObservation["reason"]): string {
