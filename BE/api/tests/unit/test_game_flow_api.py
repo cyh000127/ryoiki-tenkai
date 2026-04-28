@@ -58,6 +58,23 @@ def test_profile_lookup_and_queue_require_saved_loadout() -> None:
     assert queue_response.json()["error"]["code"] == "LOADOUT_REQUIRED"
 
 
+def test_guest_player_preflight_allows_frontend_origin() -> None:
+    client = TestClient(create_app())
+
+    response = client.options(
+        "/api/v1/players/guest",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+    assert "POST" in response.headers["access-control-allow-methods"]
+
+
 def test_animset_catalog_and_loadout_validation_are_stable() -> None:
     client = TestClient(create_app())
     guest_response = client.post("/api/v1/players/guest", json={"nickname": "catalog-player"})
