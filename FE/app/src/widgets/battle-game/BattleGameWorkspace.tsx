@@ -39,6 +39,9 @@ import {
 import {
   JAPANESE_STARTUP_COMMANDS,
   createJapaneseStartupVoiceCommandRecognizer,
+  getJapaneseVoiceCommandLabel,
+  type JapaneseStartupCommand,
+  type JapaneseVoiceCommandDefinition,
   type StartupVoiceCommandRecognizer,
   type StartupVoiceRecognitionStatus
 } from "../../features/gesture-session/model/startupVoiceCommand";
@@ -77,6 +80,54 @@ import { formatLatency } from "../../shared/time/formatLatency";
 
 const navigationScreenOrder: ScreenKey[] = ["home", "loadout", "practice", "history"];
 const PRACTICE_AUTO_ADVANCE_DELAY_MS = 650;
+const DOMAIN_EXPANSION_VOICE_COMMAND: JapaneseVoiceCommandDefinition = {
+  label: "領域展開(영역전개)",
+  aliases: ["領域展開", "りょういきてんかい"]
+};
+
+const SKILL_SPEECH_METADATA: Record<
+  string,
+  {
+    japaneseReading: string;
+    voiceAliases: readonly string[];
+  }
+> = {
+  jjk_gojo_red: {
+    japaneseReading: "あか",
+    voiceAliases: ["赫", "あか"]
+  },
+  jjk_gojo_hollow_purple: {
+    japaneseReading: "きょしきむらさき",
+    voiceAliases: ["虚式「茈」", "茈", "むらさき", "きょしきむらさき", "虚式むらさき"]
+  },
+  jjk_gojo_infinite_void: {
+    japaneseReading: "むりょうくうしょ",
+    voiceAliases: [
+      "領域展開「無量空処」",
+      "無量空処",
+      "むりょうくうしょ",
+      "りょういきてんかいむりょうくうしょ"
+    ]
+  },
+  jjk_sukuna_malevolent_shrine: {
+    japaneseReading: "ふくまみづし",
+    voiceAliases: [
+      "領域展開「伏魔御厨子」",
+      "伏魔御厨子",
+      "ふくまみづし",
+      "りょういきてんかいふくまみづし"
+    ]
+  },
+  jjk_megumi_chimera_shadow_garden: {
+    japaneseReading: "かんごうあんえいてい",
+    voiceAliases: [
+      "領域展開「嵌合暗翳庭」",
+      "嵌合暗翳庭",
+      "かんごうあんえいてい",
+      "りょういきてんかいかんごうあんえいてい"
+    ]
+  }
+};
 
 type SkillInputMode = "gesture_only" | "voice_then_gesture";
 
@@ -2590,31 +2641,25 @@ function canAcceptLiveGestureInput(state: BattleFlowState): boolean {
   );
 }
 
-function getSkillVoiceGateCommands(skill: Skill): readonly string[] {
+function getSkillVoiceGateCommands(skill: Skill): readonly JapaneseStartupCommand[] {
   const presentation = getSkillPresentation(skill);
+  const speechMetadata = SKILL_SPEECH_METADATA[skill.skillId];
+  const commands: JapaneseStartupCommand[] = [...JAPANESE_STARTUP_COMMANDS];
 
-  return Array.from(new Set([
-    ...JAPANESE_STARTUP_COMMANDS,
-    "領域展開",
-    "りょういきてんかい",
-    "료이키 텐카이",
-    "료이키텐카이",
-    "영역전개",
-    "술식 발동",
-    "술식기동",
-    "術式発動",
-    skill.name,
-    presentation.koreanName,
-    presentation.displayName
-  ]));
+  if (isVoiceActivatedSkill(skill)) {
+    commands.push(DOMAIN_EXPANSION_VOICE_COMMAND);
+  }
+
+  commands.push({
+    label: presentation.displayName,
+    aliases: speechMetadata?.voiceAliases ?? [skill.name]
+  });
+
+  return dedupeJapaneseVoiceCommands(commands);
 }
 
 function getSkillVoiceGateLanguage(): string {
-  if (typeof navigator !== "undefined" && navigator.language.toLowerCase().startsWith("ja")) {
-    return "ja-JP";
-  }
-
-  return "ko-KR";
+  return "ja-JP";
 }
 
 function isVoiceActivatedSkill(skill: Skill): boolean {
@@ -2650,12 +2695,14 @@ function getSkillPresentation(skill: Skill): SkillPresentation {
   const koreanNameMatch = /^한국어명:\s*([^.]*)\.\s*(.*)$/u.exec(skill.description);
   const koreanName = koreanNameMatch?.[1]?.trim() || skill.name;
   const summary = koreanNameMatch?.[2]?.trim() || skill.description;
+  const speechMetadata = SKILL_SPEECH_METADATA[skill.skillId];
 
   return {
     japaneseName: skill.name,
+    japaneseReading: speechMetadata?.japaneseReading ?? null,
     koreanName,
     summary,
-    displayName: `${skill.name} - ${koreanName}`
+    displayName: `${skill.name}(${koreanName})`
   };
 }
 
@@ -2860,6 +2907,7 @@ function Metric({ label, value }: { label: string; value: string | number }) {
 
 type SkillPresentation = {
   japaneseName: string;
+  japaneseReading: string | null;
   koreanName: string;
   summary: string;
   displayName: string;
@@ -2952,7 +3000,7 @@ function SkillDetailContent({
 }
 
 type StartupVoicePanelProps = {
-  commands: readonly string[];
+  commands: readonly JapaneseStartupCommand[];
   disabled: boolean;
   matchedCommand: string | null;
   onManualStart: () => void;
@@ -2997,8 +3045,8 @@ function StartupVoicePanel({
         />
         <div className="startup-voice__commands" aria-label={copy.startupVoiceCommandExamples}>
           {commands.map((command) => (
-            <span className="startup-voice__command" key={command}>
-              {command}
+            <span className="startup-voice__command" key={getJapaneseVoiceCommandLabel(command)}>
+              {getJapaneseVoiceCommandLabel(command)}
             </span>
           ))}
         </div>
@@ -3055,12 +3103,31 @@ function CooldownList({ cooldowns }: { cooldowns: Record<string, number> }) {
       ) : (
         <ul className="cooldown-list__items">
           {activeCooldowns.map(([skillId, turns]) => (
-            <li key={skillId}>{`${findSkill(skillId).name} · ${formatCooldownTurns(turns)}`}</li>
+            <li key={skillId}>{`${getSkillDisplayName(findSkill(skillId))} · ${formatCooldownTurns(turns)}`}</li>
           ))}
         </ul>
       )}
     </div>
   );
+}
+
+function dedupeJapaneseVoiceCommands(
+  commands: readonly JapaneseStartupCommand[]
+): JapaneseStartupCommand[] {
+  const seenLabels = new Set<string>();
+  const dedupedCommands: JapaneseStartupCommand[] = [];
+
+  for (const command of commands) {
+    const label = getJapaneseVoiceCommandLabel(command);
+    if (seenLabels.has(label)) {
+      continue;
+    }
+
+    seenLabels.add(label);
+    dedupedCommands.push(command);
+  }
+
+  return dedupedCommands;
 }
 
 function ProgressMeter({

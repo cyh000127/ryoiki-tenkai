@@ -501,7 +501,7 @@ describe("BattleGameWorkspace", () => {
 
     act(() => {
       startupVoiceMock.options?.onResult({
-        matchedCommand: "起動して",
+        matchedCommand: "術式起動(술식기동)",
         status: "matched",
         transcript: "術式を起動して"
       });
@@ -559,7 +559,7 @@ describe("BattleGameWorkspace", () => {
 
     expect(screen.getByText("술식 연습")).toBeInTheDocument();
     expect(screen.getByLabelText("캠 프리뷰")).toBeInTheDocument();
-    expect(screen.getAllByText("赫 - 혁").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("赫(혁)").length).toBeGreaterThan(0);
     expect(
       screen.getAllByText("문서 기준 고죠 사토루 무하한주술의 밀어내는 폭발 피해.").length
     ).toBeGreaterThan(0);
@@ -962,7 +962,7 @@ describe("BattleGameWorkspace", () => {
     expect(screen.getAllByText("75")).toHaveLength(2);
     expect(screen.getByText(`T1 ${defaultSkillLog}`)).toBeInTheDocument();
     expect(screen.getByText(`T2 ${defaultSkillLog}`)).toBeInTheDocument();
-    expect(screen.getByText(`${defaultSkill.name} · 1T`)).toBeInTheDocument();
+    expect(screen.getByText("赫(혁) · 1T")).toBeInTheDocument();
     expect(screen.getByText("선택 스킬 상태")).toBeInTheDocument();
   });
 
@@ -1256,7 +1256,7 @@ describe("BattleGameWorkspace", () => {
 
     act(() => {
       startupVoiceMock.options?.onResult({
-        matchedCommand: "術式起動",
+        matchedCommand: "術式起動(술식기동)",
         status: "matched",
         transcript: "術式起動"
       });
@@ -1351,9 +1351,9 @@ describe("BattleGameWorkspace", () => {
 
     act(() => {
       startupVoiceMock.options?.onResult({
-        matchedCommand: "료이키 텐카이",
+        matchedCommand: "領域展開(영역전개)",
         status: "matched",
-        transcript: "료이키 텐카이"
+        transcript: "りょういきてんかい"
       });
     });
 
