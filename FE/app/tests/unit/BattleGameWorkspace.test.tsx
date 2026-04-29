@@ -1,4 +1,4 @@
-﻿import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { AppProviders } from "../../src/app/AppProviders";
@@ -370,9 +370,9 @@ function emitSocketEvent(event: BattleSocketEvent) {
 async function enterActiveBattle(user: ReturnType<typeof createUser>) {
   await user.clear(screen.getByRole("textbox", { name: "닉네임" }));
   await user.type(screen.getByRole("textbox", { name: "닉네임" }), "rookie");
-  await user.click(screen.getByRole("button", { name: "게스트 시작" }));
-  await user.click(await screen.findByRole("button", { name: "로드아웃 저장" }));
-  await user.click(await screen.findByRole("button", { name: "랭크 1대1 매칭" }));
+  await user.click(screen.getByRole("button", { name: "게스트로 입장" }));
+  await user.click(await screen.findByRole("button", { name: "선택한 술식 저장" }));
+  await user.click(await screen.findByRole("button", { name: "1대1 대전 찾기" }));
 
   emitSocketEvent({
     type: "battle.match_ready",
@@ -468,11 +468,11 @@ describe("BattleGameWorkspace", () => {
     renderWorkspace();
 
     expect(await screen.findByText("saved_player")).toBeInTheDocument();
-    expect(screen.getByText("로드아웃 저장 필요")).toBeInTheDocument();
+    expect(screen.getByText("술식 저장 필요")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "랭크 1대1 매칭" }));
+    await user.click(screen.getByRole("button", { name: "1대1 대전 찾기" }));
 
-    expect(screen.getByText("저장된 로드아웃이 있어야 매칭을 시작할 수 있습니다.")).toBeInTheDocument();
+    expect(screen.getByText("대전에 사용할 술식을 먼저 저장해야 합니다.")).toBeInTheDocument();
   });
 
   it("starts matchmaking from a matched Japanese voice startup command", async () => {
@@ -495,7 +495,7 @@ describe("BattleGameWorkspace", () => {
     renderWorkspace();
 
     expect(await screen.findByText("saved_player")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "詠唱 시작" }));
+    await user.click(screen.getByRole("button", { name: "음성 명령 듣기" }));
 
     expect(startupVoiceMock.start).toHaveBeenCalledTimes(1);
 
@@ -507,7 +507,7 @@ describe("BattleGameWorkspace", () => {
       });
     });
 
-    expect(screen.getByText("SEARCHING")).toBeInTheDocument();
+    expect(screen.getAllByText("상대 찾는 중").length).toBeGreaterThan(0);
     await waitFor(() => {
       expect(socketConnectCount).toBe(1);
     });
@@ -519,20 +519,20 @@ describe("BattleGameWorkspace", () => {
 
     renderWorkspace();
 
-    await user.click(screen.getByRole("button", { name: "詠唱 시작" }));
+    await user.click(screen.getByRole("button", { name: "음성 명령 듣기" }));
 
     act(() => {
       startupVoiceMock.options?.onStatusChange?.("unsupported");
     });
 
-    expect(screen.getByText("音声起動未対応")).toBeInTheDocument();
+    expect(screen.getByText("음성 인식 미지원")).toBeInTheDocument();
     expect(
-      screen.getByText("이 브라우저에서는 음성 인식을 사용할 수 없습니다. 마이크 없이 시작하세요.")
+      screen.getByText("이 브라우저에서는 음성 인식을 사용할 수 없습니다. 음성 없이 입장하세요.")
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "마이크 없이 시작" }));
+    await user.click(screen.getByRole("button", { name: "음성 없이 입장" }));
 
-    expect(await screen.findByRole("button", { name: "로드아웃 저장" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "선택한 술식 저장" })).toBeInTheDocument();
   });
 
   it("blocks practice room navigation until a player session exists", async () => {
@@ -553,8 +553,8 @@ describe("BattleGameWorkspace", () => {
 
     renderWorkspace();
 
-    await user.click(screen.getByRole("button", { name: "게스트 시작" }));
-    await screen.findByRole("button", { name: "로드아웃 저장" });
+    await user.click(screen.getByRole("button", { name: "게스트로 입장" }));
+    await screen.findByRole("button", { name: "선택한 술식 저장" });
     await user.click(screen.getByRole("button", { name: "연습" }));
 
     expect(screen.getByText("술식 연습")).toBeInTheDocument();
@@ -605,7 +605,7 @@ describe("BattleGameWorkspace", () => {
     await waitFor(
       () => {
         expect(
-          screen.getAllByText("술식이 발동되었습니다. 다시 보려면 연습 초기화를 누르세요.").length
+          screen.getAllByText("술식이 발동되었습니다. 다시 보려면 처음부터 다시 연습하세요.").length
         ).toBeGreaterThan(0);
       },
       { timeout: 1500 }
@@ -644,11 +644,11 @@ describe("BattleGameWorkspace", () => {
     expect(screen.queryByRole("button", { name: "전투" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "결과" })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "랭크 1대1 매칭" }));
+    await user.click(screen.getByRole("button", { name: "1대1 대전 찾기" }));
     await user.click(screen.getByRole("button", { name: "전적" }));
 
-    expect(screen.getByText("매칭 대기 중")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "큐 취소" })).toBeInTheDocument();
+    expect(screen.getByText("상대 찾는 중")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "대전 찾기 취소" })).toBeInTheDocument();
   });
 
   it("separates the practicing skill from the saved matchmaking loadout", async () => {
@@ -657,16 +657,16 @@ describe("BattleGameWorkspace", () => {
 
     renderWorkspace();
 
-    await user.click(screen.getByRole("button", { name: "게스트 시작" }));
-    await user.click(await screen.findByRole("button", { name: "로드아웃 저장" }));
+    await user.click(screen.getByRole("button", { name: "게스트로 입장" }));
+    await user.click(await screen.findByRole("button", { name: "선택한 술식 저장" }));
     await user.click(screen.getByRole("button", { name: "연습" }));
 
-    expect(screen.getByText("저장된 매칭 로드아웃")).toBeInTheDocument();
-    expect(screen.getByText("현재 연습 중인 술식이 저장된 매칭 로드아웃과 동일합니다.")).toBeInTheDocument();
+    expect(screen.getByText("대전에 사용할 저장 술식")).toBeInTheDocument();
+    expect(screen.getByText("현재 연습 중인 술식이 대전에 사용할 저장 술식과 같습니다.")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /허식 자/i }));
 
-    expect(screen.getByText("현재 연습 중인 술식은 저장된 매칭 로드아웃과 다릅니다.")).toBeInTheDocument();
+    expect(screen.getByText("현재 연습 중인 술식은 대전에 사용할 저장 술식과 다릅니다.")).toBeInTheDocument();
   });
 
   it("renders server-backed history and leaderboard on the history screen", async () => {
@@ -759,18 +759,18 @@ describe("BattleGameWorkspace", () => {
 
     await user.clear(screen.getByRole("textbox", { name: "닉네임" }));
     await user.type(screen.getByRole("textbox", { name: "닉네임" }), "rookie");
-    await user.click(screen.getByRole("button", { name: "게스트 시작" }));
+    await user.click(screen.getByRole("button", { name: "게스트로 입장" }));
 
-    expect(await screen.findByRole("button", { name: "로드아웃 저장" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "선택한 술식 저장" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "로드아웃 저장" }));
+    await user.click(screen.getByRole("button", { name: "선택한 술식 저장" }));
 
-    expect(await screen.findByText("로드아웃이 저장되었습니다.")).toBeInTheDocument();
+    expect(await screen.findByText("선택한 술식이 저장되었습니다.")).toBeInTheDocument();
     expect(screen.getByText("플레이어 준비 완료")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "랭크 1대1 매칭" }));
+    await user.click(screen.getByRole("button", { name: "1대1 대전 찾기" }));
 
-    expect(screen.getByText("SEARCHING")).toBeInTheDocument();
+    expect(screen.getAllByText("상대 찾는 중").length).toBeGreaterThan(0);
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-04-27T00:00:00Z"));
 
@@ -841,9 +841,9 @@ describe("BattleGameWorkspace", () => {
 
     await user.clear(screen.getByRole("textbox", { name: "닉네임" }));
     await user.type(screen.getByRole("textbox", { name: "닉네임" }), "rookie");
-    await user.click(screen.getByRole("button", { name: "게스트 시작" }));
-    await user.click(await screen.findByRole("button", { name: "로드아웃 저장" }));
-    await user.click(await screen.findByRole("button", { name: "랭크 1대1 매칭" }));
+    await user.click(screen.getByRole("button", { name: "게스트로 입장" }));
+    await user.click(await screen.findByRole("button", { name: "선택한 술식 저장" }));
+    await user.click(await screen.findByRole("button", { name: "1대1 대전 찾기" }));
 
     emitSocketEvent({
       type: "battle.match_ready",
@@ -898,7 +898,7 @@ describe("BattleGameWorkspace", () => {
     expect(debugFallbackPanel).not.toBeNull();
 
     await user.click(within(debugFallbackPanel!).getByRole("button", { name: "목표 순서 입력" }));
-    await user.click(screen.getByRole("button", { name: "서버 판정 요청" }));
+    await user.click(screen.getByRole("button", { name: "입력한 술식 사용" }));
 
     expect(submittedSocketActions).toHaveLength(1);
     expect(submittedSocketActions[0]).toMatchObject({
@@ -907,7 +907,7 @@ describe("BattleGameWorkspace", () => {
       turnNumber: 1,
       gestureSequence: defaultGestureSequence
     });
-    expect(screen.getAllByText("서버 확정 대기 중").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("술식 판정 대기 중").length).toBeGreaterThan(0);
 
     emitSocketEvent({
       type: "battle.action_result",
@@ -967,7 +967,7 @@ describe("BattleGameWorkspace", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText("서버 확정 완료")).toBeInTheDocument();
+      expect(screen.getByText("술식 판정 완료")).toBeInTheDocument();
     });
     expect(screen.getAllByText(`${defaultGestureSequence.length}/${defaultGestureSequence.length}`).length).toBeGreaterThan(0);
     expect(screen.getAllByText("75")).toHaveLength(2);
@@ -991,11 +991,11 @@ describe("BattleGameWorkspace", () => {
     expect(debugFallbackPanel).not.toBeNull();
 
     await user.click(within(debugFallbackPanel!).getByRole("button", { name: "목표 순서 입력" }));
-    await user.click(screen.getByRole("button", { name: "서버 판정 요청" }));
+    await user.click(screen.getByRole("button", { name: "입력한 술식 사용" }));
 
     expect(submittedSocketActions).toHaveLength(1);
     const submittedAction = submittedSocketActions[0];
-    expect(screen.getAllByText("서버 확정 대기 중").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("술식 판정 대기 중").length).toBeGreaterThan(0);
 
     emitSocketEvent({
       type: "battle.state_updated",
@@ -1043,7 +1043,7 @@ describe("BattleGameWorkspace", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText("서버 확정 완료")).toBeInTheDocument();
+      expect(screen.getByText("술식 판정 완료")).toBeInTheDocument();
     });
 
     emitSocketEvent({
@@ -1059,7 +1059,7 @@ describe("BattleGameWorkspace", () => {
       }
     });
 
-    expect(screen.getByText("서버 확정 완료")).toBeInTheDocument();
+    expect(screen.getByText("술식 판정 완료")).toBeInTheDocument();
     expect(screen.queryByText("서버 거부")).not.toBeInTheDocument();
     expect(screen.getAllByText("75")).toHaveLength(2);
   });
@@ -1072,9 +1072,9 @@ describe("BattleGameWorkspace", () => {
 
     await user.clear(screen.getByRole("textbox", { name: "닉네임" }));
     await user.type(screen.getByRole("textbox", { name: "닉네임" }), "rookie");
-    await user.click(screen.getByRole("button", { name: "게스트 시작" }));
-    await user.click(await screen.findByRole("button", { name: "로드아웃 저장" }));
-    await user.click(await screen.findByRole("button", { name: "랭크 1대1 매칭" }));
+    await user.click(screen.getByRole("button", { name: "게스트로 입장" }));
+    await user.click(await screen.findByRole("button", { name: "선택한 술식 저장" }));
+    await user.click(await screen.findByRole("button", { name: "1대1 대전 찾기" }));
 
     emitSocketEvent({
       type: "battle.match_ready",
@@ -1127,8 +1127,8 @@ describe("BattleGameWorkspace", () => {
       .getByRole("heading", { name: "개발용 대체 입력" })
       .closest("section");
     const localFeedback = screen.getByText("로컬 입력 상태").closest("div");
-    const serverFeedback = screen.getByText("서버 판정 상태").closest("div");
-    const readinessMetric = screen.getByText("제출 준비").closest("div");
+    const serverFeedback = screen.getByText("술식 판정 상태").closest("div");
+    const readinessMetric = screen.getByText("사용 가능 상태").closest("div");
 
     expect(debugFallbackPanel).not.toBeNull();
     expect(localFeedback).not.toBeNull();
@@ -1140,9 +1140,9 @@ describe("BattleGameWorkspace", () => {
 
     await user.click(within(debugFallbackPanel!).getByRole("button", { name: defaultGesture }));
     expect(within(localFeedback!).getByText("입력 완료")).toBeInTheDocument();
-    expect(within(readinessMetric!).getByText("제출 가능")).toBeInTheDocument();
+    expect(within(readinessMetric!).getByText("사용 가능")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "서버 판정 요청" }));
+    await user.click(screen.getByRole("button", { name: "입력한 술식 사용" }));
 
     emitSocketEvent({
       type: "battle.action_result",
@@ -1162,7 +1162,7 @@ describe("BattleGameWorkspace", () => {
     expect(
       within(serverFeedback!).getByText(/상대 턴에는 입력할 수 없습니다\./)
     ).toBeInTheDocument();
-    expect(within(readinessMetric!).getByText("제출 불가")).toBeInTheDocument();
+    expect(within(readinessMetric!).getByText("사용 불가")).toBeInTheDocument();
   });
 
   it("keeps debug fallback controls out of the main battle input surface", async () => {
@@ -1173,9 +1173,9 @@ describe("BattleGameWorkspace", () => {
 
     await user.clear(screen.getByRole("textbox", { name: "닉네임" }));
     await user.type(screen.getByRole("textbox", { name: "닉네임" }), "rookie");
-    await user.click(screen.getByRole("button", { name: "게스트 시작" }));
-    await user.click(await screen.findByRole("button", { name: "로드아웃 저장" }));
-    await user.click(await screen.findByRole("button", { name: "랭크 1대1 매칭" }));
+    await user.click(screen.getByRole("button", { name: "게스트로 입장" }));
+    await user.click(await screen.findByRole("button", { name: "선택한 술식 저장" }));
+    await user.click(await screen.findByRole("button", { name: "1대1 대전 찾기" }));
 
     emitSocketEvent({
       type: "battle.match_ready",
@@ -1224,7 +1224,7 @@ describe("BattleGameWorkspace", () => {
       }
     });
 
-    const inputPanel = screen.getByRole("heading", { name: "입력 콘솔" }).closest("section");
+    const inputPanel = screen.getByRole("heading", { name: "술식 입력" }).closest("section");
     const debugFallbackPanel = screen
       .getByRole("heading", { name: "개발용 대체 입력" })
       .closest("section");
@@ -1262,7 +1262,7 @@ describe("BattleGameWorkspace", () => {
     const replayButton = within(debugFallbackPanel!).getByRole("button", { name: "목표 순서 입력" });
     expect(replayButton).toBeDisabled();
 
-    await user.click(screen.getByRole("button", { name: "서버 판정 요청" }));
+    await user.click(screen.getByRole("button", { name: "입력한 술식 사용" }));
     expect(screen.getByText("음성 승인 후 손동작을 입력할 수 있습니다.")).toBeInTheDocument();
 
     act(() => {
@@ -1279,7 +1279,7 @@ describe("BattleGameWorkspace", () => {
     await user.click(replayButton);
     expect(screen.getAllByText(`${defaultGestureSequence.length}/${defaultGestureSequence.length}`).length).toBeGreaterThan(0);
 
-    await user.click(screen.getByRole("button", { name: "서버 판정 요청" }));
+    await user.click(screen.getByRole("button", { name: "입력한 술식 사용" }));
     expect(submittedSocketActions).toHaveLength(1);
 
     await waitFor(() => {
@@ -1296,10 +1296,10 @@ describe("BattleGameWorkspace", () => {
 
     await user.clear(screen.getByRole("textbox", { name: "닉네임" }));
     await user.type(screen.getByRole("textbox", { name: "닉네임" }), "rookie");
-    await user.click(screen.getByRole("button", { name: "게스트 시작" }));
+    await user.click(screen.getByRole("button", { name: "게스트로 입장" }));
     await user.click(screen.getByRole("button", { name: /무량공처/i }));
-    await user.click(screen.getByRole("button", { name: "로드아웃 저장" }));
-    await user.click(screen.getByRole("button", { name: "랭크 1대1 매칭" }));
+    await user.click(screen.getByRole("button", { name: "선택한 술식 저장" }));
+    await user.click(screen.getByRole("button", { name: "1대1 대전 찾기" }));
 
     emitSocketEvent({
       type: "battle.match_ready",
@@ -1408,7 +1408,7 @@ describe("BattleGameWorkspace", () => {
       screen.getAllByText(`${infiniteVoidSkill.gestureSequence.length}/${infiniteVoidSkill.gestureSequence.length}`).length
     ).toBeGreaterThan(0);
 
-    await user.click(screen.getByRole("button", { name: "서버 판정 요청" }));
+    await user.click(screen.getByRole("button", { name: "입력한 술식 사용" }));
     expect(submittedSocketActions).toHaveLength(1);
   });
 
@@ -1420,9 +1420,9 @@ describe("BattleGameWorkspace", () => {
 
     await user.clear(screen.getByRole("textbox", { name: "닉네임" }));
     await user.type(screen.getByRole("textbox", { name: "닉네임" }), "rookie");
-    await user.click(screen.getByRole("button", { name: "게스트 시작" }));
-    await user.click(await screen.findByRole("button", { name: "로드아웃 저장" }));
-    await user.click(await screen.findByRole("button", { name: "랭크 1대1 매칭" }));
+    await user.click(screen.getByRole("button", { name: "게스트로 입장" }));
+    await user.click(await screen.findByRole("button", { name: "선택한 술식 저장" }));
+    await user.click(await screen.findByRole("button", { name: "1대1 대전 찾기" }));
 
     emitSocketEvent({
       type: "battle.match_ready",
@@ -1472,14 +1472,14 @@ describe("BattleGameWorkspace", () => {
     });
 
     const liveCameraPanel = screen
-      .getByRole("heading", { name: "라이브 카메라 입력" })
+      .getByRole("heading", { name: "손동작 카메라 입력" })
       .closest("section");
-    const inputPanel = screen.getByRole("heading", { name: "입력 콘솔" }).closest("section");
+    const inputPanel = screen.getByRole("heading", { name: "술식 입력" }).closest("section");
 
     expect(liveCameraPanel).not.toBeNull();
     expect(inputPanel).not.toBeNull();
 
-    await user.click(within(liveCameraPanel!).getByRole("button", { name: "카메라 시작" }));
+    await user.click(within(liveCameraPanel!).getByRole("button", { name: "손동작 인식 시작" }));
 
     expect(liveRecognizerMock.createBrowserLiveGestureRecognizer).toHaveBeenCalledTimes(1);
     expect(liveRecognizerMock.start).toHaveBeenCalledTimes(1);
@@ -1514,10 +1514,10 @@ describe("BattleGameWorkspace", () => {
     expect(within(liveCameraPanel!).getByText("토큰 인식")).toBeInTheDocument();
     expect(within(liveCameraPanel!).getByText("700ms")).toBeInTheDocument();
     expect(within(inputPanel!).getByText("입력 완료")).toBeInTheDocument();
-    expect(within(inputPanel!).getByText("라이브 카메라")).toBeInTheDocument();
+    expect(within(inputPanel!).getByText("카메라 손동작")).toBeInTheDocument();
     expect(within(inputPanel!).getByText("92%")).toBeInTheDocument();
 
-    await user.click(within(liveCameraPanel!).getByRole("button", { name: "카메라 중지" }));
+    await user.click(within(liveCameraPanel!).getByRole("button", { name: "손동작 인식 중지" }));
 
     expect(liveRecognizerMock.stop).toHaveBeenCalledTimes(1);
   });
@@ -1530,14 +1530,14 @@ describe("BattleGameWorkspace", () => {
     await enterActiveBattle(user);
 
     const liveCameraPanel = screen
-      .getByRole("heading", { name: "라이브 카메라 입력" })
+      .getByRole("heading", { name: "손동작 카메라 입력" })
       .closest("section");
-    const inputPanel = screen.getByRole("heading", { name: "입력 콘솔" }).closest("section");
+    const inputPanel = screen.getByRole("heading", { name: "술식 입력" }).closest("section");
 
     expect(liveCameraPanel).not.toBeNull();
     expect(inputPanel).not.toBeNull();
 
-    await user.click(within(liveCameraPanel!).getByRole("button", { name: "카메라 시작" }));
+    await user.click(within(liveCameraPanel!).getByRole("button", { name: "손동작 인식 시작" }));
     const currentStepMetric = within(inputPanel!).getByText("현재 단계").closest("div");
 
     expect(currentStepMetric).not.toBeNull();
@@ -1595,11 +1595,11 @@ describe("BattleGameWorkspace", () => {
     await enterActiveBattle(user);
 
     const liveCameraPanel = screen
-      .getByRole("heading", { name: "라이브 카메라 입력" })
+      .getByRole("heading", { name: "손동작 카메라 입력" })
       .closest("section");
     expect(liveCameraPanel).not.toBeNull();
 
-    await user.click(within(liveCameraPanel!).getByRole("button", { name: "카메라 시작" }));
+    await user.click(within(liveCameraPanel!).getByRole("button", { name: "손동작 인식 시작" }));
     expect(liveRecognizerMock.start).toHaveBeenCalledTimes(1);
 
     unmount();
@@ -1615,12 +1615,12 @@ describe("BattleGameWorkspace", () => {
     await enterActiveBattle(user);
 
     const liveCameraPanel = screen
-      .getByRole("heading", { name: "라이브 카메라 입력" })
+      .getByRole("heading", { name: "손동작 카메라 입력" })
       .closest("section");
 
     expect(liveCameraPanel).not.toBeNull();
 
-    await user.click(within(liveCameraPanel!).getByRole("button", { name: "카메라 시작" }));
+    await user.click(within(liveCameraPanel!).getByRole("button", { name: "손동작 인식 시작" }));
 
     act(() => {
       liveRecognizerMock.options?.onStatusChange?.("ready");
@@ -1710,9 +1710,9 @@ describe("BattleGameWorkspace", () => {
 
     await user.clear(screen.getByRole("textbox", { name: "닉네임" }));
     await user.type(screen.getByRole("textbox", { name: "닉네임" }), "rookie");
-    await user.click(screen.getByRole("button", { name: "게스트 시작" }));
-    await user.click(await screen.findByRole("button", { name: "로드아웃 저장" }));
-    await user.click(await screen.findByRole("button", { name: "랭크 1대1 매칭" }));
+    await user.click(screen.getByRole("button", { name: "게스트로 입장" }));
+    await user.click(await screen.findByRole("button", { name: "선택한 술식 저장" }));
+    await user.click(await screen.findByRole("button", { name: "1대1 대전 찾기" }));
 
     emitSocketEvent({
       type: "battle.match_ready",
@@ -1762,14 +1762,14 @@ describe("BattleGameWorkspace", () => {
     });
 
     const liveCameraPanel = screen
-      .getByRole("heading", { name: "라이브 카메라 입력" })
+      .getByRole("heading", { name: "손동작 카메라 입력" })
       .closest("section");
-    const inputPanel = screen.getByRole("heading", { name: "입력 콘솔" }).closest("section");
+    const inputPanel = screen.getByRole("heading", { name: "술식 입력" }).closest("section");
 
     expect(liveCameraPanel).not.toBeNull();
     expect(inputPanel).not.toBeNull();
 
-    await user.click(within(liveCameraPanel!).getByRole("button", { name: "카메라 시작" }));
+    await user.click(within(liveCameraPanel!).getByRole("button", { name: "손동작 인식 시작" }));
 
     act(() => {
       liveRecognizerMock.options?.onStatusChange?.("blocked");
@@ -1817,9 +1817,9 @@ describe("BattleGameWorkspace", () => {
 
     await user.clear(screen.getByRole("textbox", { name: "닉네임" }));
     await user.type(screen.getByRole("textbox", { name: "닉네임" }), "rookie");
-    await user.click(screen.getByRole("button", { name: "게스트 시작" }));
-    await user.click(await screen.findByRole("button", { name: "로드아웃 저장" }));
-    await user.click(await screen.findByRole("button", { name: "랭크 1대1 매칭" }));
+    await user.click(screen.getByRole("button", { name: "게스트로 입장" }));
+    await user.click(await screen.findByRole("button", { name: "선택한 술식 저장" }));
+    await user.click(await screen.findByRole("button", { name: "1대1 대전 찾기" }));
 
     emitSocketEvent({
       type: "battle.match_ready",
@@ -1977,7 +1977,7 @@ describe("BattleGameWorkspace", () => {
     renderWorkspace();
 
     expect(await screen.findByText("saved_player")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "랭크 1대1 매칭" }));
+    await user.click(screen.getByRole("button", { name: "1대1 대전 찾기" }));
 
     emitSocketEvent({
       type: "battle.match_ready",
@@ -2123,7 +2123,7 @@ describe("BattleGameWorkspace", () => {
 
     expect(screen.getAllByText("75")).toHaveLength(2);
     expect(screen.getByText(`T1 ${defaultSkillLog}`)).toBeInTheDocument();
-    expect(screen.queryByText("SEARCHING")).not.toBeInTheDocument();
+    expect(screen.queryByText("상대 찾는 중")).not.toBeInTheDocument();
   });
 
   it("reconnects and restores the latest active battle snapshot after socket disconnect", async () => {
@@ -2146,7 +2146,7 @@ describe("BattleGameWorkspace", () => {
     renderWorkspace();
 
     expect(await screen.findByText("saved_player")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "랭크 1대1 매칭" }));
+    await user.click(screen.getByRole("button", { name: "1대1 대전 찾기" }));
 
     emitSocketEvent({
       type: "battle.match_ready",
@@ -2205,7 +2205,7 @@ describe("BattleGameWorkspace", () => {
     await waitFor(() => {
       expect(socketConnectCount).toBe(2);
     });
-    expect(screen.getByText("소켓을 다시 연결하는 중입니다. 최신 전투 상태를 복구합니다.")).toBeInTheDocument();
+    expect(screen.getByText("실시간 연결을 다시 여는 중입니다. 최신 전투 상태를 복구합니다.")).toBeInTheDocument();
 
     emitSocketEvent({
       type: "battle.match_found",
@@ -2264,7 +2264,7 @@ describe("BattleGameWorkspace", () => {
       expect(screen.getAllByText("75")).toHaveLength(2);
     });
     expect(screen.getByText(`T1 ${defaultSkillLog}`)).toBeInTheDocument();
-    expect(screen.queryByText("소켓을 다시 연결하는 중입니다. 최신 전투 상태를 복구합니다.")).not.toBeInTheDocument();
+    expect(screen.queryByText("실시간 연결을 다시 여는 중입니다. 최신 전투 상태를 복구합니다.")).not.toBeInTheDocument();
   });
 
   it("reconnects and restores an ended battle replay into the result screen", async () => {
@@ -2381,6 +2381,6 @@ describe("BattleGameWorkspace", () => {
     expect((await screen.findAllByText("패배")).length).toBeGreaterThan(0);
     expect(screen.getAllByText("턴 타임아웃").length).toBeGreaterThan(0);
     expect(screen.getAllByText("-18").length).toBeGreaterThan(0);
-    expect(screen.queryByText("소켓을 다시 연결하는 중입니다. 최신 전투 상태를 복구합니다.")).not.toBeInTheDocument();
+    expect(screen.queryByText("실시간 연결을 다시 여는 중입니다. 최신 전투 상태를 복구합니다.")).not.toBeInTheDocument();
   });
 });

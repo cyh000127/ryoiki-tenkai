@@ -2136,8 +2136,8 @@ export function BattleGameWorkspace() {
                 ))}
               </div>
               <div className="metric-list">
-                <Metric label={copy.matchingStatus} value={state.queueStatus} />
-                <Metric label={copy.socketStatus} value={state.socketStatus} />
+                <Metric label={copy.matchingStatus} value={getQueueStatusLabel(state.queueStatus)} />
+                <Metric label={copy.socketStatus} value={getSocketStatusLabel(state.socketStatus)} />
                 <Metric
                   label={copy.cameraStatus}
                   value={state.input.cameraReady ? copy.ready : copy.checkRequired}
@@ -3547,6 +3547,14 @@ function getInputSourceLabel(source: GestureInputSource | null): string {
   }
 
   return copy.inputSourceWaiting;
+}
+
+function getQueueStatusLabel(status: BattleFlowState["queueStatus"]): string {
+  return copy.queueStatusText[status];
+}
+
+function getSocketStatusLabel(status: BattleFlowState["socketStatus"]): string {
+  return copy.socketStatusText[status];
 }
 
 function getLiveRecognizerStatusLabel(status: LiveGestureRecognizerStatus): string {
