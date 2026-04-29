@@ -94,10 +94,19 @@ practice 화면 기준으로 사용자는 아래 흐름을 봅니다.
 
 - 아직 실제 Unity Editor가 만든 WebGL build를 검증한 것은 아닙니다.
 - `FE/app/public/unity/.../mock.loader.js`는 브리지/합성/UI 흐름 검증용 mock runtime입니다.
-- battle/result scene은 아직 실제 Unity asset 기준 smoke가 부족합니다.
+- battle/result scene은 후속 전투 구현계획으로 분리했습니다.
 - Sukuna, Megumi 계열은 여전히 HTML fallback 중심입니다.
 
-## 다음 작업
+## 다음 작업 기준
+
+전투/결과 Unity 통합은 후속 구현계획으로 내리고, 다음 작업은 연습장에서 혼자 스킬을 사용하는 경험을 먼저 완성한다.
+
+우선순위:
+
+1. `practice.completed` 이후 스킬 이펙트가 명확히 발동되는지 확인한다.
+2. Gojo 3종 이펙트를 서로 구분되는 수준으로 고도화한다.
+3. 실제 Unity WebGL build로 mock runtime을 교체한다.
+4. 반복 연습 UX와 overlay 가시성을 다듬는다.
 
 남은 구현 우선순위는 아래 TODO 문서에 따릅니다.
 

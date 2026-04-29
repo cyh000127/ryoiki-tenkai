@@ -32,7 +32,7 @@
 2. Unity가 생성한 `*.loader.js`, `*.data`, `*.framework.js`, `*.wasm` 파일을 `FE/app/public/unity/ryoiki-tenkai-renderer/prototype-v1/Build`에 둔다.
 3. `FE/app/public/unity/ryoiki-tenkai-renderer/prototype-v1/build.json`의 `loaderUrl`, `dataUrl`, `frameworkUrl`, `codeUrl`, `productVersion`을 실제 파일명에 맞춘다.
 4. `productVersion`은 React registry의 `buildVersion`과 같은 값으로 둔다. 현재 값은 `prototype-v1`이다.
-5. 브라우저에서 연습 화면, 전투 화면, 결과 화면을 차례로 열어 mount/unmount와 fallback 전환을 확인한다.
+5. 브라우저에서 연습 화면을 열어 mount/unmount, 스킬 선택, 손동작 완료, 이펙트 발동, fallback 전환을 확인한다.
 
 주의:
 
@@ -52,9 +52,8 @@ Unity 쪽은 이 문자열 payload를 받아:
 - 현재 scene 전환
 - `skillId -> timelineId` 선택
 - practice progress 반영
-- battle snapshot 반영
-- result highlight 반영
 - practice overlay preview 재생
+- battle snapshot과 result highlight는 후속 구현계획으로 둔다.
 
 만 처리하면 됩니다.
 
@@ -65,8 +64,6 @@ Unity 쪽은 이 문자열 payload를 받아:
 
 - hero skill 3개 timeline 연결
 - practice scene skeleton
-- battle scene skeleton
-- result scene skeleton
 - 코드 기반 placeholder VFX 3종
 
 ## 현재 웹앱 연결 상태
@@ -113,7 +110,7 @@ Unity 쪽은 이 문자열 payload를 받아:
 - camera preset tuning
 - 나머지 스킬 timeline
 - mock WebGL runtime을 실제 Unity WebGL build 산출물로 교체
-- battle/result scene의 실제 Unity smoke 검증
+- battle/result scene의 실제 Unity smoke 검증은 후속 전투 구현계획에서 진행
 
 ## 남은 TODO 문서
 

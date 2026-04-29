@@ -1,6 +1,6 @@
 # v6 기술스택 결정
 
-이 문서는 기존 웹 플레이 앱에 Unity를 `연출 엔진`으로 붙일 때의 기술 선택을 기록한다. 목표는 새 게임 클라이언트를 만드는 것이 아니라, 현재 React/FastAPI 구조 위에 Unity renderer를 얹는 것이다.
+이 문서는 기존 웹 플레이 앱에 Unity를 `연출 엔진`으로 붙일 때의 기술 선택을 기록한다. 현재 목표는 새 게임 클라이언트를 만드는 것이 아니라, React 연습 화면 위에 Unity renderer를 얹어 혼자 스킬을 사용하는 경험을 완성하는 것이다. battle/result Unity 통합은 후속 구현계획이다.
 
 ## 선택
 
@@ -8,9 +8,9 @@
 | --- | --- | --- |
 | Unity 타깃 | Unity WebGL | 현재 제품이 웹 앱이므로 가장 얇은 통합 경로다. |
 | 웹 통합 방식 | official Unity WebGL loader + 얇은 React adapter | 특정 wrapper 종속을 줄이고 renderer port 뒤로 숨기기 쉽다. |
-| gameplay authority | FastAPI + React state 유지 | 전투 판정, 매칭, reconnect, camera recognizer를 그대로 재사용할 수 있다. |
+| gameplay authority | React practice state 유지, 전투 판정은 후속 | 현재는 연습 이펙트가 우선이며, 전투 판정/매칭 연출은 후속 구현계획으로 분리한다. |
 | renderer 경계 | `animset renderer port` | Unity와 HTML fallback을 같은 인터페이스로 다루기 쉽다. |
-| 통신 형식 | JSON event envelope | skill/battle/practice 상태를 버전 가능한 구조로 넘길 수 있다. |
+| 통신 형식 | JSON event envelope | practice skill/progress/completed 상태를 버전 가능한 구조로 넘길 수 있다. |
 | practice 입력 | 브라우저 MediaPipe recognizer 유지 | Unity가 카메라 권한과 인식 모델을 직접 소유하지 않게 한다. |
 | presentation 데이터 | versioned manifest (`skillId`, `animsetId` 기반) | 새 스킬 추가를 코드 분기보다 데이터 추가 중심으로 만든다. |
 | fallback renderer | 기존 HTML/CSS 2D UI 유지 | Unity 로드 실패 시에도 플레이 흐름을 보존한다. |
@@ -24,6 +24,7 @@
 - Unity는 WebSocket에 직접 연결하지 않는다.
 - Unity는 플레이어 프로필, 로드아웃, 전적을 저장하지 않는다.
 - React는 Unity event를 보내더라도 gameplay state의 source of truth를 유지한다.
+- 현재 구현 우선순위는 practice event이며, battle event projection은 후속 구현계획으로 둔다.
 
 ## 제안 디렉터리 구조
 

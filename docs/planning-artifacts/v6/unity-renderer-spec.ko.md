@@ -2,13 +2,13 @@
 
 ## 목적
 
-기존 웹 앱의 practice/battle 흐름을 유지한 채, Unity를 `animset renderer`로 붙여 시각 연출을 강화한다. 이 명세의 핵심은 "Unity를 어디까지 붙일 것인가"보다 "Unity를 어디까지 붙이지 않을 것인가"를 먼저 고정하는 것이다.
+기존 웹 앱의 practice 흐름을 유지한 채, Unity를 `animset renderer`로 붙여 연습장에서 혼자 스킬을 사용하는 경험을 강화한다. 이 명세의 핵심은 "Unity를 어디까지 붙일 것인가"보다 "지금은 연습장 스킬 이펙트에 집중하고, 전투는 후속으로 둔다"는 우선순위를 고정하는 것이다.
 
 ## 핵심 결정
 
-- FastAPI는 battle rule authority를 유지한다.
-- React는 navigation, session, queue/battle state, live recognizer orchestration을 유지한다.
-- Unity는 practice/battle scene rendering, camera/VFX/timeline만 담당한다.
+- React는 practice navigation, selected skill, live recognizer orchestration, progress state를 유지한다.
+- Unity는 practice scene rendering, camera/VFX/timeline만 담당한다.
+- FastAPI battle rule authority는 유지하되, battle Unity integration은 후속 구현계획으로 둔다.
 - `animsetId`는 연출 엔진 선택자다.
 - `skillId`는 규칙과 연출을 연결하는 canonical key다.
 
@@ -18,26 +18,25 @@
 - Unity가 WebSocket에 직접 연결하는 구조
 - Unity가 브라우저 카메라 recognizer를 직접 소유하는 구조
 - Unity가 player profile, rating, history를 저장하는 구조
+- v6 현재 단계에서 battle/result Unity 연출을 완성하는 작업
 - v6 첫 단계에서 모든 스킬을 3D로 만드는 작업
 
 ## 책임 분리
 
 | 층 | 책임 | 예시 |
 | --- | --- | --- |
-| Backend | authoritative battle rules | `gestureSequence -> skill`, mana, cooldown, damage, result |
-| Frontend React | 제품 플로우와 상태 orchestration | screen state, queue status, practice progress, socket event handling |
-| Unity | presentation only | clip 재생, VFX, camera preset, hit/blocked timeline |
+| Backend | 후속 전투 규칙 authority | `gestureSequence -> skill`, mana, cooldown, damage, result |
+| Frontend React | 연습 플로우와 상태 orchestration | selected skill, practice progress, camera recognizer status |
+| Unity | presentation only | clip 재생, VFX, camera preset, practice completed timeline |
 
-이 원칙 때문에 Unity는 `보기 좋은 결과`를 만들 수는 있어도 `진짜 결과`를 만들 수는 없다. 진짜 결과는 항상 backend snapshot이 결정한다.
+이 원칙 때문에 Unity는 `보기 좋은 발동`을 만들 수는 있어도 `손동작 인식 성공 여부`를 결정하지 않는다. 연습 완료 여부는 React practice state가 결정한다. 전투 결과는 후속 전투 구현에서 backend snapshot이 결정한다.
 
 ## 전체 구조
 
 ```mermaid
 flowchart LR
   A["Browser Camera + MediaPipe"] --> B["React Practice State"]
-  C["FastAPI + WebSocket"] --> D["React Battle State"]
   B --> E["Animset Renderer Port"]
-  D --> E
   E --> F["Unity WebGL Renderer"]
   E --> G["HTML Fallback Renderer"]
 ```
@@ -59,7 +58,7 @@ type AnimsetRendererPort = {
 `RendererMountOptions` 에는 최소한 아래 값이 필요하다.
 
 - `animsetId`
-- `scene`: `"practice"` | `"battle"` | `"result"`
+- `scene`: 현재 릴리즈는 `"practice"`를 우선 사용한다. `"battle"`과 `"result"`는 후속 구현계획에서 같은 port로 확장한다.
 - `buildVersion`
 - `fallbackPolicy`
 
@@ -73,9 +72,9 @@ type AnimsetRendererPort = {
 | `practice.skill_selected` | 현재 연습 술식 반영 | `skillId`, `gestureSequence`, `presentation` |
 | `practice.progress_updated` | 연습 단계 갱신 | `currentStep`, `expectedToken`, `observedToken`, `progress`, `status` |
 | `practice.completed` | 연습 완료 연출 | `skillId`, `completedAt` |
-| `battle.state_snapshot` | authoritative 전투 상태 반영 | `battleSessionId`, `turnNumber`, `self`, `opponent`, `status` |
-| `battle.action_resolved` | accepted/rejected timeline | `actionId`, `result`, `skillId?`, `reason?`, `actorPlayerId` |
-| `battle.ended` | 결과 연출 | `winnerPlayerId`, `loserPlayerId`, `endedReason` |
+| `battle.state_snapshot` | 후속 전투 상태 반영 | future scope |
+| `battle.action_resolved` | 후속 accepted/rejected timeline | future scope |
+| `battle.ended` | 후속 결과 연출 | future scope |
 
 ### Unity -> React
 
@@ -136,10 +135,22 @@ sequenceDiagram
 - Unity는 `저장된 매칭 로드아웃`을 덮어쓰지 않는다.
 - 연습 완료 CTA는 기존 React UI가 계속 제공한다.
 - Unity load 실패 시 poster/video 또는 HTML fallback으로 즉시 내려온다.
+- `practice.completed`가 들어오면 선택한 스킬의 발동 이펙트를 재생한다.
+- 이펙트는 너무 빨리 사라지지 않아야 하며, 사용자는 같은 스킬을 반복 연습할 수 있어야 한다.
 
-## Battle 통합 규칙
+## Practice 완료 기준
 
-battle은 현재처럼 backend snapshot이 진실이다.
+| 항목 | 완료 기준 |
+| --- | --- |
+| 스킬 선택 | 연습 중인 술식과 저장된 로드아웃이 분리되어 보인다. |
+| 손동작 인식 | MediaPipe 관찰 상태와 현재 단계가 표시된다. |
+| 이펙트 발동 | sequence 완료 시 Unity 이펙트가 자동 재생된다. |
+| 반복 연습 | 발동 후 `연습 초기화` 또는 스킬 재선택으로 다시 시연할 수 있다. |
+| fallback | Unity load 실패, asset missing, version mismatch에서도 연습은 계속 가능하다. |
+
+## Future Battle 통합 규칙
+
+battle은 후속 구현계획이다. 연습장 스킬 이펙트가 안정화된 뒤 backend snapshot을 진실로 삼는 전투 연출을 붙인다.
 
 ```mermaid
 sequenceDiagram
@@ -182,7 +193,7 @@ sequenceDiagram
 clip, VFX, camera preset, scene binding을 Unity build에 포함한다.
 
 6. `smoke verification`
-practice, accepted battle, rejected battle, no-Unity fallback을 확인한다.
+practice completed effect, repeat practice, no-Unity fallback을 확인한다.
 
 이 순서에서 3번이 빠지면 `연출은 있는데 손동작으로 못 쓰는 스킬`이 생기고, 4번이 빠지면 `규칙은 있는데 Unity에서 빈 화면이 되는 스킬`이 생긴다.
 
@@ -191,7 +202,7 @@ practice, accepted battle, rejected battle, no-Unity fallback을 확인한다.
 ### Unity load 실패
 
 - 즉시 HTML fallback renderer로 전환한다.
-- 전투 중이면 submit, timeout, surrender 흐름을 절대 막지 않는다.
+- 연습 중이면 카메라 인식, 진행률, 연습 초기화 흐름을 절대 막지 않는다.
 - 사용자에게는 `연출 로드 실패, 기본 화면으로 전환` 수준의 짧은 상태만 노출한다.
 
 ### Asset missing
@@ -207,11 +218,11 @@ practice, accepted battle, rejected battle, no-Unity fallback을 확인한다.
 - React manifest와 Unity build version이 다르면 Unity renderer를 시작하지 않는다.
 - 안전하게 fallback renderer로 시작한다.
 - 비교 기준은 React registry의 `buildVersion`과 Unity `build.json`의 `productVersion`이다.
-- mismatch는 사용자의 전투 입력, 항복, 결과 확인 흐름을 막지 않는다.
+- mismatch는 사용자의 연습 진행, 스킬 재선택, 연습 초기화 흐름을 막지 않는다.
 
-## Battle/Result Smoke 기준
+## Future Battle/Result Smoke 기준
 
-Unity build 또는 HTML fallback 중 어느 renderer를 쓰더라도 아래 이벤트 조합은 깨지면 안 된다.
+전투 Unity integration 착수 후에는 Unity build 또는 HTML fallback 중 어느 renderer를 쓰더라도 아래 이벤트 조합이 깨지면 안 된다.
 
 | 케이스 | 입력 이벤트 | 기대 결과 |
 | --- | --- | --- |
@@ -227,8 +238,8 @@ v6 첫 통합은 아래처럼 제한하는 것이 맞다.
 - Unity animset 1개
 - hero skill 3~4개
 - practice scene 1개
-- battle scene 1개
-- result scene은 간단한 replay 또는 highlight 수준
+- battle scene은 후속 구현계획
+- result scene은 후속 구현계획
 
 이 범위를 넘기면 `기술 검증`보다 `콘텐츠 제작`이 먼저 병목이 된다.
 
