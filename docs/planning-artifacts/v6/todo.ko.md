@@ -21,6 +21,7 @@
 - Unity load 실패와 version mismatch fallback guard
 - `practice.completed` 기반 발동 loop와 완료 sustain overlay
 - fallback 스킬의 연습 완료 activation 검증
+- Unity WebGL build 교체 전 `build.json`/산출물 검증 스크립트
 
 즉 지금은 `연습 화면에서 Unity 통합 감`과 `손동작 완료 후 발동 이펙트`까지는 확인 가능하다. 다만 실제 Unity Editor build 산출물은 아직 없으므로, 현재 이펙트는 bridge-compatible placeholder 상태다.
 
@@ -55,6 +56,7 @@
 - 목표: `mock.loader.js` 기반 placeholder를 실제 Unity Editor build 산출물로 대체합니다.
 - 이유: 현재 preview는 브리지와 레이아웃 검증용으로는 충분하지만, 실제 Unity pipeline 검증은 아직 아닙니다.
 - 현재 상태: 이 작업은 Unity Editor와 실제 build asset이 필요해 현재 저장소 코드만으로 완료할 수 없습니다.
+- 준비 상태: `scripts/unity-build-check.ps1`로 실제 산출물 교체 전후의 누락 파일과 버전 불일치를 확인할 수 있다.
 - 완료 기준:
   - Unity Editor build가 `FE/app/public/unity/ryoiki-tenkai-renderer/prototype-v1/` 경로에서 로드됩니다.
   - practice scene이 mock runtime 없이 mount/unmount 됩니다.
@@ -86,6 +88,7 @@
   - Unity build 교체 절차 갱신
   - practice smoke checklist 갱신
   - no-Unity fallback, version mismatch, missing asset smoke 갱신
+- 구현 상태: build handoff check는 `docs/implementation-artifacts/v6-3-unity-build-handoff-check.ko.md`에 기록했다.
 
 ## Future. Battle/Result Unity Integration
 

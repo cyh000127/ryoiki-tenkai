@@ -35,3 +35,7 @@ BE/api/.runtime/
 # Build artifacts
 build/
 out/
+!FE/app/public/unity/
+!FE/app/public/unity/**/
+!FE/app/public/unity/**/Build/
+!FE/app/public/unity/**/Build/**

@@ -90,5 +90,6 @@ http://localhost:5173
 pnpm --dir FE/app typecheck
 pnpm --dir FE/app test
 uv run pytest BE/api/tests/unit
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\unity-build-check.ps1
 git diff --check
 ```
