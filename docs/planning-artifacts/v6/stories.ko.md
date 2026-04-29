@@ -112,19 +112,19 @@
 
 ### V6-E3-ST05: Practice Skill Effect Activation Loop
 
-- Status: planned
+- Status: done
 - Scope: 손동작 sequence 완료 시 선택한 술식의 Unity 이펙트를 자동 발동하고, 이펙트 종료 후에도 사용자가 같은 스킬을 반복 연습할 수 있게 한다.
 - Acceptance criteria: `practice.completed` 이벤트가 Unity renderer로 전달된다. 발동 상태가 너무 빨리 사라지지 않는다. `연습 초기화` 또는 스킬 재선택으로 반복 연습할 수 있다.
 - Dependencies: V6-E3-ST02, MediaPipe runtime, skill presentation manifest.
-- Verification: frontend unit test, manual camera smoke check.
+- Verification: frontend unit test, manual camera smoke check. 구현 기록은 `docs/implementation-artifacts/v6-2-practice-effect-activation.ko.md`.
 
 ### V6-E3-ST06: Practice Unity Effect Quality Pass
 
-- Status: planned
+- Status: partial
 - Scope: Gojo 3종 이펙트를 연습장에서 실제로 식별 가능한 수준으로 고도화한다. 카메라 mesh, 상태 badge, helper text와 겹치지 않도록 overlay 우선순위를 조정한다.
 - Acceptance criteria: `jjk_gojo_red`, `jjk_gojo_hollow_purple`, `jjk_gojo_infinite_void`가 서로 다른 발동 이펙트로 보인다. 사용자가 스킬이 발동됐는지 즉시 알 수 있다.
 - Dependencies: V6-E2-ST02, Unity build 산출물 또는 mock runtime.
-- Verification: visual smoke check, screenshot comparison note.
+- Verification: visual smoke check, screenshot comparison note. Mock runtime 기준 1차 품질 개선은 완료됐고, 실제 Unity VFX 산출물 smoke는 남음.
 
 ## V6-E4: Future Battle Renderer Plan
 
@@ -180,11 +180,11 @@
 
 ### V6-E5-ST03: 성능 예산 과 Smoke Checklist
 
-- Status: planned
+- Status: done
 - Scope: 초기 bundle budget, first render budget, 메모리 위험 구간, smoke checklist를 고정한다.
 - Acceptance criteria: Unity 추가가 연습장 카메라 인식과 스킬 이펙트 확인 흐름을 망치지 않는지 반복 점검할 수 있다.
 - Dependencies: Unity build, target browser range.
-- Verification: smoke checklist document, perf measurement note.
+- Verification: `docs/implementation-artifacts/v6-4-practice-smoke-checklist.ko.md`, `scripts/v6-practice-smoke-check.ps1`.
 
 ### V6-E5-ST04: Unity Native Client 또는 Unity-Owned Battle Logic
 

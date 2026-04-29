@@ -91,5 +91,6 @@ pnpm --dir FE/app typecheck
 pnpm --dir FE/app test
 uv run pytest BE/api/tests/unit
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\unity-build-check.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v6-practice-smoke-check.ps1 -Mode fast
 git diff --check
 ```

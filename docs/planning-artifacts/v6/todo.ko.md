@@ -22,6 +22,7 @@
 - `practice.completed` 기반 발동 loop와 완료 sustain overlay
 - fallback 스킬의 연습 완료 activation 검증
 - Unity WebGL build 교체 전 `build.json`/산출물 검증 스크립트
+- v6 practice smoke 자동 확인 스크립트와 수동 체크리스트
 
 즉 지금은 `연습 화면에서 Unity 통합 감`과 `손동작 완료 후 발동 이펙트`까지는 확인 가능하다. 다만 실제 Unity Editor build 산출물은 아직 없으므로, 현재 이펙트는 bridge-compatible placeholder 상태다.
 
@@ -70,6 +71,7 @@
   - desktop/mobile에서 overlay 정보 우선순위가 정리됩니다.
   - effect 강도와 mesh 가시성이 조정됩니다.
   - 필요하면 `renderer visibility toggle`을 추가합니다.
+- 구현 상태: 완료 상태 overlay와 smoke 기준은 반영됨. 실제 mobile visual pass는 Unity 산출물 교체 후 다시 확인한다.
 
 ## 우선순위 5. Hero 외 스킬 Fallback 전략
 
@@ -89,6 +91,7 @@
   - practice smoke checklist 갱신
   - no-Unity fallback, version mismatch, missing asset smoke 갱신
 - 구현 상태: build handoff check는 `docs/implementation-artifacts/v6-3-unity-build-handoff-check.ko.md`에 기록했다.
+- 구현 상태: practice smoke checklist는 `docs/implementation-artifacts/v6-4-practice-smoke-checklist.ko.md`에 기록했다.
 
 ## Future. Battle/Result Unity Integration
 
