@@ -12,6 +12,7 @@ import type {
   RendererSkillPresentationPayload,
   RendererStatus
 } from "../model/rendererPort";
+import { resolveSkillEffectProfile } from "../../skill-effects/model/skillEffectManifest";
 
 type HtmlFallbackSceneState = {
   action: BattleActionResolvedEvent["payload"] | null;
@@ -40,6 +41,10 @@ export function createHtmlFallbackRenderer(): AnimsetRendererPort {
 
     const shell = document.createElement("div");
     shell.className = "animset-runtime animset-runtime--fallback";
+    const effectProfile = resolveSkillEffectProfile(getProjectedSkillId(sceneState));
+    shell.dataset.effectTone = effectProfile.tone;
+    shell.dataset.effectIntensity = effectProfile.intensity;
+    shell.dataset.effectActivated = sceneState.completed ? "true" : "false";
 
     const meta = document.createElement("div");
     meta.className = "animset-runtime__meta";
@@ -60,7 +65,7 @@ export function createHtmlFallbackRenderer(): AnimsetRendererPort {
     timeline.className = "animset-runtime__text";
     timeline.textContent = getRuntimeTimelineLabel(sceneState);
 
-    viewport.append(heading, timeline);
+    viewport.append(createEffectCue(effectProfile, Boolean(sceneState.completed)), heading, timeline);
 
     const metricGrid = document.createElement("div");
     metricGrid.className = "animset-runtime__metrics";
@@ -164,6 +169,29 @@ function createMetricCard(label: string, value: string): HTMLElement {
   return card;
 }
 
+function createEffectCue(
+  profile: ReturnType<typeof resolveSkillEffectProfile>,
+  activated: boolean
+): HTMLElement {
+  const cue = document.createElement("div");
+  cue.className = "animset-runtime__effect-cue";
+  cue.dataset.tone = profile.tone;
+  cue.dataset.activated = activated ? "true" : "false";
+
+  const ring = document.createElement("span");
+  ring.className = "animset-runtime__effect-ring";
+
+  const core = document.createElement("span");
+  core.className = "animset-runtime__effect-core";
+
+  const label = document.createElement("span");
+  label.className = "animset-runtime__effect-label";
+  label.textContent = activated ? profile.completionLabel : profile.activationLabel;
+
+  cue.append(ring, core, label);
+  return cue;
+}
+
 function getRuntimeHeadline(state: HtmlFallbackSceneState): string {
   if (state.scene === "practice" && state.selectedSkill) {
     return `${state.selectedSkill.skillName} 연습 타임라인`;
@@ -199,12 +227,31 @@ function getPresentation(state: HtmlFallbackSceneState): RendererSkillPresentati
   return null;
 }
 
+function getProjectedSkillId(state: HtmlFallbackSceneState): string {
+  if (state.selectedSkill) {
+    return state.selectedSkill.skillId;
+  }
+  if (state.action?.skillId) {
+    return state.action.skillId;
+  }
+  if (state.battle) {
+    return state.battle.selectedSkillId;
+  }
+  if (state.completed) {
+    return state.completed.skillId;
+  }
+  return "unknown";
+}
+
 function getMetricPairs(state: HtmlFallbackSceneState): Array<[string, string]> {
+  const effectProfile = resolveSkillEffectProfile(getProjectedSkillId(state));
+
   if (state.scene === "practice") {
     const presentation = getPresentation(state);
     return [
       ["Skill", state.selectedSkill?.skillName ?? "-"],
       ["Timeline", presentation?.timelineId ?? "-"],
+      ["Effect", effectProfile.effectId],
       ["Step", formatPracticeStep(state.practice)],
       ["Expected", state.practice?.expectedToken ?? "-"],
       ["Observed", state.practice?.observedToken ?? "-"],
@@ -216,6 +263,7 @@ function getMetricPairs(state: HtmlFallbackSceneState): Array<[string, string]> 
   if (state.scene === "battle") {
     return [
       ["Skill", state.battle?.selectedSkillName ?? "-"],
+      ["Effect", effectProfile.effectId],
       ["Turn", state.battle ? String(state.battle.turnNumber) : "-"],
       ["Self HP/Mana", formatParticipant(state.battle?.self ?? null)],
       ["Opponent HP/Mana", formatParticipant(state.battle?.opponent ?? null)],
@@ -226,6 +274,7 @@ function getMetricPairs(state: HtmlFallbackSceneState): Array<[string, string]> 
 
   return [
     ["Outcome", state.summary?.resultForPlayer ?? "-"],
+    ["Effect", effectProfile.effectId],
     ["Winner", state.summary?.winnerPlayerId ?? "-"],
     ["Loser", state.summary?.loserPlayerId ?? "-"],
     ["Ended", state.summary?.endedReason ?? "-"],

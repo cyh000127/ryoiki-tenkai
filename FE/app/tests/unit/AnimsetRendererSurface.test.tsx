@@ -262,6 +262,7 @@ describe("AnimsetRendererSurface", () => {
     expect(await screen.findByText("HTML 폴백")).toBeInTheDocument();
     expect(screen.getByText("Triggered")).toBeInTheDocument();
     expect(screen.getByText("complete")).toBeInTheDocument();
+    expect(screen.getByText("cleave_barrage")).toBeInTheDocument();
   });
 
   it("projects accepted battle actions into the battle renderer fallback", async () => {

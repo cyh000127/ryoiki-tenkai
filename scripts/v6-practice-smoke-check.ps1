@@ -78,6 +78,7 @@ Add-Step "Practice renderer unit tests" @(
     "test",
     "AnimsetRendererSurface",
     "BattleGameWorkspace",
+    "skillEffectManifest",
     "skillPresentationManifest",
     "unityWebglRenderer",
     "animsetRegistry"

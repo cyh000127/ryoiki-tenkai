@@ -23,6 +23,7 @@
 - fallback 스킬의 연습 완료 activation 검증
 - Unity WebGL build 교체 전 `build.json`/산출물 검증 스크립트
 - v6 practice smoke 자동 확인 스크립트와 수동 체크리스트
+- frontend skill effect manifest와 HTML fallback effect cue
 
 즉 지금은 `연습 화면에서 Unity 통합 감`과 `손동작 완료 후 발동 이펙트`까지는 확인 가능하다. 다만 실제 Unity Editor build 산출물은 아직 없으므로, 현재 이펙트는 bridge-compatible placeholder 상태다.
 
@@ -108,3 +109,11 @@
 - 연습장에서 최소 3개 hero skill 이펙트가 충분히 구분됩니다.
 - 반복 연습 flow가 안정적입니다.
 - 전투 UX와 action accepted/rejected 연출 정책이 별도 승인됩니다.
+
+## Unity 산출물 대기 중 진행할 작업
+
+실제 Unity WebGL build가 막혀 있는 동안에는 아래 순서로 진행한다.
+
+1. 프론트 skill effect manifest를 기준으로 연습장 스킬 상세와 fallback cue를 고도화한다.
+2. HTML fallback에서도 `effectId`, tone, replay policy가 드러나게 유지한다.
+3. Unity 프로젝트가 준비되면 동일한 `effectId`를 prefab/timeline key에 연결한다.

@@ -88,6 +88,6 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v6-practice-smok
 
 - Unity build config check: PASS
 - frontend typecheck: PASS
-- practice renderer unit tests: PASS, 5 files / 40 tests
+- practice renderer unit tests: PASS, 6 files / 44 tests
 - frontend production build: PASS
 - live camera smoke fixture: PASS, 2 tests

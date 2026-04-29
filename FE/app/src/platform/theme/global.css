@@ -1227,6 +1227,108 @@ textarea {
   padding: 16px;
 }
 
+.animset-runtime__effect-cue {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 112px;
+  height: 112px;
+  margin-bottom: 4px;
+  isolation: isolate;
+}
+
+.animset-runtime__effect-ring,
+.animset-runtime__effect-core {
+  position: absolute;
+  display: block;
+  border-radius: 999px;
+}
+
+.animset-runtime__effect-ring {
+  inset: 10px;
+  border: 2px solid rgba(83, 215, 255, 0.48);
+  box-shadow: 0 0 30px rgba(83, 215, 255, 0.18);
+}
+
+.animset-runtime__effect-core {
+  width: 48px;
+  height: 48px;
+  background: rgba(83, 215, 255, 0.72);
+  box-shadow: 0 0 34px rgba(83, 215, 255, 0.42);
+}
+
+.animset-runtime__effect-label {
+  position: absolute;
+  right: -96px;
+  bottom: 4px;
+  min-width: 116px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(5, 10, 16, 0.72);
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.35;
+  padding: 6px 8px;
+}
+
+.animset-runtime__effect-cue[data-activated="true"] .animset-runtime__effect-ring {
+  transform: scale(1.18);
+}
+
+.animset-runtime__effect-cue[data-activated="true"] .animset-runtime__effect-core {
+  transform: scale(1.12);
+}
+
+.animset-runtime__effect-cue[data-tone="red"] .animset-runtime__effect-ring {
+  border-color: rgba(255, 184, 112, 0.62);
+  box-shadow: 0 0 36px rgba(255, 76, 76, 0.26);
+}
+
+.animset-runtime__effect-cue[data-tone="red"] .animset-runtime__effect-core {
+  background: rgba(255, 88, 88, 0.88);
+  box-shadow: 0 0 38px rgba(255, 66, 66, 0.46);
+}
+
+.animset-runtime__effect-cue[data-tone="purple"] .animset-runtime__effect-ring {
+  border-color: rgba(150, 222, 255, 0.58);
+  box-shadow: 0 0 38px rgba(168, 86, 255, 0.28);
+}
+
+.animset-runtime__effect-cue[data-tone="purple"] .animset-runtime__effect-core {
+  background: rgba(172, 102, 255, 0.88);
+  box-shadow: 0 0 40px rgba(160, 88, 255, 0.48);
+}
+
+.animset-runtime__effect-cue[data-tone="domain"] .animset-runtime__effect-ring {
+  border-color: rgba(178, 236, 255, 0.66);
+  box-shadow: 0 0 42px rgba(86, 133, 255, 0.32);
+}
+
+.animset-runtime__effect-cue[data-tone="domain"] .animset-runtime__effect-core {
+  background: rgba(112, 145, 255, 0.86);
+  box-shadow: 0 0 42px rgba(112, 170, 255, 0.46);
+}
+
+.animset-runtime__effect-cue[data-tone="shrine"] .animset-runtime__effect-ring {
+  border-color: rgba(255, 204, 118, 0.58);
+  box-shadow: 0 0 34px rgba(255, 85, 64, 0.24);
+}
+
+.animset-runtime__effect-cue[data-tone="shrine"] .animset-runtime__effect-core {
+  background: rgba(255, 104, 76, 0.82);
+  box-shadow: 0 0 34px rgba(255, 104, 76, 0.38);
+}
+
+.animset-runtime__effect-cue[data-tone="shadow"] .animset-runtime__effect-ring {
+  border-color: rgba(132, 161, 255, 0.5);
+  box-shadow: 0 0 34px rgba(88, 105, 170, 0.26);
+}
+
+.animset-runtime__effect-cue[data-tone="shadow"] .animset-runtime__effect-core {
+  background: rgba(99, 117, 178, 0.82);
+  box-shadow: 0 0 34px rgba(99, 117, 178, 0.38);
+}
+
 .animset-runtime__headline {
   color: var(--text);
   font-size: 18px;
@@ -1260,6 +1362,10 @@ textarea {
   padding: 0;
   min-height: auto;
   max-width: min(340px, calc(100% - 32px));
+}
+
+.animset-surface--overlay .animset-runtime__effect-cue {
+  display: none;
 }
 
 .animset-surface--overlay .animset-runtime__headline {

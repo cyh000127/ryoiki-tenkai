@@ -66,7 +66,7 @@
 - Scope: 새 스킬 추가 시 `backend rule`, `frontend catalog`, `recognizer token`, `presentation manifest`, `Unity asset`, `smoke test` 순서를 문서화한다.
 - Acceptance criteria: 팀원이 새 스킬 하나를 넣을 때 어디를 수정해야 하는지 문서만 보고 따라갈 수 있다.
 - Dependencies: V6-E2-ST01.
-- Verification: 기본 순서는 v6 문서에 있음. 실제 Unity asset 교체 절차와 smoke 체크리스트 보강이 남음.
+- Verification: 기본 순서는 v6 문서에 있음. frontend skill effect manifest 경계는 구현됨. 실제 Unity asset 교체 절차와 신규 스킬별 authoring smoke는 남음.
 
 ### V6-E2-ST04: 신규 Gesture Token 경계
 
