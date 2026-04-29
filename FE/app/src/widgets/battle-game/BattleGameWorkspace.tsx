@@ -1957,7 +1957,7 @@ export function BattleGameWorkspace() {
                 <p className="status-text">{copy.practiceAccountRequired}</p>
               ) : (
                 <div className="practice-room">
-                  <div className="practice-camera">
+                  <div className="practice-camera" data-activated={practiceCompleted ? "true" : "false"}>
                     <video
                       aria-label={copy.practiceCameraPreview}
                       className="practice-camera__video"
@@ -1983,6 +1983,12 @@ export function BattleGameWorkspace() {
                         {getPracticeStatusLabel(practiceState)}
                       </StatusBadge>
                     </div>
+                    {practiceCompleted ? (
+                      <div className="practice-camera__effect-state" role="status">
+                        <strong>{copy.practiceActivationTriggeredBadge}</strong>
+                        <span>{copy.practiceActivationTriggered}</span>
+                      </div>
+                    ) : null}
                   </div>
                   <div className="field-stack">
                     <p className="helper-text">{copy.practiceHelp}</p>

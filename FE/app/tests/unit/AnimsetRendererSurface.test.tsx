@@ -4,7 +4,11 @@ import { describe, expect, it } from "vitest";
 import { AnimsetRendererSurface } from "../../src/features/animset-renderer/ui/AnimsetRendererSurface";
 import type { RendererEventEnvelope } from "../../src/features/animset-renderer/model/rendererPort";
 
-function buildPracticeEvents(skillId: string, fallbackMode: "html-only" | "unity"): RendererEventEnvelope[] {
+function buildPracticeEvents(
+  skillId: string,
+  fallbackMode: "html-only" | "unity",
+  completed = false
+): RendererEventEnvelope[] {
   return [
     {
       payload: {
@@ -38,11 +42,23 @@ function buildPracticeEvents(skillId: string, fallbackMode: "html-only" | "unity
         handDetected: true,
         observedToken: "index_up",
         progressPercent: 100,
-        status: "running",
+        status: completed ? "complete" : "running",
         targetLength: 1
       },
       type: "practice.progress_updated"
-    }
+    },
+    ...(completed
+      ? [
+          {
+            payload: {
+              completedAtMs: 1777392000000,
+              completedRounds: 1,
+              skillId
+            },
+            type: "practice.completed" as const
+          }
+        ]
+      : [])
   ];
 }
 
@@ -232,6 +248,20 @@ describe("AnimsetRendererSurface", () => {
     const surface = screen.getByLabelText("연습 애니셋");
     expect(surface).toHaveClass("animset-surface--overlay");
     expect(await screen.findByText("Unity WebGL")).toBeInTheDocument();
+  });
+
+  it("keeps completed practice activation visible in the html fallback renderer", async () => {
+    render(
+      <AnimsetRendererSurface
+        animsetId="animset_basic_2d"
+        events={buildPracticeEvents("jjk_sukuna_malevolent_shrine", "html-only", true)}
+        scene="practice"
+      />
+    );
+
+    expect(await screen.findByText("HTML 폴백")).toBeInTheDocument();
+    expect(screen.getByText("Triggered")).toBeInTheDocument();
+    expect(screen.getByText("complete")).toBeInTheDocument();
   });
 
   it("projects accepted battle actions into the battle renderer fallback", async () => {

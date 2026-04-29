@@ -50,6 +50,7 @@
       battle: null,
       buildVersion: config.productVersion || "prototype-v1",
       burstAtMs: nowMs(),
+      completedAtRuntimeMs: null,
       phaseSeed: Math.random() * Math.PI * 2,
       practice: null,
       scene: "practice",
@@ -77,17 +78,21 @@
         state.selectedSkill = envelope.payload;
         state.timelineId = envelope.payload.presentation.timelineId;
         state.phaseSeed = (state.phaseSeed + 0.7) % (Math.PI * 2);
+        state.completedAtRuntimeMs = null;
         markBurst(state);
         break;
       case "practice.progress_updated":
+        var previousStatus = state.practice ? state.practice.status : null;
         state.practice = envelope.payload;
-        if (envelope.payload.progressPercent > 0 || envelope.payload.status === "complete") {
+        if (envelope.payload.status === "complete" && previousStatus !== "complete") {
+          state.completedAtRuntimeMs = nowMs();
           markBurst(state);
         }
         break;
       case "practice.completed":
         state.practice = state.practice || {};
         state.practice.status = "complete";
+        state.completedAtRuntimeMs = nowMs();
         markBurst(state);
         break;
       case "battle.state_snapshot":
@@ -203,6 +208,82 @@
     ctx.restore();
   }
 
+  function isPracticeComplete(state) {
+    return Boolean(state.practice && state.practice.status === "complete");
+  }
+
+  function getProgress(state) {
+    return clamp(((state.practice && state.practice.progressPercent) || 0) / 100, 0, 1);
+  }
+
+  function getCompletionAgeMs(state) {
+    return nowMs() - (state.completedAtRuntimeMs || state.burstAtMs);
+  }
+
+  function getBurstProgress(state, durationMs) {
+    return easeOutCubic((nowMs() - state.burstAtMs) / durationMs);
+  }
+
+  function getCompletionSustain(state) {
+    if (!isPracticeComplete(state)) {
+      return 0;
+    }
+
+    var ageMs = getCompletionAgeMs(state);
+    if (ageMs < 1800) {
+      return 1;
+    }
+
+    return Math.max(0.48, 1 - (ageMs - 1800) / 8200);
+  }
+
+  function drawImpactSpokes(ctx, x, y, radius, count, color, alpha, rotation) {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.globalAlpha = alpha;
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    for (var spokeIndex = 0; spokeIndex < count; spokeIndex += 1) {
+      var angle = rotation + (Math.PI * 2 * spokeIndex) / count;
+      var inner = radius * 0.32;
+      ctx.beginPath();
+      ctx.moveTo(x + Math.cos(angle) * inner, y + Math.sin(angle) * inner);
+      ctx.lineTo(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawActivationStamp(ctx, state, width, height, theme) {
+    if (!isPracticeComplete(state)) {
+      return;
+    }
+
+    var skillLabel = state.selectedSkill ? state.selectedSkill.skillName : "Skill activated";
+    var pulse = 0.74 + Math.sin(nowMs() / 180) * 0.08;
+    var boxWidth = Math.min(width * 0.52, 430);
+    var boxHeight = 72;
+    var x = Math.max(26, width - boxWidth - 26);
+    var y = height - boxHeight - 78;
+
+    ctx.save();
+    createRoundedRectPath(ctx, x, y, boxWidth, boxHeight, 18);
+    ctx.fillStyle = "rgba(4, 9, 15, 0.68)";
+    ctx.fill();
+    ctx.strokeStyle = theme.edge;
+    ctx.globalAlpha = pulse;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = theme.edge;
+    ctx.font = "12px Menlo, monospace";
+    ctx.fillText("TECHNIQUE ACTIVATED", x + 20, y + 28);
+    ctx.fillStyle = "#f7fbff";
+    ctx.font = "600 18px Menlo, monospace";
+    ctx.fillText(skillLabel, x + 20, y + 54);
+    ctx.restore();
+  }
+
   function drawBackdrop(ctx, width, height, theme, timeSeconds) {
     var gradient = ctx.createLinearGradient(0, 0, width, height);
     gradient.addColorStop(0, theme.hueA);
@@ -296,17 +377,22 @@
   }
 
   function drawRedEffect(ctx, width, height, state, timeSeconds) {
-    var progress = clamp(((state.practice && state.practice.progressPercent) || 0) / 100, 0, 1);
-    var complete = state.practice && state.practice.status === "complete";
-    var burst = easeOutCubic((nowMs() - state.burstAtMs) / 650);
+    var progress = getProgress(state);
+    var complete = isPracticeComplete(state);
+    var burst = getBurstProgress(state, 650);
+    var sustain = getCompletionSustain(state);
     var orbit = Math.sin(timeSeconds * 3.8 + state.phaseSeed);
     var orbX = lerp(width * 0.36, width * 0.5, progress * 0.35);
     var orbY = height * 0.56 + orbit * 8;
-    var orbRadius = 42 + orbit * 4 + progress * 16;
+    var orbRadius = 42 + orbit * 4 + progress * 16 + sustain * 7;
 
     fillCircle(ctx, orbX, orbY, orbRadius + 28, "rgba(255, 72, 72, 0.22)", 48);
     fillCircle(ctx, orbX, orbY, orbRadius, "rgba(255, 92, 92, 0.94)", 28);
     fillCircle(ctx, orbX, orbY, orbRadius * 0.46, "rgba(255, 240, 216, 0.82)", 18);
+    if (complete) {
+      fillCircle(ctx, orbX, orbY, orbRadius + 82, "rgba(255, 42, 42, 0.12)", 78);
+      drawImpactSpokes(ctx, orbX, orbY, orbRadius + 112, 14, "rgba(255, 194, 128, 0.5)", sustain, timeSeconds * 0.55);
+    }
 
     ctx.save();
     ctx.strokeStyle = "rgba(255, 180, 122, 0.46)";
@@ -329,7 +415,7 @@
       return;
     }
 
-    var projectileProgress = easeOutCubic((nowMs() - state.burstAtMs) / 900);
+    var projectileProgress = getBurstProgress(state, 900);
     var projectileX = lerp(orbX, width * 0.76, projectileProgress);
     var projectileY = lerp(orbY, height * 0.42, projectileProgress * 0.75);
     var trailGradient = ctx.createLinearGradient(orbX, orbY, projectileX, projectileY);
@@ -346,13 +432,16 @@
     ctx.restore();
 
     fillCircle(ctx, projectileX, projectileY, 28 + burst * 18, "rgba(255, 108, 92, 0.95)", 36);
-    strokeRing(ctx, projectileX, projectileY, 54 + burst * 72, 8, "rgba(255, 204, 150, 0.88)", 1 - burst * 0.7);
+    fillCircle(ctx, projectileX, projectileY, 84 + Math.sin(timeSeconds * 4.5) * 8, "rgba(255, 56, 56, 0.16)", 64);
+    strokeRing(ctx, projectileX, projectileY, 54 + burst * 72, 8, "rgba(255, 204, 150, 0.88)", Math.max(0.34, 1 - burst * 0.7));
+    strokeRing(ctx, projectileX, projectileY, 112 + Math.sin(timeSeconds * 2.2) * 14, 3, "rgba(255, 105, 83, 0.7)", sustain);
   }
 
   function drawHollowPurpleEffect(ctx, width, height, state, timeSeconds) {
-    var progress = clamp(((state.practice && state.practice.progressPercent) || 0) / 100, 0, 1);
-    var complete = state.practice && state.practice.status === "complete";
-    var burst = easeOutCubic((nowMs() - state.burstAtMs) / 900);
+    var progress = getProgress(state);
+    var complete = isPracticeComplete(state);
+    var burst = getBurstProgress(state, 900);
+    var sustain = getCompletionSustain(state);
     var centerX = width * 0.46;
     var centerY = height * 0.54;
     var orbitRadius = 96 - progress * 28;
@@ -374,15 +463,19 @@
     ctx.stroke();
     ctx.restore();
 
-    var mergeRadius = 44 + progress * 18;
+    var mergeRadius = 44 + progress * 18 + sustain * 9;
     fillCircle(ctx, centerX, centerY, mergeRadius + 22, "rgba(120, 64, 255, 0.18)", 42);
     fillCircle(ctx, centerX, centerY, mergeRadius, "rgba(168, 110, 255, 0.68)", 26);
+    if (complete) {
+      fillCircle(ctx, centerX, centerY, mergeRadius + 74, "rgba(166, 76, 255, 0.14)", 86);
+      drawImpactSpokes(ctx, centerX, centerY, mergeRadius + 128, 18, "rgba(196, 151, 255, 0.44)", sustain, -timeSeconds * 0.42);
+    }
 
     if (!complete && progress < 0.5) {
       return;
     }
 
-    var beamProgress = complete ? easeOutCubic((nowMs() - state.burstAtMs) / 850) : progress;
+    var beamProgress = complete ? getBurstProgress(state, 850) : progress;
     var beamWidth = 26 + beamProgress * 36;
     var beamEndX = lerp(centerX + 40, width * 0.96, beamProgress);
     var beamGradient = ctx.createLinearGradient(centerX, centerY, beamEndX, centerY);
@@ -401,13 +494,26 @@
     ctx.stroke();
     ctx.restore();
 
-    strokeRing(ctx, centerX, centerY, 66 + burst * 34, 10, "rgba(201, 161, 255, 0.92)", 1 - burst * 0.42);
+    if (complete) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.76)";
+      ctx.lineWidth = Math.max(3, beamWidth * 0.18);
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(centerX + 16, centerY);
+      ctx.lineTo(width * 0.98, centerY - beamWidth * 0.08);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    strokeRing(ctx, centerX, centerY, 66 + burst * 34, 10, "rgba(201, 161, 255, 0.92)", Math.max(0.38, 1 - burst * 0.42));
+    strokeRing(ctx, centerX, centerY, 124 + Math.sin(timeSeconds * 2.4) * 16, 4, "rgba(115, 221, 255, 0.72)", sustain);
   }
 
   function drawInfiniteVoidEffect(ctx, width, height, state, timeSeconds) {
-    var progress = clamp(((state.practice && state.practice.progressPercent) || 0) / 100, 0, 1);
-    var complete = state.practice && state.practice.status === "complete";
-    var burst = easeOutCubic((nowMs() - state.burstAtMs) / 1200);
+    var complete = isPracticeComplete(state);
+    var burst = getBurstProgress(state, 1200);
+    var sustain = getCompletionSustain(state);
     var centerX = width * 0.5;
     var centerY = height * 0.54;
     var domeRadius = Math.min(width, height) * (complete ? 0.44 : 0.36);
@@ -458,15 +564,27 @@
     }
 
     ctx.save();
-    ctx.fillStyle = "rgba(16, 29, 88, " + (0.18 + burst * 0.2) + ")";
+    ctx.fillStyle = "rgba(16, 29, 88, " + (0.2 + burst * 0.18) + ")";
     ctx.fillRect(0, 0, width, height);
     ctx.restore();
 
-    strokeRing(ctx, centerX, centerY, domeRadius + burst * 48, 14, "rgba(210, 246, 255, 0.88)", 1 - burst * 0.4);
+    for (var starIndex = 0; starIndex < 34; starIndex += 1) {
+      var starAngle = (Math.PI * 2 * starIndex) / 34 + state.phaseSeed;
+      var starDistance = domeRadius * (0.2 + (starIndex % 7) * 0.12);
+      var starX = centerX + Math.cos(starAngle + timeSeconds * 0.12) * starDistance;
+      var starY = centerY + Math.sin(starAngle - timeSeconds * 0.08) * starDistance * 0.7;
+      fillCircle(ctx, starX, starY, 1.5 + (starIndex % 3), "rgba(226, 247, 255, 0.72)", 8);
+    }
+
+    strokeRing(ctx, centerX, centerY, domeRadius + burst * 48, 14, "rgba(210, 246, 255, 0.88)", Math.max(0.42, 1 - burst * 0.4));
+    strokeRing(ctx, centerX, centerY, domeRadius * 0.68 + Math.sin(timeSeconds * 2.1) * 16, 5, "rgba(135, 175, 255, 0.8)", sustain);
+    drawImpactSpokes(ctx, centerX, centerY, domeRadius * 0.92, 24, "rgba(185, 230, 255, 0.28)", sustain, timeSeconds * 0.18);
   }
 
   function drawFallbackEffect(ctx, width, height, state, timeSeconds, theme) {
-    var progress = clamp(((state.practice && state.practice.progressPercent) || 0) / 100, 0, 1);
+    var progress = getProgress(state);
+    var complete = isPracticeComplete(state);
+    var sustain = getCompletionSustain(state);
     var centerX = width * 0.5;
     var centerY = height * 0.55;
     var radius = 88 + Math.sin(timeSeconds * 2 + state.phaseSeed) * 10;
@@ -474,6 +592,11 @@
     fillCircle(ctx, centerX, centerY, radius + 42, theme.glow, 52);
     strokeRing(ctx, centerX, centerY, radius, 10, theme.accent, 0.86);
     strokeRing(ctx, centerX, centerY, radius + 46, 4, theme.edge, 0.52);
+    if (complete) {
+      fillCircle(ctx, centerX, centerY, radius + 72, theme.glow, 82);
+      strokeRing(ctx, centerX, centerY, radius + 72 + Math.sin(timeSeconds * 2.6) * 10, 5, theme.edge, sustain);
+      drawImpactSpokes(ctx, centerX, centerY, radius + 132, 16, theme.edge, sustain * 0.72, timeSeconds * 0.4);
+    }
 
     ctx.save();
     ctx.strokeStyle = theme.edge;
@@ -503,6 +626,7 @@
     }
 
     drawSkillBanner(ctx, state, width, height, theme);
+    drawActivationStamp(ctx, state, width, height, theme);
   }
 
   function drawBattle(ctx, state, width, height, timeSeconds) {

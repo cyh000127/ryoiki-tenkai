@@ -604,11 +604,17 @@ describe("BattleGameWorkspace", () => {
 
     await waitFor(
       () => {
-        expect(screen.getByText("술식이 발동되었습니다. 다시 보려면 연습 초기화를 누르세요.")).toBeInTheDocument();
+        expect(
+          screen.getAllByText("술식이 발동되었습니다. 다시 보려면 연습 초기화를 누르세요.").length
+        ).toBeGreaterThan(0);
       },
       { timeout: 1500 }
     );
     expect(screen.getAllByText("술식 발동 완료").length).toBeGreaterThan(0);
+    expect(
+      within(screen.getByLabelText("캠 프리뷰").closest(".practice-camera") as HTMLElement).getAllByText("술식 발동 완료")
+        .length
+    ).toBeGreaterThan(0);
     expect(screen.queryByText("완료 횟수")).not.toBeInTheDocument();
     expect(screen.getAllByText("1/1").length).toBeGreaterThan(0);
     expect(liveRecognizerMock.stop).not.toHaveBeenCalled();

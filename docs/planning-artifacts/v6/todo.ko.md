@@ -19,8 +19,10 @@
 - practice recognizer 자동 시작
 - Gojo 3종 mock WebGL placeholder preview
 - Unity load 실패와 version mismatch fallback guard
+- `practice.completed` 기반 발동 loop와 완료 sustain overlay
+- fallback 스킬의 연습 완료 activation 검증
 
-즉 지금은 `연습 화면에서 Unity 통합 감`까지는 확인 가능하지만, 아직 `제대로 된 스킬 이펙트가 발동되는 연습장`이라고 보기에는 부족합니다.
+즉 지금은 `연습 화면에서 Unity 통합 감`과 `손동작 완료 후 발동 이펙트`까지는 확인 가능하다. 다만 실제 Unity Editor build 산출물은 아직 없으므로, 현재 이펙트는 bridge-compatible placeholder 상태다.
 
 ## 우선순위 1. Practice Skill Effect Activation Loop
 
@@ -32,6 +34,7 @@
   - `practice.completed`가 이펙트 발동 trigger로 쓰입니다.
   - 발동 상태가 너무 빨리 사라지지 않습니다.
   - `연습 초기화` 또는 스킬 재선택으로 반복 연습할 수 있습니다.
+- 구현 상태: 반영 완료. 상세 기록은 `docs/implementation-artifacts/v6-2-practice-effect-activation.ko.md`를 기준으로 본다.
 
 ## 우선순위 2. Gojo 3종 이펙트 품질 개선
 
@@ -45,6 +48,7 @@
   - `jjk_gojo_hollow_purple`: 적/청 결합과 보라색 관통 연출이 보입니다.
   - `jjk_gojo_infinite_void`: 영역 전개 느낌의 화면 장악 연출이 보입니다.
   - 각 이펙트가 손 mesh와 상태 HUD를 완전히 가리지 않습니다.
+- 구현 상태: mock WebGL placeholder 기준 1차 품질 개선 완료.
 
 ## 우선순위 3. 실제 Unity WebGL build로 교체
 
@@ -72,6 +76,7 @@
 - 완료 기준:
   - fallback 스킬도 연습 진행 자체는 가능합니다.
   - 사용자는 해당 스킬이 아직 Unity 이펙트 대상이 아니라는 점을 짧게 이해할 수 있습니다.
+- 구현 상태: 정책 유지. fallback renderer의 완료 상태 테스트를 추가했다.
 
 ## 우선순위 6. Practice Smoke와 문서 갱신
 
