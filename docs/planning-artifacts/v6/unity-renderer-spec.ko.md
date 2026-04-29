@@ -199,11 +199,26 @@ practice, accepted battle, rejected battle, no-Unity fallback을 확인한다.
 - 해당 스킬만 기본 timeline으로 대체한다.
 - 앱 전체 renderer를 내리지 않는다.
 - telemetry를 남기고 smoke checklist에 포함한다.
+- `jjk_sukuna_malevolent_shrine`, `jjk_megumi_chimera_shadow_garden`은 실제 Unity asset이 붙기 전까지 `html-only` fallback으로 고정한다.
+- poster/video fallback은 임시 시각 자산이 준비된 뒤 manifest에 명시적으로 추가한다. 코드에서 임의 poster 경로를 추정하지 않는다.
 
 ### Version mismatch
 
 - React manifest와 Unity build version이 다르면 Unity renderer를 시작하지 않는다.
 - 안전하게 fallback renderer로 시작한다.
+- 비교 기준은 React registry의 `buildVersion`과 Unity `build.json`의 `productVersion`이다.
+- mismatch는 사용자의 전투 입력, 항복, 결과 확인 흐름을 막지 않는다.
+
+## Battle/Result Smoke 기준
+
+Unity build 또는 HTML fallback 중 어느 renderer를 쓰더라도 아래 이벤트 조합은 깨지면 안 된다.
+
+| 케이스 | 입력 이벤트 | 기대 결과 |
+| --- | --- | --- |
+| accepted action | `battle.state_snapshot` + `battle.action_resolved(accepted)` | skill timeline 또는 fallback timeline 표시 |
+| rejected action | `battle.action_resolved(rejected)` | 성공 연출 대신 blocked/failed 상태 표시 |
+| reconnect snapshot | 최신 `battle.state_snapshot` 재전송 | 이전 로컬 연출 캐시보다 snapshot을 우선 |
+| ended result replay | `battle.state_snapshot(ENDED)` + `battle.ended` | 결과 하이라이트 또는 fallback summary 표시 |
 
 ## 권장 초기 범위
 

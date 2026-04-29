@@ -21,4 +21,15 @@ describe("skillPresentationManifest", () => {
     expect(entry.clipId).toBeUndefined();
     expect(entry.timelineId).toBe("timeline.sukuna.malevolent_shrine");
   });
+
+  it("keeps Megumi domain on the documented html fallback policy", () => {
+    const entry = resolveSkillPresentationEntry(
+      "jjk_megumi_chimera_shadow_garden",
+      "animset_unity_jjk"
+    );
+
+    expect(entry.fallbackMode).toBe("html-only");
+    expect(entry.clipId).toBeUndefined();
+    expect(entry.timelineId).toBe("timeline.megumi.chimera_shadow_garden");
+  });
 });

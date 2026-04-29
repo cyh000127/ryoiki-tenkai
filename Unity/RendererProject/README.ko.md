@@ -20,7 +20,25 @@
 
 권장 빌드 경로:
 
-- `/Users/hyeok127/Desktop/project/ryoiki-tenkai/FE/app/public/unity/ryoiki-tenkai-renderer/prototype-v1/Build`
+- `FE/app/public/unity/ryoiki-tenkai-renderer/prototype-v1/Build`
+
+## 실제 Unity WebGL build 교체 절차
+
+현재 프론트는 `build.json`을 먼저 읽고, 그 안의 `loaderUrl`을 통해 Unity WebGL loader를 로드합니다.
+
+교체 순서:
+
+1. Unity Editor에서 WebGL build를 생성한다.
+2. Unity가 생성한 `*.loader.js`, `*.data`, `*.framework.js`, `*.wasm` 파일을 `FE/app/public/unity/ryoiki-tenkai-renderer/prototype-v1/Build`에 둔다.
+3. `FE/app/public/unity/ryoiki-tenkai-renderer/prototype-v1/build.json`의 `loaderUrl`, `dataUrl`, `frameworkUrl`, `codeUrl`, `productVersion`을 실제 파일명에 맞춘다.
+4. `productVersion`은 React registry의 `buildVersion`과 같은 값으로 둔다. 현재 값은 `prototype-v1`이다.
+5. 브라우저에서 연습 화면, 전투 화면, 결과 화면을 차례로 열어 mount/unmount와 fallback 전환을 확인한다.
+
+주의:
+
+- 실제 build 산출물이 들어오기 전에는 `Build/mock.loader.js`가 placeholder 역할을 한다.
+- `productVersion`이 React registry의 `buildVersion`과 다르면 Unity renderer를 시작하지 않고 HTML fallback으로 내려간다.
+- Unity build는 연출만 담당한다. 매칭, 전투 판정, 손동작 인식은 계속 React/FastAPI가 소유한다.
 
 ## 현재 프론트 브리지 계약
 
@@ -99,7 +117,7 @@ Unity 쪽은 이 문자열 payload를 받아:
 
 ## 남은 TODO 문서
 
-- `/Users/hyeok127/Desktop/project/ryoiki-tenkai/docs/planning-artifacts/v6/todo.ko.md`
+- `docs/planning-artifacts/v6/todo.ko.md`
 
 ## 자산 manifest 샘플
 

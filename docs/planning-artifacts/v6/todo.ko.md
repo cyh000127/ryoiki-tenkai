@@ -18,6 +18,7 @@
 
 - 목표: `mock.loader.js` 기반 placeholder를 실제 Unity Editor build 산출물로 대체합니다.
 - 이유: 현재 preview는 브리지와 레이아웃 검증용으로는 충분하지만, 실제 Unity pipeline 검증은 아직 아닙니다.
+- 현재 상태: 이 작업은 Unity Editor와 실제 build asset이 필요해 현재 저장소 코드만으로 완료할 수 없습니다. 대신 build 산출물 위치, `build.json` 계약, version mismatch fallback 정책을 먼저 고정합니다.
 - 완료 기준:
   - Unity Editor build가 `FE/app/public/unity/ryoiki-tenkai-renderer/prototype-v1/` 경로에서 로드됩니다.
   - practice scene이 mock runtime 없이 mount/unmount 됩니다.
@@ -37,6 +38,7 @@
 
 - 목표: battle/result surface도 practice와 같은 수준으로 smoke를 남깁니다.
 - 이유: 현재 practice는 시각적으로 많이 확인 가능하지만 battle/result는 실제 authoritative event 조합 검증이 더 필요합니다.
+- 현재 상태: React battle/result renderer surface와 snapshot projection은 반영되어 있습니다. 남은 작업은 accepted/rejected/result replay를 renderer fallback 기준으로 회귀 테스트에 고정하는 것입니다.
 - 완료 기준:
   - accepted action
   - rejected action
@@ -48,6 +50,7 @@
 
 - 목표: Sukuna, Megumi 계열을 그냥 `없음`처럼 두지 않고 poster/video/html fallback 중 어떤 형태로 유지할지 고정합니다.
 - 이유: practice에서 일부 스킬만 Unity로 보이고 나머지가 급격히 달라지면 사용자가 품질 차이를 버그처럼 느낄 수 있습니다.
+- 현재 정책: `jjk_sukuna_malevolent_shrine`, `jjk_megumi_chimera_shadow_garden`은 실제 Unity asset이 붙기 전까지 `html-only` fallback으로 고정합니다. poster/video는 추후 자산이 준비될 때 manifest 확장으로만 추가합니다.
 - 완료 기준:
   - `jjk_sukuna_malevolent_shrine`
   - `jjk_megumi_chimera_shadow_garden`
@@ -57,6 +60,10 @@
 
 - 목표: React manifest와 Unity build가 어긋날 때의 fallback/로그/표시 정책을 구체화합니다.
 - 이유: 지금은 fallback이 동작하지만 운영 중 원인 파악을 위한 기준이 더 필요합니다.
+- 현재 정책:
+  - `productVersion`이 React registry의 `buildVersion`과 다르면 Unity renderer를 시작하지 않습니다.
+  - 스킬 presentation이 `unity`가 아니면 해당 surface만 HTML fallback으로 내려갑니다.
+  - fallback 상태는 사용자에게 짧은 안내 문구로 표시하고, 전투/연습 흐름은 중단하지 않습니다.
 - 완료 기준:
   - build version mismatch 시 fallback 규칙
   - missing clip/vfx/camera preset 시 fallback 규칙

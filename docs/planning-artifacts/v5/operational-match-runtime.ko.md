@@ -1,5 +1,7 @@
 # v5 운영형 매칭/전투 runtime 설계 초안
 
+현재 상태: `blocked`. PostgreSQL과 Redis는 Compose에 포함되어 있지만, queue/session store, battle owner lease, timeout worker, event bus 전환은 아직 구현하지 않는다. 운영형 multi-process 배포가 필요해지는 시점에 아래 설계를 기준으로 별도 작업을 시작한다.
+
 ## 배경
 
 현재 구현은 player, history, rating, compact audit는 PostgreSQL에 저장하지만, matchmaking queue와 active battle session은 backend 프로세스 메모리에 유지한다.
@@ -86,11 +88,17 @@
 
 ## 단계별 구현 순서
 
+운영형 전환은 한 번에 바꾸지 않고, 먼저 경계만 분리한 뒤 저장소를 교체한다. 현재 코드의 사용자 플로우를 깨지 않으려면 아래 순서를 지킨다.
+
 ### 작업 1. Runtime 경계 분리
 
 - API/websocket에서 in-memory repository 직접 호출 지점을 port 기반 service로 감싼다.
 - local adapter는 기존 in-memory 구현을 재사용한다.
 - 이 단계에서는 동작 변경 없이 구조만 분리한다.
+- 완료 기준:
+  - API route와 websocket handler가 구체 repository 대신 service/port를 호출한다.
+  - 현재 단일 프로세스 테스트가 그대로 통과한다.
+  - Redis adapter는 아직 붙이지 않는다.
 
 권장 커밋 수:
 1. `refactor(backend): queue and battle runtime ports 분리`
@@ -101,6 +109,10 @@
 - queue enter/status/cancel을 Redis adapter로 이전한다.
 - pairing은 별도 matchmaker worker가 수행한다.
 - `battle.match_ready`와 `battle.match_found` 발행을 event bus로 이동한다.
+- 완료 기준:
+  - 동일 player의 queue enter/cancel이 idempotent하게 동작한다.
+  - 두 API 프로세스가 같은 Redis queue를 본다.
+  - reconnect가 queue 상태를 Redis에서 복구한다.
 
 권장 커밋 수:
 1. `feat(backend): redis queue store 추가`
@@ -112,6 +124,10 @@
 - active battle snapshot을 Redis + PostgreSQL snapshot 조합으로 이동한다.
 - submit action은 battle owner worker만 처리한다.
 - timeout worker와 reconnect replay를 event stream 기준으로 전환한다.
+- 완료 기준:
+  - battle owner lease가 하나의 worker에만 부여된다.
+  - submit action은 command queue를 통해 순서대로 처리된다.
+  - timeout, surrender, ended result가 event stream으로 fanout된다.
 
 권장 커밋 수:
 1. `feat(runtime): active battle store and owner lease 추가`
@@ -132,3 +148,10 @@
 - cross-region websocket fanout
 - raw gesture verification backend
 - classifier 학습 데이터 파이프라인
+
+## 다음 구현 착수 조건
+
+- 운영 환경에서 API 프로세스를 2개 이상 띄울 계획이 확정된다.
+- Redis를 runtime store로 사용할지, managed queue/event bus를 쓸지 결정된다.
+- timeout worker를 어느 프로세스/컨테이너에서 운영할지 정한다.
+- battle snapshot을 PostgreSQL에 어느 주기로 저장할지 정한다.
