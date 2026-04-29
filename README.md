@@ -1,229 +1,35 @@
 # 손동작 술식 전투 워크스페이스
 
-이 저장소는 브라우저 기반 손동작 배틀 MVP를 위한 프론트엔드/백엔드 워크스페이스입니다.
+브라우저 카메라로 손동작을 인식하고, 인식된 동작을 전투 입력으로 사용해 술식을 발동하는 웹 기반 실시간 전투 프로젝트입니다.
 
-영문 문서는 `README.en.md`에 있습니다.
+현재 프로젝트는 프론트엔드, 백엔드, PostgreSQL, Redis, DB migration, MediaPipe 기반 손동작 인식, 연습 모드, 매칭/전투 흐름을 포함합니다.
 
-## v1 릴리스 상태
+## 구성
 
-- v1 기능 MVP는 릴리스 준비 완료 상태입니다.
-- 릴리스 차단 항목은 없습니다.
-- v2-1 live recognizer adapter boundary 연결이 완료되었습니다.
-- v2-2 camera permission smoke 자동화와 v2-3 storage adapter persistence 전환이 완료되었습니다.
-- v2 planning baseline이 작성되었습니다.
-- v2 smoke checklist가 작성되었습니다.
-- v2 release readiness checkpoint가 작성되었습니다.
-- v2 SQL migration smoke 절차가 작성되었습니다.
-- v2 storage failure/fallback policy가 작성되었습니다.
-- v2 compact audit retention boundary가 작성되었습니다.
-- v2 recognition UI state hardening이 완료되었습니다.
-- v2 two-player queue pairing rule이 강화되었습니다.
-- v2 socket reconnect latest snapshot 재동기화가 강화되었습니다.
-- v2 delayed/duplicate event reconciliation이 강화되었습니다.
-- v2 timeout/surrender fanout hardening이 완료되었습니다.
-- v2 recognizer lifecycle hardening이 완료되었습니다.
-- v2 recognizer runtime port boundary가 분리되었습니다.
-- v2 recognizer runtime port smoke가 강화되었습니다.
-- v2 browser frame signal runtime binding이 완료되었습니다.
-- v3 planning baseline이 작성되었습니다.
-- v3 handoff 검증 스크립트가 작성되었습니다.
-- v3 runtime health summary가 backend health response에 반영되었습니다.
-- v3 smoke checklist가 작성되었습니다.
-- v3 release readiness checkpoint가 작성되었습니다.
-- v4 일본어 음성 시작 명령 계획과 구현 기록이 작성되었습니다.
-- v4 일본어 음성 시작 명령이 홈 화면에 연결되었습니다.
-- v4 STT 모듈 경계가 공용 transcript recognizer port로 분리되었습니다.
-- v4 캐릭터/스킬/STT 후보 카탈로그가 작성되었습니다.
-- v4 Phase 1 주술회전 캐릭터/술식/STT 카탈로그가 작성되었습니다.
-- game state persistence 기본 backend가 PostgreSQL storage adapter로 전환되었습니다.
-- v5 연습모드/매칭 플로우 재기획 문서가 작성되었습니다.
-- v5 기본 손동작 런타임이 MediaPipe Hand Landmarker로 전환되었습니다.
-- v6 Unity WebGL renderer scaffold와 practice overlay preview가 연결되었습니다.
-- 스킬명, 스킬 효과, 손동작 리소스, 시각 자산은 별도 domain source 확정 후 진행합니다.
-- 최종 릴리스 점검 문서: `docs/implementation-artifacts/v1-release-readiness.ko.md`
-- v2-1 구현 기록: `docs/implementation-artifacts/v2-1-live-recognizer-adapter.ko.md`
-- v2-12 구현 기록: `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.ko.md`
-- v2 planning baseline: `docs/implementation-artifacts/v2-planning-baseline.ko.md`
-- v2 release readiness checkpoint: `docs/implementation-artifacts/v2-release-readiness.ko.md`
-- v3 handoff 검증 기록: `docs/implementation-artifacts/v3-1-handoff-check.ko.md`
-- v3 runtime health summary 기록: `docs/implementation-artifacts/v3-2-health-runtime-summary.ko.md`
-- v3 smoke checklist: `docs/implementation-artifacts/v3-smoke-checklist.ko.md`
-- v3 release readiness checkpoint: `docs/implementation-artifacts/v3-release-readiness.ko.md`
-- v4 일본어 음성 시작 명령 기록: `docs/implementation-artifacts/v4-1-japanese-stt-startup-command.ko.md`
-- v4 STT 모듈 경계 기록: `docs/implementation-artifacts/v4-2-stt-module-boundary.ko.md`
-- v4 캐릭터/스킬/STT 정리 기록: `docs/implementation-artifacts/v4-3-character-skill-stt-intake.ko.md`
-- v4 Phase 1 주술회전 카탈로그: `docs/product/jujutsu-character-skill-stt-catalog.ko.md`
-- PostgreSQL game state storage 전환 기록: `docs/implementation-artifacts/v4-4-postgres-game-state-storage.ko.md`
-- v5 연습모드/매칭 플로우: `docs/planning-artifacts/v5/practice-match-flow.ko.md`
-- v5 MediaPipe 손동작 런타임 기록: `docs/implementation-artifacts/v5-mediapipe-hand-runtime.ko.md`
+- `FE/app`: React + Vite 프론트엔드
+- `BE/api`: FastAPI 백엔드
+- `db`: PostgreSQL
+- `cache`: Redis
+- `db-migrate`: Alembic migration 실행 컨테이너
+- `Unity/RendererProject`: 술식 연출 렌더러 프로젝트
 
-## 명세 점검
+## 빠른 실행
 
-- 점검 시점: `2026-04-28`
-- 점검 기준 문서
-  `docs/implementation-artifacts/mvp-v1-implementation-plan.ko.md`
-  `docs/planning-artifacts/mvp-v1/stories.ko.md`
-  `docs/planning-artifacts/mvp-v1/implementation-order.ko.md`
-- 스토리 상태 집계
-  `done 28`
-  `partial 0`
-  `planned 0`
-- 현재 partial 항목 없음
-- 상세 점검 문서
-  `docs/implementation-artifacts/mvp-v1-spec-review.ko.md`
-
-## 현재 상태
-
-현재 구현은 아래 흐름까지 실제로 연결되어 있습니다.
-
-- 게스트 플레이어 생성 또는 복구
-- `skillset` / `animset` catalog 조회와 `loadout` 저장
-- ranked 1v1 queue 진입, 취소, 상태 조회
-- 두 player의 ranked queue pairing과 반대 seat battle handoff
-- WebSocket 인증과 `battle.match_ready` / `battle.match_found` / `battle.started` handoff
-- 서버 권위 전투 액션 검증, 중복 방지, 상태 반영
-- practice rival 자동 턴 처리
-- `HP_ZERO`, `TIMEOUT`, `SURRENDER` 종료 처리와 결과 화면 반영
-- reconnect 후 최신 battle snapshot 복구
-- two-player reconnect 후 최신 turn/hp/mana/cooldown snapshot 복구
-- delayed/duplicate socket event 정합성 처리
-- timeout/surrender final state fanout과 disconnected participant replay
-- 전적, 레이팅, leaderboard 조회
-- battle result, compact action audit, rating, history의 storage adapter 영속화
-- game state persistence 기본값을 Docker Compose PostgreSQL로 전환
-- live camera adapter의 시작/중지/상태 표시와 recognized token의 normalized input boundary 연결
-- live camera adapter 내부 runtime session port 분리
-- live camera adapter의 기본 browser frame signal runtime 연결
-- camera permission smoke의 runtime port start/stop 경로 검증
-- no-hand, unstable-hand, recognized-token live camera UI 상태 분리
-- v3 에픽, 스토리, 구현 순서, 선행조건, 기술스택 문서화
-- v3 handoff check fast/full mode와 plan-only 검증 경로 문서화
-- backend `/healthz` safe runtime summary와 contract/test 반영
-- v3 smoke checklist와 release readiness checkpoint 문서화
-- 일본어 음성 시작 명령의 홈 화면 연결, 상태 표시, 마이크 없이 시작 경로
-- 공용 STT transcript recognizer port와 시작 명령 매칭 모델 분리
-- 오리지널 캐릭터/스킬/STT trigger 후보 카탈로그 문서화
-- Phase 1 주술회전 캐릭터/술식/STT trigger 후보 카탈로그 문서화
-- result/history/rating persistence를 storage adapter 경계 뒤로 전환
-- v2 에픽, 스토리, 구현 순서, 선행조건, 기술스택 문서화
-- v2 camera/runtime/storage/matching smoke checklist 문서화
-- v2 release readiness checkpoint 문서화
-- SQL migration apply/reset/rollback smoke 절차 문서화
-- storage failure/fallback policy 문서화와 손상된 JSON state 거부
-- compact audit retention boundary 문서화와 raw recognition data 저장 제외 기준
-- no-hand, unstable-hand, recognized-token UI 상태 분리
-- two-player queue pairing과 practice path 분리
-- v5 연습모드와 매칭의 목적지/진행 상태 분리 기획 문서화
-- 기본 live camera recognizer를 MediaPipe Hand Landmarker 기반 손 landmark 판정으로 전환
-- practice 카메라 overlay 안에서 Unity/HTML renderer preview 재생
-- practice 화면 진입 시 카메라 recognizer 자동 시작
-- `赫(혁)`, `虚式「茈」(허식 자)`, `領域展開「無量空処」(무량공처)` placeholder 연출 3종 practice preview
-
-## 실행 방법
-
-### 준비물
-
-- Python `3.13+`
-- Node.js
-- `uv`
-- `pnpm`
-- PostgreSQL `16+` 또는 Docker Compose
-- Homebrew (macOS에서 PostgreSQL을 설치할 때 선택)
-
-### 처음 한 번만 설치
-
-저장소 루트에서 실행합니다.
-
-```powershell
-uv sync
-pnpm --dir FE/app install
-```
-
-프론트 환경 파일은 선택 사항입니다. 기본 API 주소가 `http://localhost:8000`이라면 없어도 됩니다.
-
-```powershell
-Copy-Item FE/app/.env.example FE/app/.env
-```
-
-### 로컬 macOS 실행: Docker 없이
-
-Docker가 없어도 로컬 PostgreSQL만 준비되어 있으면 백엔드와 프론트를 바로 실행할 수 있습니다.
-
-1. PostgreSQL을 설치하고 시작합니다.
-
-```bash
-brew install postgresql@16
-brew services start postgresql@16
-```
-
-2. 개발용 role과 database를 한 번만 준비합니다.
-
-```bash
-createuser app
-psql postgres -c "ALTER USER app WITH PASSWORD 'app';"
-createdb -O app gesture_skill
-```
-
-3. SQL migration을 적용합니다.
-
-```bash
-export DATABASE_URL="postgresql+psycopg://app:app@localhost:5432/gesture_skill"
-export GAME_STATE_STORAGE_BACKEND="sql"
-cd BE/api
-uv run --package gesture-api alembic upgrade head
-```
-
-주의:
-
-- `alembic.ini`의 `script_location = migrations`는 `BE/api` 기준 상대경로입니다.
-- migration command는 `BE/api` 디렉터리에서 실행하는 것을 권장합니다.
-
-4. 백엔드를 실행합니다.
-
-```bash
-export DATABASE_URL="postgresql+psycopg://app:app@localhost:5432/gesture_skill"
-export GAME_STATE_STORAGE_BACKEND="sql"
-cd BE/api
-uv run --package gesture-api uvicorn gesture_api.main:app --app-dir src --reload --host 0.0.0.0 --port 8000
-```
-
-5. 새 터미널에서 프론트엔드를 실행합니다.
-
-```bash
-pnpm --dir FE/app dev
-```
-
-6. 브라우저에서 접속합니다.
-
-```text
-http://localhost:5173
-```
-
-### 빠른 실행: 전체 런타임을 Compose로 실행
-
-프론트, 백엔드, PostgreSQL, cache, migration을 한 번에 띄우는 방식입니다.
+Docker Compose로 프론트엔드, 백엔드, DB, cache, migration을 한 번에 실행합니다.
 
 ```powershell
 docker compose up --build
 ```
 
-실행 후 확인합니다.
+실행 후 접속 주소는 아래와 같습니다.
 
 - Frontend: `http://localhost:5173`
 - Backend health: `http://localhost:8000/healthz`
 - API docs: `http://localhost:8000/docs`
 - PostgreSQL: `localhost:5432`
-- Cache: `localhost:6379`
+- Redis: `localhost:6379`
 
-Compose 실행 순서는 아래와 같습니다.
-
-1. `db`가 PostgreSQL을 시작합니다.
-2. `cache`가 시작됩니다.
-3. `db-migrate`가 SQL migration을 적용합니다.
-4. `api`가 migration 완료 후 시작됩니다.
-5. `web`이 정적 프론트엔드를 제공합니다.
-
-현재 game state persistence 기본 backend는 PostgreSQL입니다. Compose 환경에서는 `BE/api/.env.example`의 `GAME_STATE_STORAGE_BACKEND=sql`과 `DATABASE_URL=postgresql+psycopg://app:app@db:5432/gesture_skill`을 사용합니다.
+`db-migrate` 컨테이너는 migration을 완료하면 정상 종료됩니다. 계속 떠 있어야 하는 컨테이너는 `web`, `api`, `db`, `cache`입니다.
 
 중지:
 
@@ -237,17 +43,24 @@ DB 데이터까지 초기화:
 docker compose down -v
 ```
 
-### 개발 실행: DB만 Compose로 켜고 백엔드/프론트는 호스트에서 실행
+## 개발 실행
 
-개발 중 hot reload가 필요하면 이 방식을 권장합니다.
+프론트엔드와 백엔드를 호스트에서 hot reload로 실행하고, PostgreSQL/Redis만 Docker로 띄우는 방식입니다.
 
-1. PostgreSQL/cache와 migration을 준비합니다.
+### 1. 의존성 설치
+
+```powershell
+uv sync
+pnpm --dir FE/app install
+```
+
+### 2. DB와 cache 실행
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\dev-deps.ps1
 ```
 
-2. 백엔드를 실행합니다.
+### 3. 백엔드 실행
 
 ```powershell
 $env:DATABASE_URL = "postgresql+psycopg://app:app@localhost:5432/gesture_skill"
@@ -255,260 +68,27 @@ $env:GAME_STATE_STORAGE_BACKEND = "sql"
 uv run --package gesture-api uvicorn gesture_api.main:app --app-dir BE/api/src --reload --host 0.0.0.0 --port 8000
 ```
 
-3. 새 터미널에서 프론트엔드를 실행합니다.
+### 4. 프론트엔드 실행
+
+새 터미널에서 실행합니다.
 
 ```powershell
 pnpm --dir FE/app dev
 ```
 
-4. 브라우저에서 접속합니다.
+브라우저에서 접속합니다.
 
 ```text
 http://localhost:5173
 ```
 
-호스트에서 백엔드를 직접 실행할 때는 `BE/api/.env.example`을 그대로 `BE/api/.env`로 복사하지 마세요. `.env.example`의 database host는 Compose container 내부용 `db`입니다. 호스트 실행에서는 `localhost:5432`를 사용해야 합니다.
+## 검증
 
-### 상태 확인
-
-Compose 서비스 상태:
+기본 확인 명령은 아래와 같습니다.
 
 ```powershell
-docker compose ps
-```
-
-백엔드 health:
-
-```powershell
-Invoke-RestMethod http://localhost:8000/healthz
-```
-
-정상이라면 `stateStorage`가 `sql`로 표시됩니다.
-
-### 자주 헷갈리는 점
-
-- 브라우저에서 `POST` 전용 API를 직접 열면 `405 Method Not Allowed`가 정상입니다.
-- 예를 들어 매칭 진입은 `POST /api/v1/matchmaking/queue`라서 주소창으로 열면 안 됩니다.
-- `http://localhost:8000/docs`에서 API를 직접 호출할 수 있습니다.
-- 기존 JSON 저장은 기본 경로가 아닙니다. 임시 JSON 모드가 필요할 때만 `GAME_STATE_STORAGE_BACKEND=json`을 명시합니다.
-- DB를 완전히 초기화하려면 `docker compose down -v` 후 다시 `docker compose up --build`를 실행합니다.
-
-## 검증 명령
-
-현재 저장소 기준 기본 검증 명령은 아래입니다.
-
-```bash
 pnpm --dir FE/app typecheck
 pnpm --dir FE/app test
-pnpm --dir FE/app smoke:camera
 uv run pytest BE/api/tests/unit
 git diff --check
 ```
-
-PowerShell 보조 스크립트도 유지하고 있습니다.
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\bootstrap.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\dev-deps.ps1 -PlanOnly
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\check-boundaries.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\backend-check.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\frontend-check.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check.ps1 -Mode fast
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check.ps1 -Mode full
-```
-
-## 완료된 작업
-
-- lightweight guest identity 생성/복구와 profile lookup
-- `skillset`, `animset` catalog API와 `loadout` 저장/검증
-- matchmaking queue 진입, 취소, 상태 조회의 idempotent 처리
-- WebSocket token 인증과 battle handoff
-- 서버 권위 전투 규칙
-  액션 검증, exact-once 적용, duplicate/out-of-turn/invalid gesture/insufficient mana/cooldown 거부
-- practice rival 자동 턴 처리
-- `battle.state_updated`, `battle.timeout`, `battle.surrendered`, `battle.ended` 이벤트 발행
-- 프론트 battle workspace의 실제 REST/WS 연동
-  pending, rejected, confirmed, timeout, surrender, result 화면 반영
-- live camera 입력 surface와 debug fallback 입력 panel 분리
-  deterministic sequence replay와 manual token 입력을 debug 전용 경계로 유지
-- live recognizer adapter를 battle 화면에 연결
-  camera observation-only feedback과 recognized token dispatch를 분리
-- battle deadline countdown, fighter cooldown detail, selected skill 상태 표시
-- sequence progress, submission readiness, local input 상태와 server rejection feedback 분리 표시
-- winner/loser, 종료 사유, rating delta, rematch/history/home을 포함한 결과 화면
-- shared gesture token fixture와 FE/BE cross-stack contract test
-- reconnect 시 latest active battle snapshot 복구와 ended battle 결과 상태 복원
-- delayed/duplicate socket event를 최신 battle state 기준으로 정리해 UI rollback과 중복 결과 반영 방지
-- server-backed 전적/레이팅/leaderboard 화면과 loading/empty/error 상태 렌더링
-- battle result, compact action audit, rating, history를 백엔드 storage adapter 경계로 영속화
-- 기본 game state storage를 PostgreSQL adapter로 전환하고 JSON은 테스트/임시 모드로 격리
-- v2 planning baseline 작성과 스킬 구현 blocked 조건 문서화
-- v2 smoke checklist 작성과 implemented/planned/blocked 항목 분리
-- v2 release readiness checkpoint 작성과 full v2 release blocker 분리
-- SQL migration smoke script와 절차 문서화
-- storage failure/fallback policy 작성과 JSON 손상 파일 거부 테스트
-- compact audit retention boundary 작성과 retained/excluded field 기준 정리
-- recognition UI state hardening과 no-hand/unstable/recognized 상태 회귀 테스트
-- two-player queue pairing rule 강화와 socket handoff 회귀 테스트
-- socket reconnect latest snapshot 복구와 ended replay result 회귀 테스트
-- timeout/surrender fanout과 disconnected participant replay 회귀 테스트
-- recognizer stop/start, permission recovery, unmount cleanup 회귀 테스트
-- recognizer runtime session start/stop과 startup failure cleanup 회귀 테스트
-- camera permission smoke의 fake runtime port lifecycle 검증
-- browser frame signal runtime의 stability/recognition reset 회귀 테스트
-- v3 planning baseline 작성과 blocked domain 범위 유지
-- v3 handoff 검증 자동화 fast/full mode와 plan-only 경로
-- backend health response의 safe runtime summary와 contract 회귀 테스트
-- v3 smoke checklist와 release readiness 문서화
-- 일본어 음성 시작 명령 모델, 홈 화면 패널, 마이크 없이 시작 경로 회귀 테스트
-- 공용 STT 모듈과 시작 명령 모델 회귀 테스트
-- 캐릭터/스킬/STT 후보와 손모양 추후 구현 계획 문서화
-- 주술회전 Phase 1 카탈로그와 손모양 추후 구현 계획 문서화
-
-## 남은 작업
-
-- v1 릴리스 차단 작업 없음
-- v3 릴리스 차단 작업 없음
-- v2 또는 follow-up 범위
-  스킬 domain source 확정 후 skill/resource 구현
-
-## 경계
-
-- `FE/app`: 브라우저 앱, 라우트 셸, 손동작 제어 UI, 생성 API 클라이언트 경계.
-- `BE/api`: 명령, 세션, 매핑, 감사 상태의 표준 쓰기 소유자.
-- `BE/core`: 공유 도메인 값 객체와 순수 규칙.
-- `BE/worker`: API 쓰기 소유권을 우회하지 않는 지연 또는 비동기 처리.
-- `BE/api/contracts`: 표준 와이어 계약 원천.
-- `scripts`: 저장소 소유 설정 및 검증 진입점.
-- `infra/runtime`: 로컬 런타임 토폴로지 메모.
-- `ops`: 운영 설정 자리.
-
-## 용어 기준
-
-- `skillset`: 서버가 승인한 전투 규칙과 gesture sequence 프리셋.
-- `animset`: 서버가 승인한 시각 연출 프리셋.
-- `loadout`: queue entry 전에 저장하는 `skillset + animset` 조합.
-
-## MVP 계획과 QA
-
-### 한국어 문서
-
-- `docs/implementation-artifacts/mvp-v1-implementation-plan.ko.md`: WebSocket 흐름, 서버 권위 규칙, 클라이언트 손 인식, 제외 범위를 포함한 MVP 구현 기준.
-- `docs/implementation-artifacts/mvp-v1-spec-review.ko.md`: 현재 구현과 스토리 명세를 대조한 점검 문서.
-- `docs/implementation-artifacts/v1-release-readiness.ko.md`: v1 릴리스 준비 완료 판정과 검증 근거.
-- `docs/implementation-artifacts/v2-1-live-recognizer-adapter.ko.md`: live recognizer adapter 연결 구현 기록.
-- `docs/implementation-artifacts/v2-2-camera-permission-smoke.ko.md`: 카메라 권한 smoke 자동화 구현 기록.
-- `docs/implementation-artifacts/v2-4-recognition-ui-state.ko.md`: recognition UI state hardening 구현 기록.
-- `docs/implementation-artifacts/v2-5-two-player-queue-pairing.ko.md`: two-player queue pairing 구현 기록.
-- `docs/implementation-artifacts/v2-6-socket-reconnect-resync.ko.md`: socket reconnect 재동기화 구현 기록.
-- `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.ko.md`: delayed/duplicate event reconciliation 구현 기록.
-- `docs/implementation-artifacts/v2-8-timeout-surrender-fanout.ko.md`: timeout/surrender fanout 구현 기록.
-- `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.ko.md`: recognizer lifecycle hardening 구현 기록.
-- `docs/implementation-artifacts/v2-10-recognizer-runtime-port.ko.md`: recognizer runtime port 구현 기록.
-- `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.ko.md`: recognizer runtime port smoke 구현 기록.
-- `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.ko.md`: browser frame signal runtime 구현 기록.
-- `docs/implementation-artifacts/v2-3-storage-adapter-persistence.ko.md`: storage adapter persistence 구현 기록.
-- `docs/implementation-artifacts/v3-planning-baseline.ko.md`: v3 planning baseline 구현 기록.
-- `docs/implementation-artifacts/v3-1-handoff-check.ko.md`: v3 handoff 검증 스크립트 구현 기록.
-- `docs/implementation-artifacts/v3-2-health-runtime-summary.ko.md`: safe runtime health summary 구현 기록.
-- `docs/implementation-artifacts/v3-smoke-checklist.ko.md`: v3 smoke checklist와 blocked carryover.
-- `docs/implementation-artifacts/v3-release-readiness.ko.md`: v3 checkpoint 판정과 full feature release blocker.
-- `docs/implementation-artifacts/v4-1-japanese-stt-startup-command.ko.md`: 일본어 음성 시작 명령 구현 기록.
-- `docs/implementation-artifacts/v4-2-stt-module-boundary.ko.md`: STT 공용 모듈 경계 분리 구현 기록.
-- `docs/implementation-artifacts/v4-3-character-skill-stt-intake.ko.md`: 캐릭터/스킬/STT 후보 정리 기록.
-- `docs/product/jujutsu-character-skill-stt-catalog.ko.md`: Phase 1 주술회전 캐릭터, 술식, STT trigger 후보 카탈로그.
-- `docs/product/jujutsu-technique-domain-reference.ko.md`: Phase 1 술식/영역전개 도메인 참고자료.
-- `docs/product/character-skill-stt-catalog.ko.md`: 오리지널 캐릭터, 스킬, STT trigger 후보 카탈로그.
-- `docs/implementation-artifacts/v4-4-postgres-game-state-storage.ko.md`: PostgreSQL game state storage 전환 기록.
-- `docs/implementation-artifacts/v4-5-technique-skill-catalog.ko.md`: 술식 카탈로그 반영 기록.
-- `docs/planning-artifacts/v4/technology-stack.ko.md`: v4 음성 시작 기술스택 결정.
-- `docs/planning-artifacts/v4/epics.ko.md`: v4 에픽, 경계, 수용 신호.
-- `docs/planning-artifacts/v4/stories.ko.md`: v4 스토리 상태와 검증 기준.
-- `docs/planning-artifacts/v4/implementation-order.ko.md`: v4 구현 순서와 커밋 단위.
-- `docs/planning-artifacts/v4/prerequisites.ko.md`: v4 선행조건과 구현 중단 조건.
-- `docs/implementation-artifacts/v5-flow-planning-review.ko.md`: v5 연습모드/매칭 플로우 기획 검토 기록.
-- `docs/implementation-artifacts/v5-mediapipe-hand-runtime.ko.md`: v5 MediaPipe 손동작 런타임 연결 기록.
-- `docs/planning-artifacts/v5/practice-match-flow.ko.md`: v5 연습모드/매칭 제품 플로우.
-- `docs/planning-artifacts/v5/stories.ko.md`: v5 스토리 상태와 검증 기준.
-- `docs/planning-artifacts/v5/implementation-order.ko.md`: v5 구현 순서와 커밋 단위.
-- `docs/planning-artifacts/v5/prerequisites.ko.md`: v5 선행조건과 구현 중단 조건.
-- `docs/implementation-artifacts/v6-1-practice-overlay-preview.ko.md`: practice 카메라 overlay preview와 auto-start 구현 기록.
-- `docs/planning-artifacts/v6/unity-renderer-spec.ko.md`: v6 Unity renderer 명세.
-- `docs/planning-artifacts/v6/implementation-order.ko.md`: v6 구현 순서와 커밋 단위.
-- `docs/planning-artifacts/v6/todo.ko.md`: v6 현재 TODO와 남은 작업.
-- `docs/implementation-artifacts/v2-planning-baseline.ko.md`: v2 planning baseline 구현 기록.
-- `docs/implementation-artifacts/v2-smoke-checklist.ko.md`: v2 smoke checklist와 blocked 항목.
-- `docs/implementation-artifacts/v2-release-readiness.ko.md`: v2 checkpoint 판정과 full v2 release blocker.
-- `docs/implementation-artifacts/v2-sql-migration-smoke.ko.md`: SQL migration apply/reset/rollback smoke 절차.
-- `docs/implementation-artifacts/v2-storage-failure-policy.ko.md`: storage failure mode와 fallback policy.
-- `docs/implementation-artifacts/v2-audit-retention-boundary.ko.md`: compact audit retention boundary.
-- `docs/planning-artifacts/v2/technology-stack.ko.md`: v2에서 유지/보류할 기술스택 결정.
-- `docs/planning-artifacts/v2/epics.ko.md`: v2 에픽, 경계, 수용 신호.
-- `docs/planning-artifacts/v2/stories.ko.md`: v2 스토리 상태와 blocked 조건.
-- `docs/planning-artifacts/v2/implementation-order.ko.md`: v2 구현 순서와 커밋 단위.
-- `docs/planning-artifacts/v2/prerequisites.ko.md`: v2 선행조건과 구현 중단 조건.
-- `docs/planning-artifacts/v3/technology-stack.ko.md`: v3에서 유지/보류할 기술스택 결정.
-- `docs/planning-artifacts/v3/epics.ko.md`: v3 에픽, 경계, 수용 신호.
-- `docs/planning-artifacts/v3/stories.ko.md`: v3 스토리 상태와 blocked 조건.
-- `docs/planning-artifacts/v3/implementation-order.ko.md`: v3 구현 순서와 커밋 단위.
-- `docs/planning-artifacts/v3/prerequisites.ko.md`: v3 선행조건과 구현 중단 조건.
-- `docs/planning-artifacts/mvp-v1/technology-stack.ko.md`: 선택한 MVP 기술스택, 경계, 보류 항목, 의존성 추가 규칙.
-- `docs/planning-artifacts/mvp-v1/epics.ko.md`: MVP 구현 계획을 에픽 단위로 분리한 문서.
-- `docs/planning-artifacts/mvp-v1/stories.ko.md`: 스토리 단위 구현 항목, 상태, 범위, 의존성, 검증 메모.
-- `docs/planning-artifacts/mvp-v1/implementation-order.ko.md`: MVP 권장 구현 순서와 커밋 순서.
-- `docs/planning-artifacts/mvp-v1/prerequisites.ko.md`: 제품, 계약, FE, BE, 입력 런타임, 영속성, QA 선행조건.
-- `docs/implementation-artifacts/smoke-test-checklist.ko.md`: 저장소, 런타임, REST, WebSocket, 전투, 클라이언트 인식, E2E 검증 체크리스트.
-
-### English Documents
-
-- `README.en.md`
-- `docs/implementation-artifacts/mvp-v1-implementation-plan.en.md`
-- `docs/implementation-artifacts/mvp-v1-spec-review.en.md`
-- `docs/implementation-artifacts/v1-release-readiness.en.md`
-- `docs/implementation-artifacts/v2-1-live-recognizer-adapter.en.md`
-- `docs/implementation-artifacts/v2-2-camera-permission-smoke.en.md`
-- `docs/implementation-artifacts/v2-4-recognition-ui-state.en.md`
-- `docs/implementation-artifacts/v2-5-two-player-queue-pairing.en.md`
-- `docs/implementation-artifacts/v2-6-socket-reconnect-resync.en.md`
-- `docs/implementation-artifacts/v2-7-delayed-duplicate-event-reconciliation.en.md`
-- `docs/implementation-artifacts/v2-8-timeout-surrender-fanout.en.md`
-- `docs/implementation-artifacts/v2-9-recognizer-lifecycle-hardening.en.md`
-- `docs/implementation-artifacts/v2-10-recognizer-runtime-port.en.md`
-- `docs/implementation-artifacts/v2-11-recognizer-runtime-port-smoke.en.md`
-- `docs/implementation-artifacts/v2-12-browser-frame-signal-runtime.en.md`
-- `docs/implementation-artifacts/v2-3-storage-adapter-persistence.en.md`
-- `docs/implementation-artifacts/v3-planning-baseline.en.md`
-- `docs/implementation-artifacts/v3-1-handoff-check.en.md`
-- `docs/implementation-artifacts/v3-2-health-runtime-summary.en.md`
-- `docs/implementation-artifacts/v3-smoke-checklist.en.md`
-- `docs/implementation-artifacts/v3-release-readiness.en.md`
-- `docs/implementation-artifacts/v2-planning-baseline.en.md`
-- `docs/implementation-artifacts/v2-smoke-checklist.en.md`
-- `docs/implementation-artifacts/v2-release-readiness.en.md`
-- `docs/implementation-artifacts/v2-sql-migration-smoke.en.md`
-- `docs/implementation-artifacts/v2-storage-failure-policy.en.md`
-- `docs/implementation-artifacts/v2-audit-retention-boundary.en.md`
-- `docs/planning-artifacts/v2/technology-stack.en.md`
-- `docs/planning-artifacts/v2/epics.en.md`
-- `docs/planning-artifacts/v2/stories.en.md`
-- `docs/planning-artifacts/v2/implementation-order.en.md`
-- `docs/planning-artifacts/v2/prerequisites.en.md`
-- `docs/planning-artifacts/v3/technology-stack.en.md`
-- `docs/planning-artifacts/v3/epics.en.md`
-- `docs/planning-artifacts/v3/stories.en.md`
-- `docs/planning-artifacts/v3/implementation-order.en.md`
-- `docs/planning-artifacts/v3/prerequisites.en.md`
-- `docs/planning-artifacts/mvp-v1/technology-stack.en.md`
-- `docs/planning-artifacts/mvp-v1/epics.en.md`
-- `docs/planning-artifacts/mvp-v1/stories.en.md`
-- `docs/planning-artifacts/mvp-v1/implementation-order.en.md`
-- `docs/planning-artifacts/mvp-v1/prerequisites.en.md`
-- `docs/implementation-artifacts/smoke-test-checklist.en.md`
-
-## 스캐폴드 정책
-
-- 문서와 제품 문구에서 외부 제공자 세부사항을 제외합니다.
-- 카메라 프레임과 원시 랜드마크 스트림은 기본적으로 클라이언트에 둡니다.
-- 확인된 명령 메타데이터만 백엔드로 보냅니다.
-- 사용자에게 보이는 문구는 프론트엔드 로케일 카탈로그에 둡니다.
-- 클라이언트 코드를 생성하거나 소비하기 전에 계약을 먼저 확장합니다.
