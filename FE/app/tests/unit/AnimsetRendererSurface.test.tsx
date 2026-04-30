@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AnimsetRendererSurface } from "../../src/features/animset-renderer/ui/AnimsetRendererSurface";
 import type { RendererEventEnvelope } from "../../src/features/animset-renderer/model/rendererPort";
@@ -47,6 +47,12 @@ function buildPracticeEvents(skillId: string, fallbackMode: "html-only" | "unity
 }
 
 describe("AnimsetRendererSurface", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    delete window.createUnityInstance;
+  });
+
   it("renders the html fallback surface for classic animsets", async () => {
     render(
       <AnimsetRendererSurface
@@ -90,5 +96,43 @@ describe("AnimsetRendererSurface", () => {
     const surface = screen.getByLabelText("연습 애니셋");
     expect(surface).toHaveClass("animset-surface--overlay");
     expect(await screen.findByText("Unity WebGL")).toBeInTheDocument();
+  });
+
+  it("falls back to the html renderer with a friendly message when the Unity loader script fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        json: async () => ({
+          loaderUrl: "/unity/mock-loader-surface-fail.js",
+          productVersion: "prototype-v1"
+        }),
+        ok: true
+      })
+    );
+
+    vi.spyOn(document.head, "append").mockImplementation((...nodes: (Node | string)[]) => {
+      for (const node of nodes) {
+        if (!(node instanceof HTMLScriptElement)) {
+          continue;
+        }
+
+        queueMicrotask(() => {
+          node.onerror?.(new Event("error"));
+        });
+      }
+    });
+
+    render(
+      <AnimsetRendererSurface
+        animsetId="animset_unity_jjk"
+        events={buildPracticeEvents("jjk_gojo_red", "unity")}
+        scene="practice"
+      />
+    );
+
+    expect(await screen.findByText("HTML 폴백")).toBeInTheDocument();
+    expect(
+      screen.getByText("Unity 연출 로더를 불러오지 못해 기본 연출 화면으로 전환했습니다.")
+    ).toBeInTheDocument();
   });
 });
