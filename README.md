@@ -59,7 +59,7 @@
 
 ## 명세 점검
 
-- 점검 시점: `2026-04-28`
+- 점검 시점: `2026-04-30`
 - 점검 기준 문서
   `docs/implementation-artifacts/mvp-v1-implementation-plan.ko.md`
   `docs/planning-artifacts/mvp-v1/stories.ko.md`
