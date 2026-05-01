@@ -56,10 +56,13 @@
 - PostgreSQL game state storage 전환 기록: `docs/implementation-artifacts/v4-4-postgres-game-state-storage.ko.md`
 - v5 연습모드/매칭 플로우: `docs/planning-artifacts/v5/practice-match-flow.ko.md`
 - v5 MediaPipe 손동작 런타임 기록: `docs/implementation-artifacts/v5-mediapipe-hand-runtime.ko.md`
+- v6 practice overlay preview 기록: `docs/implementation-artifacts/v6-1-practice-overlay-preview.ko.md`
+- v6 Unity renderer 명세: `docs/planning-artifacts/v6/unity-renderer-spec.ko.md`
+- v6 Unity TODO: `docs/planning-artifacts/v6/todo.ko.md`
 
 ## 명세 점검
 
-- 점검 시점: `2026-04-30`
+- 점검 시점: `2026-05-01`
 - 점검 기준 문서
   `docs/implementation-artifacts/mvp-v1-implementation-plan.ko.md`
   `docs/planning-artifacts/mvp-v1/stories.ko.md`
@@ -369,8 +372,18 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\v3-handoff-check
 
 - v1 릴리스 차단 작업 없음
 - v3 릴리스 차단 작업 없음
-- v2 또는 follow-up 범위
+- v6 follow-up 우선순위
+  mock WebGL placeholder를 실제 Unity WebGL build 산출물로 교체
+- v6 follow-up 우선순위
+  Gojo 3종 practice placeholder를 실제 timeline/prefab 재생기로 전환
+- v6 follow-up 우선순위
+  battle/result Unity smoke와 reconnect/result replay 검증 보강
+- v6 follow-up 우선순위
+  hero 외 스킬의 poster/video/html fallback 전략 고정
+- domain follow-up
   스킬 domain source 확정 후 skill/resource 구현
+- 세부 작업 목록
+  `docs/planning-artifacts/v6/todo.ko.md`
 
 ## 경계
 
