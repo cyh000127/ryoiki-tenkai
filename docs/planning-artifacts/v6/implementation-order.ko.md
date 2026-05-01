@@ -1,74 +1,114 @@
 # v6 구현 순서
 
-v6는 `Unity를 붙인다`보다 `Unity를 어디까지 붙이지 않는지`를 먼저 고정해야 한다. 구현 순서는 아래와 같이 `경계 -> 데이터 -> 연습 -> 전투 -> 안정화` 순서를 따른다.
+v6의 현재 구현 순서는 `연습 UX -> Unity 스킬 이펙트 -> 반복 연습 안정화 -> fallback/성능 -> 전투 후속 계획`이다.
 
-## 1. V6-E1 Unity Bridge Foundation
+전투는 지금 구현 완료 목표가 아니다. 현재 제품 목표는 사용자가 연습장에서 혼자 스킬을 선택하고, 손동작을 성공시키고, Unity 이펙트로 술식 발동을 확인하는 것이다.
 
-대상 스토리:
-
-- `V6-E1-ST01`
-- `V6-E1-ST02`
-- `V6-E1-ST03`
-- `V6-E1-ST04`
-
-실행 순서:
-
-- React가 의존할 renderer port를 먼저 만든다.
-- `animsetId` 기반 renderer registry를 만든다.
-- Unity WebGL mount lifecycle과 bridge event contract를 고정한다.
-- 같은 port 위에서 기존 HTML fallback renderer를 계속 유지한다.
-
-이 단계의 산출물:
-
-- Unity adapter 없이도 돌아가는 renderer abstraction
-- `unity-webgl` 과 `html-fallback` 선택 구조
-- bridge event schema v1
-
-## 2. V6-E2 Skill Presentation Model And Authoring Workflow
-
-대상 스토리:
-
-- `V6-E2-ST01`
-- `V6-E2-ST02`
-- `V6-E2-ST03`
-- `V6-E2-ST04`
-
-실행 순서:
-
-- `skill presentation manifest` schema를 정의한다.
-- 첫 Unity animset (`animset_unity_jjk`)과 hero skill starter set을 잡는다.
-- 새 스킬 onboarding checklist를 문서와 검증 절차에 고정한다.
-- 새 gesture token이 필요한 스킬은 recognizer 작업과 분리한다.
-
-이 단계의 산출물:
-
-- `skillId -> animsetId -> clip/vfx/camera` manifest
-- hero skill starter set 기준
-- 새 스킬 추가 체크리스트
-
-## 3. V6-E3 Practice Renderer Integration
+## 1. Practice UX 기준 재정렬
 
 대상 스토리:
 
 - `V6-E3-ST01`
 - `V6-E3-ST02`
 - `V6-E3-ST03`
-- `V6-E3-ST04`
+- `V6-E3-ST05`
 
 실행 순서:
 
-- 연습 화면에 Unity renderer surface를 탑재한다.
-- 현재 술식, 단계, 진행률, 완료 상태를 Unity로 투영한다.
-- 기존 `연습 술식` 과 `저장된 로드아웃` 분리 UI를 유지한다.
-- Unity 실패 시 poster/video 또는 HTML fallback preview로 내려온다.
+- 연습 화면을 카메라와 스킬 이펙트 중심으로 유지한다.
+- 연습 중인 술식, 현재 단계, 인식 상태, 이펙트 상태를 한 화면에서 확인하게 한다.
+- 손동작 sequence 완료 후 자동으로 스킬 발동 상태로 넘어간다.
+- 한 번 발동했다고 연습이 끝나지 않게 `연습 초기화`와 스킬 재선택 흐름을 유지한다.
 
-이 단계의 산출물:
+완료 기준:
 
-- practice scene projection
-- practice fallback behavior
-- 연습 화면 기준 smoke check
+- 연습 탭 진입 후 카메라가 자동 시작된다.
+- 사용자가 스킬 하나를 선택하면 해당 스킬의 이름, 손동작, 이펙트 상태가 보인다.
+- sequence 완료 시 Unity renderer가 `practice.completed`를 받아 이펙트를 재생한다.
+- 같은 스킬을 반복 연습할 수 있다.
 
-## 4. V6-E4 Battle Renderer Integration
+## 2. Unity 스킬 이펙트 구현
+
+대상 스토리:
+
+- `V6-E2-ST01`
+- `V6-E2-ST02`
+- `V6-E3-ST06`
+
+실행 순서:
+
+- `skillId + animsetId` 기준 presentation manifest를 유지한다.
+- Gojo 3종을 우선 이펙트 품질 검증 대상으로 둔다.
+  - `jjk_gojo_red`
+  - `jjk_gojo_hollow_purple`
+  - `jjk_gojo_infinite_void`
+- 현재 mock/procedural placeholder를 실제 Unity scene/timeline/prefab 재생기로 교체한다.
+- 이펙트가 카메라 mesh와 상태 HUD를 가리지 않도록 overlay 레이어 우선순위를 조정한다.
+
+완료 기준:
+
+- 3개 hero skill이 실제 Unity WebGL build에서 재생된다.
+- 이펙트 시작, 유지, 종료 상태가 React practice state와 어긋나지 않는다.
+- 이펙트가 보이지 않는 경우 HTML fallback이 명확히 표시된다.
+
+## 3. 실제 Unity WebGL Build 교체
+
+대상 스토리:
+
+- `V6-E1-ST02`
+- `V6-E5-ST02`
+
+실행 순서:
+
+- Unity Editor에서 WebGL build를 생성한다.
+- build 산출물을 `FE/app/public/unity/ryoiki-tenkai-renderer/prototype-v1/Build`에 둔다.
+- `build.json`의 `loaderUrl`, `dataUrl`, `frameworkUrl`, `codeUrl`, `productVersion`을 실제 산출물과 맞춘다.
+- `productVersion`과 React registry `buildVersion`이 다르면 HTML fallback으로 내려가게 한다.
+
+완료 기준:
+
+- mock loader 없이 practice renderer가 mount/unmount 된다.
+- 실제 Unity build가 `practice.skill_selected`, `practice.progress_updated`, `practice.completed` 이벤트를 받는다.
+- version mismatch 시 연습 흐름이 깨지지 않는다.
+
+## 4. Hero 외 스킬 Fallback 정책
+
+대상 스토리:
+
+- `V6-E2-ST02`
+- `V6-E3-ST04`
+- `V6-E5-ST01`
+
+실행 순서:
+
+- Sukuna/Megumi 계열은 실제 Unity asset 전까지 `html-only` fallback으로 고정한다.
+- poster/video fallback은 임시 자산이 준비될 때만 manifest에 추가한다.
+- 사용자가 fallback을 버그로 오해하지 않도록 연습 화면 문구를 짧고 명확하게 유지한다.
+
+완료 기준:
+
+- `jjk_sukuna_malevolent_shrine`, `jjk_megumi_chimera_shadow_garden`은 빈 Unity 화면으로 보이지 않는다.
+- Unity asset이 없는 스킬도 연습 진행 자체는 가능하다.
+
+## 5. Practice Smoke와 성능 기준
+
+대상 스토리:
+
+- `V6-E5-ST03`
+
+실행 순서:
+
+- desktop/mobile viewport에서 카메라, 손 mesh, Unity effect, 상태 badge가 겹치지 않는지 확인한다.
+- Unity load 실패, asset missing, version mismatch를 강제로 확인한다.
+- first render, effect start latency, memory risk를 기록한다.
+
+완료 기준:
+
+- practice smoke checklist가 문서화된다.
+- Unity 실패 시에도 연습 UI가 멈추지 않는다.
+- effect visibility toggle이 필요하면 이 단계에서 추가한다.
+
+## 6. Future Battle Renderer Plan
 
 대상 스토리:
 
@@ -77,83 +117,43 @@ v6는 `Unity를 붙인다`보다 `Unity를 어디까지 붙이지 않는지`를 
 - `V6-E4-ST03`
 - `V6-E4-ST04`
 
-실행 순서:
+상태:
 
-- 전투 보드에 Unity renderer surface를 탑재한다.
-- authoritative battle snapshot을 Unity로 투영한다.
-- accepted/rejected action timeline을 분리한다.
-- reconnect/result replay를 snapshot 기준으로 복구한다.
+- 후속 구현계획.
+- 연습장 스킬 이펙트가 안정화되기 전에는 전투 renderer 완성을 목표로 잡지 않는다.
 
-이 단계의 산출물:
+착수 조건:
 
-- battle scene projection
-- authoritative action timeline
-- reconnect/result replay support
-
-## 5. V6-E5 Safety, Performance, And Rollout
-
-대상 스토리:
-
-- `V6-E5-ST01`
-- `V6-E5-ST02`
-- `V6-E5-ST03`
-
-실행 순서:
-
-- Unity unavailable fallback을 강제로 검증한다.
-- manifest/build version mismatch 정책을 넣는다.
-- 성능 예산과 smoke checklist를 기록하고 반복한다.
-
-이 단계의 산출물:
-
-- no-Unity survival path
-- asset/version mismatch fallback
-- release smoke checklist
+- 연습 화면에서 최소 3개 hero skill의 Unity 이펙트가 실제 build 또는 충분한 품질의 placeholder로 검증된다.
+- 스킬 발동 이펙트와 손동작 인식 흐름이 반복 연습에서 안정적이다.
+- battle action accepted/rejected/result replay의 제품 UX가 별도 승인된다.
 
 ## 작업 단위와 커밋 상한
 
-한 작업당 최대 3커밋 원칙을 아래처럼 적용한다.
+한 작업당 최대 3커밋 원칙을 유지한다.
 
-### 작업 1. Foundation + Presentation Model
+### 작업 1. Practice UX 정렬
 
-- 포함 스토리: `V6-E1-ST01` 부터 `V6-E2-ST04`
-- 최대 커밋: 3
 - 권장 커밋:
-  - `feat(frontend): animset renderer port와 unity bridge 기초 추가`
-  - `feat(frontend): animset registry와 skill presentation manifest 추가`
-  - `docs: unity integration spec과 onboarding checklist 정리`
+  - `docs: practice first 구현 순서 정리`
+  - `feat(frontend): practice effect 상태와 반복 연습 UX 정리`
+  - `test(frontend): practice effect flow 검증`
 
-### 작업 2. Practice Integration
+### 작업 2. Unity Effect 품질 개선
 
-- 포함 스토리: `V6-E3-ST01` 부터 `V6-E3-ST04`
-- 최대 커밋: 3
 - 권장 커밋:
-  - `feat(frontend): practice unity surface와 fallback preview 추가`
-  - `feat(frontend): practice progress projection과 loadout 분리 유지`
-  - `test(frontend): practice unity/fallback smoke 보강`
+  - `feat(renderer): hero skill unity effect 재생 개선`
+  - `feat(frontend): practice renderer event projection 보강`
+  - `test(frontend): unity practice effect fallback 검증`
 
-### 작업 3. Battle Integration
+### 작업 3. 실제 Unity Build 교체
 
-- 포함 스토리: `V6-E4-ST01` 부터 `V6-E4-ST04`
-- 최대 커밋: 3
 - 권장 커밋:
-  - `feat(frontend): battle unity surface와 snapshot projection 추가`
-  - `feat(frontend): action timeline과 reconnect replay 추가`
-  - `test(frontend): battle websocket projection 검증`
+  - `chore(renderer): unity webgl build 산출물 교체`
+  - `feat(frontend): unity build version guard 보강`
+  - `docs: unity build smoke 절차 갱신`
 
-### 작업 4. Safety And Rollout
+### 작업 4. Future Battle Plan
 
-- 포함 스토리: `V6-E5-ST01` 부터 `V6-E5-ST03`
-- 최대 커밋: 3
 - 권장 커밋:
-  - `feat(frontend): unity unavailable fallback과 mismatch guard 추가`
-  - `docs: unity smoke checklist와 perf budget 정리`
-  - `test(frontend): fallback regression 검증`
-
-## 새 스킬 추가 작업의 커밋 상한
-
-새 스킬 1개를 넣는 작업도 최대 3커밋을 넘기지 않는다.
-
-1. `feat(domain): backend rule과 frontend catalog 동기화`
-2. `feat(presentation): manifest와 unity asset mapping 추가`
-3. `test/docs: recognizer coverage와 smoke note 정리`
+  - `docs: battle renderer 후속 구현계획 정리`

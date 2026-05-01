@@ -4,8 +4,10 @@
 
 - Unity는 v6에서 `연출 renderer`이지 `게임 로직 엔진`이 아니다.
 - FastAPI battle rules, React navigation/state, browser camera recognizer는 계속 유지한다.
-- 첫 릴리즈는 hero skill 3~4개와 1개의 Unity animset으로 시작한다.
-- practice와 battle은 Unity가 없어도 기능적으로 계속 플레이 가능해야 한다.
+- 현재 v6 릴리즈의 1차 목표는 practice 화면에서 혼자 스킬을 사용하는 경험이다.
+- 첫 릴리즈는 practice hero skill 3개와 1개의 Unity animset으로 시작한다.
+- practice는 Unity가 없어도 기능적으로 계속 동작해야 한다.
+- battle/result Unity integration은 practice effect가 안정화된 뒤 후속 구현계획으로 진행한다.
 - 연습 중인 술식과 저장된 매칭 로드아웃 분리 원칙은 Unity 통합 후에도 유지한다.
 
 ## 기술 조건
@@ -15,6 +17,7 @@
 - Unity build 산출물과 React manifest는 같은 버전 키를 공유해야 한다.
 - bridge event schema는 버전 필드 또는 최소 호환 규칙을 가져야 한다.
 - MediaPipe recognizer는 계속 브라우저에서 돌고, Unity는 인식 결과를 표시만 한다.
+- `practice.completed`는 연습 이펙트 trigger일 뿐 서버 전투 판정이 아니다.
 
 ## 자산 조건
 
@@ -28,6 +31,7 @@
 - frontend owner, backend owner, Unity asset owner가 최소한 story 단위로 구분되어야 한다.
 - 새 스킬 추가 시 `rule`, `recognizer`, `presentation` 중 어느 층을 건드리는지 먼저 선언해야 한다.
 - hero skill starter set은 구현 전에 확정해야 한다.
+- 전투 연출 작업은 practice effect 완료 전에는 current sprint scope로 올리지 않는다.
 
 ## 구현 중단 조건
 
@@ -35,3 +39,4 @@
 - 새 스킬이 새 gesture token을 요구하지만 recognizer spec owner 합의가 없으면 그 스킬 integration을 중단한다.
 - Unity build 크기나 메모리 사용량이 기존 웹 플레이를 실질적으로 망치면 hero skill 범위를 줄이고 재측정한다.
 - 모바일 저사양 브라우저를 1차 필수 타깃으로 올리려면 별도 성능 검증 전에는 범위를 확장하지 않는다.
+- battle/result Unity 완성을 먼저 요구하면 practice skill effect 목표와 충돌하므로 구현 순서를 재승인한다.

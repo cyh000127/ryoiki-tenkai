@@ -4,7 +4,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { AnimsetRendererSurface } from "../../src/features/animset-renderer/ui/AnimsetRendererSurface";
 import type { RendererEventEnvelope } from "../../src/features/animset-renderer/model/rendererPort";
 
-function buildPracticeEvents(skillId: string, fallbackMode: "html-only" | "unity"): RendererEventEnvelope[] {
+function buildPracticeEvents(
+  skillId: string,
+  fallbackMode: "html-only" | "unity",
+  completed = false
+): RendererEventEnvelope[] {
   return [
     {
       payload: {
@@ -38,10 +42,164 @@ function buildPracticeEvents(skillId: string, fallbackMode: "html-only" | "unity
         handDetected: true,
         observedToken: "index_up",
         progressPercent: 100,
-        status: "running",
+        status: completed ? "complete" : "running",
         targetLength: 1
       },
       type: "practice.progress_updated"
+    },
+    ...(completed
+      ? [
+          {
+            payload: {
+              completedAtMs: 1777392000000,
+              completedRounds: 1,
+              skillId
+            },
+            type: "practice.completed" as const
+          }
+        ]
+      : [])
+  ];
+}
+
+function buildBattleEvents(
+  result: "accepted" | "rejected",
+  reason: string | null = null
+): RendererEventEnvelope[] {
+  return [
+    {
+      payload: {
+        animsetId: "animset_basic_2d",
+        opponentId: "pl_opponent",
+        playerId: "pl_local",
+        scene: "battle"
+      },
+      type: "renderer.bootstrap"
+    },
+    {
+      payload: {
+        actionDeadlineAt: "2026-04-29T00:00:30Z",
+        battleSessionId: "battle_renderer",
+        matchId: "match_renderer",
+        opponent: {
+          cooldowns: {},
+          hp: result === "accepted" ? 76 : 100,
+          mana: 100,
+          playerId: "pl_opponent"
+        },
+        presentation: {
+          animsetId: "animset_basic_2d",
+          fallbackMode: "html-only",
+          skillId: "jjk_gojo_red",
+          tier: "hero",
+          timelineId: "timeline.gojo.red"
+        },
+        selectedSkillId: "jjk_gojo_red",
+        selectedSkillName: "赫(혁)",
+        self: {
+          cooldowns: {},
+          hp: 100,
+          mana: 80,
+          playerId: "pl_local"
+        },
+        status: "ACTIVE",
+        turnNumber: 1,
+        turnOwnerPlayerId: "pl_local"
+      },
+      type: "battle.state_snapshot"
+    },
+    {
+      payload: {
+        actionId: "action_renderer",
+        actorPlayerId: "pl_local",
+        presentation: {
+          animsetId: "animset_basic_2d",
+          fallbackMode: "html-only",
+          skillId: "jjk_gojo_red",
+          tier: "hero",
+          timelineId: "timeline.gojo.red"
+        },
+        reason,
+        result,
+        skillId: "jjk_gojo_red",
+        skillName: "赫(혁)"
+      },
+      type: "battle.action_resolved"
+    }
+  ];
+}
+
+function buildResultEvents(): RendererEventEnvelope[] {
+  return [
+    {
+      payload: {
+        animsetId: "animset_basic_2d",
+        opponentId: "pl_opponent",
+        playerId: "pl_local",
+        scene: "result"
+      },
+      type: "renderer.bootstrap"
+    },
+    {
+      payload: {
+        actionDeadlineAt: null,
+        battleSessionId: "battle_renderer",
+        matchId: "match_renderer",
+        opponent: {
+          cooldowns: {},
+          hp: 0,
+          mana: 100,
+          playerId: "pl_opponent"
+        },
+        presentation: {
+          animsetId: "animset_basic_2d",
+          fallbackMode: "html-only",
+          skillId: "jjk_gojo_red",
+          tier: "hero",
+          timelineId: "timeline.gojo.red"
+        },
+        selectedSkillId: "jjk_gojo_red",
+        selectedSkillName: "赫(혁)",
+        self: {
+          cooldowns: {},
+          hp: 100,
+          mana: 80,
+          playerId: "pl_local"
+        },
+        status: "ENDED",
+        turnNumber: 3,
+        turnOwnerPlayerId: "pl_local"
+      },
+      type: "battle.state_snapshot"
+    },
+    {
+      payload: {
+        actionId: "action_renderer",
+        actorPlayerId: "pl_local",
+        presentation: {
+          animsetId: "animset_basic_2d",
+          fallbackMode: "html-only",
+          skillId: "jjk_gojo_red",
+          tier: "hero",
+          timelineId: "timeline.gojo.red"
+        },
+        reason: null,
+        result: "accepted",
+        skillId: "jjk_gojo_red",
+        skillName: "赫(혁)"
+      },
+      type: "battle.action_resolved"
+    },
+    {
+      payload: {
+        battleSessionId: "battle_renderer",
+        endedReason: "HP_ZERO",
+        loserPlayerId: "pl_opponent",
+        ratingChange: 18,
+        resultForPlayer: "WIN",
+        winnerPlayerId: "pl_local"
+      },
+      type: "battle.ended"
     }
   ];
 }
@@ -134,5 +292,61 @@ describe("AnimsetRendererSurface", () => {
     expect(
       screen.getByText("Unity 연출 로더를 불러오지 못해 기본 연출 화면으로 전환했습니다.")
     ).toBeInTheDocument();
+  });
+
+  it("keeps completed practice activation visible in the html fallback renderer", async () => {
+    render(
+      <AnimsetRendererSurface
+        animsetId="animset_basic_2d"
+        events={buildPracticeEvents("jjk_sukuna_malevolent_shrine", "html-only", true)}
+        scene="practice"
+      />
+    );
+
+    expect(await screen.findByText("HTML 폴백")).toBeInTheDocument();
+    expect(screen.getByText("Triggered")).toBeInTheDocument();
+    expect(screen.getByText("complete")).toBeInTheDocument();
+    expect(screen.getByText("cleave_barrage")).toBeInTheDocument();
+  });
+
+  it("projects accepted battle actions into the battle renderer fallback", async () => {
+    render(
+      <AnimsetRendererSurface
+        animsetId="animset_basic_2d"
+        events={buildBattleEvents("accepted")}
+        scene="battle"
+      />
+    );
+
+    expect(await screen.findByText("赫(혁) 전투 타임라인")).toBeInTheDocument();
+    expect(screen.getByText("timeline.gojo.red / html-only")).toBeInTheDocument();
+    expect(screen.getByText("accepted")).toBeInTheDocument();
+  });
+
+  it("projects rejected battle actions without showing a false success timeline", async () => {
+    render(
+      <AnimsetRendererSurface
+        animsetId="animset_basic_2d"
+        events={buildBattleEvents("rejected", "INVALID_TURN")}
+        scene="battle"
+      />
+    );
+
+    expect(await screen.findByText("赫(혁) 전투 타임라인")).toBeInTheDocument();
+    expect(screen.getByText("rejected / INVALID_TURN")).toBeInTheDocument();
+  });
+
+  it("replays ended battle summaries on the result renderer fallback", async () => {
+    render(
+      <AnimsetRendererSurface
+        animsetId="animset_basic_2d"
+        events={buildResultEvents()}
+        scene="result"
+      />
+    );
+
+    expect(await screen.findByText("결과 하이라이트 · 승리")).toBeInTheDocument();
+    expect(screen.getByText("HP_ZERO")).toBeInTheDocument();
+    expect(screen.getByText("18")).toBeInTheDocument();
   });
 });

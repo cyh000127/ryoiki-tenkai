@@ -46,6 +46,7 @@ import {
   type StartupVoiceCommandRecognizer,
   type StartupVoiceRecognitionStatus
 } from "../../features/gesture-session/model/startupVoiceCommand";
+import { resolveSkillEffectProfile } from "../../features/skill-effects/model/skillEffectManifest";
 import { resolveSkillPresentationEntry } from "../../features/skill-presentation/model/skillPresentationManifest";
 import {
   connectBattleSocket,
@@ -273,6 +274,8 @@ export function BattleGameWorkspace() {
     activeSkillset.skills.find((skill) => skill.skillId === draftSkillId) ??
     activeSkillset.skills[0] ??
     equippedSkill;
+  const equippedEffectProfile = resolveSkillEffectProfile(equippedSkill.skillId);
+  const selectedEffectProfile = resolveSkillEffectProfile(selectedSkill.skillId);
 
   const createGuestMutation = useMutation({
     mutationFn: createGuestPlayer,
@@ -1809,18 +1812,14 @@ export function BattleGameWorkspace() {
         ) : null}
 
         {state.screen === "home" ? (
-          <div className="surface-grid">
-            <Panel title={copy.playerRating}>
-              <StatusBadge tone={playerStatusTone}>{playerStatusLabel}</StatusBadge>
-              <Metric label={copy.playerStatus} value={state.player.nickname} />
-              <Metric label={copy.playerRating} value={state.player.rating} />
-              <Metric label={copy.record} value={`${state.player.wins}W / ${state.player.losses}L`} />
-              <Metric label={copy.skillDetail} value={getSkillDisplayName(equippedSkill)} />
-            </Panel>
-            <Panel title={copy.nextAction}>
-              <div className="field-stack">
+          <div className="home-screen">
+            <section className="home-hero" aria-label={copy.home}>
+              <div className="home-hero__content">
+                <StatusBadge tone={playerStatusTone}>{playerStatusLabel}</StatusBadge>
+                <h1>{copy.appTitle}</h1>
+                <p>{homePrimaryAction.description}</p>
                 {!session ? (
-                  <label className="field">
+                  <label className="field home-hero__nickname">
                     <span className="field__label">{copy.nickname}</span>
                     <input
                       className="text-input"
@@ -1831,12 +1830,8 @@ export function BattleGameWorkspace() {
                     />
                   </label>
                 ) : null}
-                <div className="home-action-card">
-                  <strong>{homePrimaryAction.actionLabel}</strong>
-                  <p className="helper-text">{homePrimaryAction.description}</p>
-                </div>
                 {statusMessage ? <p className="status-text">{statusMessage}</p> : null}
-                <div className="action-row">
+                <div className="home-hero__actions">
                   <Button
                     disabled={
                       homePrimaryDisabled ||
@@ -1854,27 +1849,43 @@ export function BattleGameWorkspace() {
                     </Button>
                   ))}
                 </div>
-                {homeLockedActionReason ? (
-                  <div className="locked-action">
-                    <span className="field__label">{copy.lockedAction}</span>
-                    <div className="action-row">
-                      <Button disabled>{copy.startMatch}</Button>
-                    </div>
-                    <p className="helper-text">{homeLockedActionReason}</p>
-                  </div>
-                ) : null}
               </div>
-            </Panel>
-            <StartupVoicePanel
-              commands={JAPANESE_STARTUP_COMMANDS}
-              disabled={isStartupActionPending}
-              matchedCommand={startupVoiceMatchedCommand}
-              onManualStart={handleManualStartupFallback}
-              onStart={handleStartVoiceStartup}
-              status={startupVoiceStatus}
-              transcript={startupVoiceTranscript}
-            />
-            <DebugPanel events={state.recentEvents} latency={state.input.networkLatencyMs} />
+              <div className="home-hero__loadout" data-effect-tone={equippedEffectProfile.tone}>
+                <span>{copy.skillDetail}</span>
+                <strong>{getSkillDisplayName(equippedSkill)}</strong>
+                <em>{equippedEffectProfile.activationLabel}</em>
+              </div>
+            </section>
+
+            <div className="home-stat-strip" aria-label={copy.playerRating}>
+              <Metric label={copy.playerStatus} value={state.player.nickname} />
+              <Metric label={copy.playerRating} value={state.player.rating} />
+              <Metric label={copy.record} value={`${state.player.wins}W / ${state.player.losses}L`} />
+              <Metric label={copy.selectedSkillStatus} value={hasConfiguredLoadout ? copy.ready : copy.checkRequired} />
+            </div>
+
+            {homeLockedActionReason ? (
+              <section className="locked-action">
+                <span className="field__label">{copy.lockedAction}</span>
+                <div className="action-row">
+                  <Button disabled>{copy.startMatch}</Button>
+                </div>
+                <p className="helper-text">{homeLockedActionReason}</p>
+              </section>
+            ) : null}
+
+            <div className="home-utility-grid">
+              <StartupVoicePanel
+                commands={JAPANESE_STARTUP_COMMANDS}
+                disabled={isStartupActionPending}
+                matchedCommand={startupVoiceMatchedCommand}
+                onManualStart={handleManualStartupFallback}
+                onStart={handleStartVoiceStartup}
+                status={startupVoiceStatus}
+                transcript={startupVoiceTranscript}
+              />
+              <DebugPanel events={state.recentEvents} latency={state.input.networkLatencyMs} />
+            </div>
           </div>
         ) : null}
 
@@ -1957,36 +1968,58 @@ export function BattleGameWorkspace() {
                 <p className="status-text">{copy.practiceAccountRequired}</p>
               ) : (
                 <div className="practice-room">
-                  <div className="practice-camera">
-                    <video
-                      aria-label={copy.practiceCameraPreview}
-                      className="practice-camera__video"
-                      muted
-                      playsInline
-                      ref={practiceVideoRef}
-                    />
-                    <div className="practice-camera__renderer">
-                      <AnimsetRendererSurface
-                        animsetId={practicePreviewAnimsetId}
-                        events={practiceRendererEvents}
-                        layout="overlay"
-                        scene="practice"
+                  <div className="practice-stage">
+                    <div className="practice-camera" data-activated={practiceCompleted ? "true" : "false"}>
+                      <video
+                        aria-label={copy.practiceCameraPreview}
+                        className="practice-camera__video"
+                        muted
+                        playsInline
+                        ref={practiceVideoRef}
                       />
+                      <div className="practice-camera__renderer">
+                        <AnimsetRendererSurface
+                          animsetId={practicePreviewAnimsetId}
+                          events={practiceRendererEvents}
+                          layout="overlay"
+                          scene="practice"
+                        />
+                      </div>
+                      <canvas
+                        aria-hidden="true"
+                        className="practice-camera__mesh"
+                        ref={practiceMeshCanvasRef}
+                      />
+                      <div className="practice-camera__overlay">
+                        <StatusBadge tone={getPracticeStatusTone(practiceState)}>
+                          {getPracticeStatusLabel(practiceState)}
+                        </StatusBadge>
+                      </div>
+                      {practiceCompleted ? (
+                        <div className="practice-camera__effect-state" role="status">
+                          <strong>{copy.practiceActivationTriggeredBadge}</strong>
+                          <span>{copy.practiceActivationTriggered}</span>
+                        </div>
+                      ) : null}
                     </div>
-                    <canvas
-                      aria-hidden="true"
-                      className="practice-camera__mesh"
-                      ref={practiceMeshCanvasRef}
-                    />
-                    <div className="practice-camera__overlay">
-                      <StatusBadge tone={getPracticeStatusTone(practiceState)}>
-                        {getPracticeStatusLabel(practiceState)}
-                      </StatusBadge>
+                    <div className="practice-cockpit" data-effect-tone={selectedEffectProfile.tone}>
+                      <div>
+                        <span>{copy.practiceCurrentSkill}</span>
+                        <strong>{getSkillDisplayName(selectedSkill)}</strong>
+                      </div>
+                      <div>
+                        <span>{copy.currentStep}</span>
+                        <strong>{practiceExpectedGesture ?? selectedEffectProfile.completionLabel}</strong>
+                      </div>
+                      <div>
+                        <span>{copy.liveCameraStatus}</span>
+                        <strong>{getLiveRecognizerStatusLabel(practiceRecognizerStatus)}</strong>
+                      </div>
+                      <div>
+                        <span>{copy.confidence}</span>
+                        <strong>{Math.round(practiceProgress.confidence * 100)}%</strong>
+                      </div>
                     </div>
-                  </div>
-                  <div className="field-stack">
-                    <p className="helper-text">{copy.practiceHelp}</p>
-                    <p className="helper-text">{copy.practiceLoadoutSeparation}</p>
                   </div>
                   <div className="practice-guide">
                     <StatusBadge tone={practiceCompleted || isPracticeGestureRecognized ? "success" : "neutral"}>
@@ -2032,29 +2065,6 @@ export function BattleGameWorkspace() {
                       </span>
                     ))}
                   </div>
-                  <div className="metric-list">
-                    <Metric label={copy.skillDetail} value={getSkillDisplayName(selectedSkill)} />
-                    <Metric label={copy.skillDescription} value={getSkillPresentation(selectedSkill).summary} />
-                    <Metric
-                      label={copy.practiceActivationState}
-                      value={practiceCompleted ? copy.practiceSkillComplete : copy.practiceSkillRunning}
-                    />
-                    <Metric label={copy.liveCameraStatus} value={getLiveRecognizerStatusLabel(practiceRecognizerStatus)} />
-                    <Metric
-                      label={copy.handStatus}
-                      value={practiceProgress.handDetected ? copy.detected : copy.notDetected}
-                    />
-                    <Metric
-                      label={copy.liveObservationReason}
-                      value={
-                        practiceObservation
-                          ? getLiveObservationReasonLabel(practiceObservation.reason)
-                          : copy.inputSourceWaiting
-                      }
-                    />
-                    <Metric label={copy.currentGesture} value={practiceProgress.currentGesture ?? copy.noGesture} />
-                    <Metric label={copy.confidence} value={`${Math.round(practiceProgress.confidence * 100)}%`} />
-                  </div>
                   {statusMessage ? <p className="status-text">{statusMessage}</p> : null}
                   <div className="action-row">
                     <Button onClick={() => resetPracticeProgress()}>{copy.practiceReset}</Button>
@@ -2063,8 +2073,9 @@ export function BattleGameWorkspace() {
               )}
             </Panel>
             <Panel title={copy.practiceSelectSkill}>
-              <div className="practice-loadout-summary">
-                <Metric label={copy.practiceCurrentSkill} value={getSkillDisplayName(selectedSkill)} />
+              <div className="practice-loadout-summary" data-effect-tone={selectedEffectProfile.tone}>
+                <strong>{selectedEffectProfile.activationLabel}</strong>
+                <p className="helper-text">{getSkillPresentation(selectedSkill).summary}</p>
                 <Metric label={copy.practiceSavedLoadout} value={savedLoadoutLabel} />
                 <StatusBadge tone={isPracticeLoadoutSynced ? "success" : "warning"}>
                   {isPracticeLoadoutSynced ? copy.ready : copy.checkRequired}
@@ -2125,8 +2136,8 @@ export function BattleGameWorkspace() {
                 ))}
               </div>
               <div className="metric-list">
-                <Metric label={copy.matchingStatus} value={state.queueStatus} />
-                <Metric label={copy.socketStatus} value={state.socketStatus} />
+                <Metric label={copy.matchingStatus} value={getQueueStatusLabel(state.queueStatus)} />
+                <Metric label={copy.socketStatus} value={getSocketStatusLabel(state.socketStatus)} />
                 <Metric
                   label={copy.cameraStatus}
                   value={state.input.cameraReady ? copy.ready : copy.checkRequired}
@@ -3536,6 +3547,14 @@ function getInputSourceLabel(source: GestureInputSource | null): string {
   }
 
   return copy.inputSourceWaiting;
+}
+
+function getQueueStatusLabel(status: BattleFlowState["queueStatus"]): string {
+  return copy.queueStatusText[status];
+}
+
+function getSocketStatusLabel(status: BattleFlowState["socketStatus"]): string {
+  return copy.socketStatusText[status];
 }
 
 function getLiveRecognizerStatusLabel(status: LiveGestureRecognizerStatus): string {

@@ -1,12 +1,32 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createUnityWebglRenderer } from "../../src/features/animset-renderer/adapters/unityWebglRenderer";
+import {
+  createUnityWebglRenderer,
+  validateUnityBuildVersion
+} from "../../src/features/animset-renderer/adapters/unityWebglRenderer";
 import type { AnimsetRendererBridgeEvent } from "../../src/features/animset-renderer/model/rendererPort";
 
 describe("unityWebglRenderer", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     delete window.createUnityInstance;
+  });
+
+  it("allows a Unity build that matches the registered build version", () => {
+    expect(() =>
+      validateUnityBuildVersion({ productVersion: "prototype-v1" }, "prototype-v1")
+    ).not.toThrow();
+  });
+
+  it("allows old mock builds that do not expose a product version", () => {
+    expect(() => validateUnityBuildVersion({}, "prototype-v1")).not.toThrow();
+  });
+
+  it("blocks a Unity build with a mismatched product version", () => {
+    expect(() =>
+      validateUnityBuildVersion({ productVersion: "prototype-v0" }, "prototype-v1")
+    ).toThrow("Unity build version mismatch");
   });
 
   it("fails fast when the Unity build version mismatches the expected renderer version", async () => {
@@ -39,7 +59,7 @@ describe("unityWebglRenderer", () => {
     expect(bridgeEvents).toEqual([
       {
         payload: {
-          message: "Unity build version mismatch. expected prototype-v1, received prototype-v2."
+          message: "Unity build version mismatch: expected prototype-v1, received prototype-v2."
         },
         type: "renderer.error"
       }
