@@ -97,6 +97,7 @@ export function createUnityWebglRenderer(): AnimsetRendererPort {
 
       try {
         const buildConfig = await loadBuildConfig(mountOptions.buildConfigUrl);
+        assertBuildVersionMatches(buildConfig.productVersion, mountOptions.buildVersion);
         const resolvedConfig = resolveBuildConfigUrls(buildConfig, mountOptions.buildConfigUrl);
         await loadScriptOnce(resolvedConfig.loaderUrl);
 
@@ -173,6 +174,19 @@ async function loadBuildConfig(buildConfigUrl: string): Promise<UnityBuildConfig
   }
 
   return (await response.json()) as UnityBuildConfig;
+}
+
+function assertBuildVersionMatches(
+  actualBuildVersion: string | undefined,
+  expectedBuildVersion: string
+) {
+  if (!actualBuildVersion || actualBuildVersion === expectedBuildVersion) {
+    return;
+  }
+
+  throw new Error(
+    `Unity build version mismatch. expected ${expectedBuildVersion}, received ${actualBuildVersion}.`
+  );
 }
 
 function resolveBuildConfigUrls(
