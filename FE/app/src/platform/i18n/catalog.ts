@@ -271,6 +271,12 @@ export const copy = {
     "실제 Unity 빌드나 스킬 자산이 준비되기 전에도 연습과 전투 상태는 이 화면으로 계속 검증할 수 있습니다.",
   rendererAssetMissing:
     "일부 스킬 연출 자산이 아직 없어 기본 타임라인으로 표시됩니다.",
+  rendererBuildConfigMissing:
+    "Unity 연출 설정을 불러오지 못해 기본 연출 화면으로 전환했습니다.",
+  rendererLoaderUnavailable:
+    "Unity 연출 로더를 불러오지 못해 기본 연출 화면으로 전환했습니다.",
+  rendererVersionMismatch:
+    "Unity 연출 버전이 현재 웹앱과 맞지 않아 기본 연출 화면으로 전환했습니다.",
   rendererKindText: {
     "html-fallback": "HTML 폴백",
     "unity-webgl": "Unity WebGL"

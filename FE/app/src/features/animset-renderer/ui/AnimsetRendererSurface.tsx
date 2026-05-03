@@ -41,6 +41,7 @@ export function AnimsetRendererSurface({
     loadFailure || requiresPresentationFallback
       ? resolveFallbackRendererDefinition(requestedDefinition)
       : requestedDefinition;
+  const loadFailureText = loadFailure ? describeRendererLoadFailure(loadFailure) : null;
   const helperText = requiresPresentationFallback
     ? copy.rendererAssetMissing
     : loadFailure
@@ -162,7 +163,7 @@ export function AnimsetRendererSurface({
             </span>
             {requiresPresentationFallback || loadFailure ? (
               <p className="helper-text animset-surface__helper">
-                {loadFailure ?? copy.rendererAssetMissing}
+                {loadFailureText ?? copy.rendererAssetMissing}
               </p>
             ) : null}
           </div>
@@ -188,7 +189,7 @@ export function AnimsetRendererSurface({
       </div>
       <div className="animset-surface__viewport" ref={hostRef} />
       <p className="helper-text animset-surface__helper">{helperText}</p>
-      {loadFailure ? <p className="helper-text animset-surface__helper">{loadFailure}</p> : null}
+      {loadFailureText ? <p className="helper-text animset-surface__helper">{loadFailureText}</p> : null}
     </div>
   );
 }
@@ -225,4 +226,20 @@ function extractPresentation(
     default:
       return null;
   }
+}
+
+function describeRendererLoadFailure(loadFailure: string): string {
+  if (loadFailure.includes("version mismatch")) {
+    return copy.rendererVersionMismatch;
+  }
+
+  if (loadFailure.includes("build config")) {
+    return copy.rendererBuildConfigMissing;
+  }
+
+  if (loadFailure.includes("loader")) {
+    return copy.rendererLoaderUnavailable;
+  }
+
+  return copy.rendererFallbackActivated;
 }
