@@ -229,7 +229,10 @@ function loadScriptOnce(url: string): Promise<void> {
     script.async = true;
     script.src = url;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error(`Failed to load Unity loader script: ${url}`));
+    script.onerror = () => {
+      loadedScripts.delete(url);
+      reject(new Error(`Failed to load Unity loader script: ${url}`));
+    };
     document.head.append(script);
   });
 

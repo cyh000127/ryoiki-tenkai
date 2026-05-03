@@ -93,4 +93,81 @@ describe("unityWebglRenderer", () => {
     expect(renderer.getStatus()).toBe("ready");
     expect(bridgeEvents).toEqual([{ type: "renderer.ready" }]);
   });
+
+  it("reports loader script failures and retries the same loader url on the next mount", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      json: async () => ({
+        loaderUrl: "/unity/mock-loader-retry.js",
+        productVersion: "prototype-v1"
+      }),
+      ok: true
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    let appendCount = 0;
+    vi.spyOn(document.head, "append").mockImplementation((...nodes: (Node | string)[]) => {
+      for (const node of nodes) {
+        if (!(node instanceof HTMLScriptElement)) {
+          continue;
+        }
+
+        const currentAttempt = appendCount;
+        appendCount += 1;
+        queueMicrotask(() => {
+          if (currentAttempt === 0) {
+            node.onerror?.(new Event("error"));
+            return;
+          }
+
+          node.onload?.(new Event("load"));
+        });
+      }
+    });
+
+    const createUnityInstance = vi.fn().mockResolvedValue({
+      Quit: vi.fn(async () => undefined),
+      SendMessage: vi.fn()
+    });
+    window.createUnityInstance = createUnityInstance;
+
+    const firstRenderer = createUnityWebglRenderer();
+    const firstEvents: AnimsetRendererBridgeEvent[] = [];
+    await firstRenderer.mount(document.createElement("div"), {
+      animsetId: "animset_unity_jjk",
+      buildConfigUrl: "/unity/ryoiki-tenkai-renderer/prototype-v1/build.json",
+      buildVersion: "prototype-v1",
+      fallbackPolicy: "html-fallback",
+      onBridgeEvent: (event) => firstEvents.push(event),
+      rendererKind: "unity-webgl",
+      scene: "practice"
+    });
+
+    expect(firstRenderer.getStatus()).toBe("error");
+    expect(firstEvents).toEqual([
+      {
+        payload: {
+          message: "Failed to load Unity loader script: http://localhost:3000/unity/mock-loader-retry.js"
+        },
+        type: "renderer.error"
+      }
+    ]);
+    expect(createUnityInstance).not.toHaveBeenCalled();
+
+    const secondRenderer = createUnityWebglRenderer();
+    const secondEvents: AnimsetRendererBridgeEvent[] = [];
+    await secondRenderer.mount(document.createElement("div"), {
+      animsetId: "animset_unity_jjk",
+      buildConfigUrl: "/unity/ryoiki-tenkai-renderer/prototype-v1/build.json",
+      buildVersion: "prototype-v1",
+      fallbackPolicy: "html-fallback",
+      onBridgeEvent: (event) => secondEvents.push(event),
+      rendererKind: "unity-webgl",
+      scene: "practice"
+    });
+
+    expect(appendCount).toBe(2);
+    expect(createUnityInstance).toHaveBeenCalledTimes(1);
+    expect(secondRenderer.getStatus()).toBe("ready");
+    expect(secondEvents).toEqual([{ type: "renderer.ready" }]);
+  });
 });
