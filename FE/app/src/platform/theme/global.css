@@ -1529,6 +1529,22 @@ textarea {
   padding: 6px 8px;
 }
 
+.animset-runtime__effect-detail {
+  position: absolute;
+  left: 8px;
+  bottom: -24px;
+  min-width: 160px;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.animset-runtime__effect-cue[data-unity="fallback"] .animset-runtime__effect-detail {
+  color: var(--yellow);
+}
+
 .animset-runtime__effect-cue[data-activated="true"] .animset-runtime__effect-ring {
   transform: scale(1.18);
 }

@@ -306,7 +306,10 @@ describe("AnimsetRendererSurface", () => {
     expect(await screen.findByText("HTML 폴백")).toBeInTheDocument();
     expect(screen.getByText("Triggered")).toBeInTheDocument();
     expect(screen.getByText("complete")).toBeInTheDocument();
-    expect(screen.getByText("cleave_barrage")).toBeInTheDocument();
+    expect(screen.getAllByText("cleave_barrage").length).toBeGreaterThan(0);
+    expect(screen.getByText("Policy: static fallback")).toBeInTheDocument();
+    expect(screen.getByLabelText("cleave_barrage HTML fallback")).toBeInTheDocument();
+    expect(screen.getByText("cleave_barrage · HTML fallback")).toBeInTheDocument();
   });
 
   it("projects accepted battle actions into the battle renderer fallback", async () => {

@@ -98,6 +98,9 @@ export const copy = {
   skillJapaneseName: "일본어명",
   skillKoreanName: "한국어명",
   skillEffectSummary: "효과 설명",
+  skillEffectId: "이펙트 ID",
+  skillEffectRenderer: "연출 방식",
+  skillEffectReplayPolicy: "반복 연습 방식",
   skillCombatSpec: "전투 수치",
   skillGestureGuide: "손동작 가이드",
   skillGestureCount: "동작 수",
@@ -277,6 +280,10 @@ export const copy = {
     "Unity 연출 로더를 불러오지 못해 기본 연출 화면으로 전환했습니다.",
   rendererVersionMismatch:
     "Unity 연출 버전이 현재 웹앱과 맞지 않아 기본 연출 화면으로 전환했습니다.",
+  rendererUnityReady: "Unity 연출 준비",
+  rendererFallbackOnly: "HTML 기본 연출",
+  replaySustainAfterComplete: "발동 후 유지",
+  replayFallbackStatic: "기본 연출 반복",
   rendererKindText: {
     "html-fallback": "HTML 폴백",
     "unity-webgl": "Unity WebGL"

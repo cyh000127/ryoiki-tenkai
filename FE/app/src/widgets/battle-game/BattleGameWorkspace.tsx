@@ -2076,6 +2076,15 @@ export function BattleGameWorkspace() {
               <div className="practice-loadout-summary" data-effect-tone={selectedEffectProfile.tone}>
                 <strong>{selectedEffectProfile.activationLabel}</strong>
                 <p className="helper-text">{getSkillPresentation(selectedSkill).summary}</p>
+                <Metric label={copy.skillEffectId} value={selectedEffectProfile.effectId} />
+                <Metric
+                  label={copy.skillEffectRenderer}
+                  value={getSkillEffectRendererLabel(selectedEffectProfile)}
+                />
+                <Metric
+                  label={copy.skillEffectReplayPolicy}
+                  value={getSkillEffectReplayLabel(selectedEffectProfile)}
+                />
                 <Metric label={copy.practiceSavedLoadout} value={savedLoadoutLabel} />
                 <StatusBadge tone={isPracticeLoadoutSynced ? "success" : "warning"}>
                   {isPracticeLoadoutSynced ? copy.ready : copy.checkRequired}
@@ -3002,6 +3011,7 @@ function SkillDetailContent({
   selectedCooldownTurns?: number;
 }) {
   const presentation = getSkillPresentation(skill);
+  const effectProfile = resolveSkillEffectProfile(skill.skillId);
 
   return (
     <div className="skill-detail">
@@ -3013,6 +3023,9 @@ function SkillDetailContent({
         <Metric label={copy.skillJapaneseName} value={presentation.japaneseName} />
         <Metric label={copy.skillKoreanName} value={presentation.koreanName} />
         <Metric label={copy.skillEffectSummary} value={presentation.summary} />
+        <Metric label={copy.skillEffectId} value={effectProfile.effectId} />
+        <Metric label={copy.skillEffectRenderer} value={getSkillEffectRendererLabel(effectProfile)} />
+        <Metric label={copy.skillEffectReplayPolicy} value={getSkillEffectReplayLabel(effectProfile)} />
         <Metric label={copy.targetSequence} value={skill.gestureSequence.join(" -> ")} />
         <Metric label={copy.skillGestureCount} value={skill.gestureSequence.length} />
         <Metric label={copy.mana} value={skill.manaCost} />
@@ -3555,6 +3568,18 @@ function getQueueStatusLabel(status: BattleFlowState["queueStatus"]): string {
 
 function getSocketStatusLabel(status: BattleFlowState["socketStatus"]): string {
   return copy.socketStatusText[status];
+}
+
+function getSkillEffectRendererLabel(profile: ReturnType<typeof resolveSkillEffectProfile>): string {
+  return profile.supportsUnity ? copy.rendererUnityReady : copy.rendererFallbackOnly;
+}
+
+function getSkillEffectReplayLabel(profile: ReturnType<typeof resolveSkillEffectProfile>): string {
+  if (profile.replayPolicy === "sustain-after-complete") {
+    return copy.replaySustainAfterComplete;
+  }
+
+  return copy.replayFallbackStatic;
 }
 
 function getLiveRecognizerStatusLabel(status: LiveGestureRecognizerStatus): string {

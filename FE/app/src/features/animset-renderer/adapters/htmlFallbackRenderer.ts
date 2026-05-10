@@ -51,7 +51,9 @@ export function createHtmlFallbackRenderer(): AnimsetRendererPort {
     meta.append(
       createMetaItem("Renderer", "HTML fallback"),
       createMetaItem("Scene", sceneState.scene),
-      createMetaItem("Build", options.buildVersion)
+      createMetaItem("Build", options.buildVersion),
+      createMetaItem("Effect", effectProfile.effectId),
+      createMetaItem("Policy", getReplayPolicyLabel(effectProfile.replayPolicy))
     );
 
     const viewport = document.createElement("div");
@@ -177,6 +179,8 @@ function createEffectCue(
   cue.className = "animset-runtime__effect-cue";
   cue.dataset.tone = profile.tone;
   cue.dataset.activated = activated ? "true" : "false";
+  cue.dataset.unity = profile.supportsUnity ? "ready" : "fallback";
+  cue.setAttribute("aria-label", `${profile.effectId} ${getUnitySupportLabel(profile.supportsUnity)}`);
 
   const ring = document.createElement("span");
   ring.className = "animset-runtime__effect-ring";
@@ -188,8 +192,24 @@ function createEffectCue(
   label.className = "animset-runtime__effect-label";
   label.textContent = activated ? profile.completionLabel : profile.activationLabel;
 
-  cue.append(ring, core, label);
+  const detail = document.createElement("span");
+  detail.className = "animset-runtime__effect-detail";
+  detail.textContent = `${profile.effectId} · ${getUnitySupportLabel(profile.supportsUnity)}`;
+
+  cue.append(ring, core, label, detail);
   return cue;
+}
+
+function getUnitySupportLabel(supportsUnity: boolean): string {
+  return supportsUnity ? "Unity ready" : "HTML fallback";
+}
+
+function getReplayPolicyLabel(policy: ReturnType<typeof resolveSkillEffectProfile>["replayPolicy"]): string {
+  if (policy === "sustain-after-complete") {
+    return "sustain";
+  }
+
+  return "static fallback";
 }
 
 function getRuntimeHeadline(state: HtmlFallbackSceneState): string {

@@ -82,6 +82,7 @@
   - fallback 스킬도 연습 진행 자체는 가능합니다.
   - 사용자는 해당 스킬이 아직 Unity 이펙트 대상이 아니라는 점을 짧게 이해할 수 있습니다.
 - 구현 상태: 정책 유지. fallback renderer의 완료 상태 테스트를 추가했다.
+- 구현 상태: 연습장 상세와 HTML fallback cue의 effect policy 노출은 `docs/implementation-artifacts/v6-6-practice-effect-detail.ko.md`에 기록했다.
 
 ## 우선순위 6. Practice Smoke와 문서 갱신
 
@@ -117,3 +118,5 @@
 1. 프론트 skill effect manifest를 기준으로 연습장 스킬 상세와 fallback cue를 고도화한다.
 2. HTML fallback에서도 `effectId`, tone, replay policy가 드러나게 유지한다.
 3. Unity 프로젝트가 준비되면 동일한 `effectId`를 prefab/timeline key에 연결한다.
+
+구현 상태: 1, 2번은 `docs/implementation-artifacts/v6-6-practice-effect-detail.ko.md`에 1차 반영했다. 3번은 Unity Editor build 산출물이 들어온 뒤 진행한다.

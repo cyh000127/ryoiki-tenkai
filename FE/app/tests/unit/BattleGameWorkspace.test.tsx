@@ -568,6 +568,10 @@ describe("BattleGameWorkspace", () => {
     expect(
       screen.getAllByText("문서 기준 고죠 사토루 무하한주술의 밀어내는 폭발 피해.").length
     ).toBeGreaterThan(0);
+    expect(screen.getByText("이펙트 ID")).toBeInTheDocument();
+    expect(screen.getAllByText("red_burst").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Unity 연출 준비").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("발동 후 유지").length).toBeGreaterThan(0);
     expect(screen.getByText("이번 단계")).toBeInTheDocument();
     expect(
       screen.getAllByText("검지를 세우고 손목을 고정해 정면을 향하게 합니다.").length
