@@ -1496,7 +1496,9 @@ textarea {
 }
 
 .animset-runtime__effect-ring,
-.animset-runtime__effect-core {
+.animset-runtime__effect-core,
+.animset-runtime__effect-pattern,
+.animset-runtime__effect-mark {
   position: absolute;
   display: block;
   border-radius: 999px;
@@ -1513,6 +1515,136 @@ textarea {
   height: 48px;
   background: rgba(83, 215, 255, 0.72);
   box-shadow: 0 0 34px rgba(83, 215, 255, 0.42);
+}
+
+.animset-runtime__effect-pattern {
+  inset: 0;
+  pointer-events: none;
+}
+
+.animset-runtime__effect-mark {
+  opacity: 0.78;
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="burst"] .animset-runtime__effect-mark {
+  top: 50%;
+  left: 50%;
+  width: 72px;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(255, 184, 112, 0.92), transparent);
+  transform-origin: left center;
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="burst"] .animset-runtime__effect-mark[data-index="1"] {
+  transform: rotate(10deg) translateX(-8px);
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="burst"] .animset-runtime__effect-mark[data-index="2"] {
+  transform: rotate(130deg) translateX(-8px);
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="burst"] .animset-runtime__effect-mark[data-index="3"] {
+  transform: rotate(250deg) translateX(-8px);
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="collision"] .animset-runtime__effect-mark {
+  top: 30px;
+  width: 34px;
+  height: 34px;
+  border: 2px solid rgba(255, 255, 255, 0.34);
+  box-shadow: 0 0 24px rgba(178, 88, 255, 0.34);
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="collision"] .animset-runtime__effect-mark[data-index="1"] {
+  left: 10px;
+  background: rgba(83, 215, 255, 0.22);
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="collision"] .animset-runtime__effect-mark[data-index="2"] {
+  right: 10px;
+  background: rgba(255, 88, 104, 0.22);
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="collision"] .animset-runtime__effect-mark[data-index="3"] {
+  top: 40px;
+  left: 40px;
+  width: 32px;
+  height: 32px;
+  background: rgba(185, 102, 255, 0.38);
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="domain"] .animset-runtime__effect-mark {
+  inset: 16px;
+  border: 1px solid rgba(178, 236, 255, 0.42);
+  border-radius: 8px;
+  transform: rotate(45deg);
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="domain"] .animset-runtime__effect-mark[data-index="2"] {
+  inset: 25px;
+  transform: rotate(0deg);
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="domain"] .animset-runtime__effect-mark[data-index="3"] {
+  inset: 34px;
+  transform: rotate(45deg);
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="slash"] .animset-runtime__effect-mark {
+  left: 18px;
+  width: 78px;
+  height: 3px;
+  border-radius: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 234, 178, 0.94), transparent);
+  box-shadow: 0 0 18px rgba(255, 104, 76, 0.5);
+  transform: rotate(-28deg);
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="slash"] .animset-runtime__effect-mark[data-index="1"] {
+  top: 35px;
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="slash"] .animset-runtime__effect-mark[data-index="2"] {
+  top: 54px;
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="slash"] .animset-runtime__effect-mark[data-index="3"] {
+  top: 73px;
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="shadow"] .animset-runtime__effect-mark {
+  bottom: 24px;
+  width: 34px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(71, 86, 150, 0.52);
+  box-shadow: 0 0 22px rgba(99, 117, 178, 0.34);
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="shadow"] .animset-runtime__effect-mark[data-index="1"] {
+  left: 15px;
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="shadow"] .animset-runtime__effect-mark[data-index="2"] {
+  left: 39px;
+  bottom: 34px;
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="shadow"] .animset-runtime__effect-mark[data-index="3"] {
+  right: 15px;
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="pulse"] .animset-runtime__effect-mark {
+  inset: 20px;
+  border: 1px solid rgba(83, 215, 255, 0.34);
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="pulse"] .animset-runtime__effect-mark[data-index="2"] {
+  inset: 30px;
+}
+
+.animset-runtime__effect-pattern[data-effect-pattern="pulse"] .animset-runtime__effect-mark[data-index="3"] {
+  inset: 40px;
 }
 
 .animset-runtime__effect-label {

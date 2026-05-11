@@ -309,7 +309,23 @@ describe("AnimsetRendererSurface", () => {
     expect(screen.getAllByText("cleave_barrage").length).toBeGreaterThan(0);
     expect(screen.getByText("Policy: static fallback")).toBeInTheDocument();
     expect(screen.getByLabelText("cleave_barrage HTML fallback")).toBeInTheDocument();
+    expect(screen.getByLabelText("slash cue pattern")).toBeInTheDocument();
     expect(screen.getByText("cleave_barrage · HTML fallback")).toBeInTheDocument();
+  });
+
+  it("renders a distinct fallback cue pattern for shadow-domain practice skills", async () => {
+    render(
+      <AnimsetRendererSurface
+        animsetId="animset_basic_2d"
+        events={buildPracticeEvents("jjk_megumi_chimera_shadow_garden", "html-only", true)}
+        scene="practice"
+      />
+    );
+
+    expect(await screen.findByText("HTML 폴백")).toBeInTheDocument();
+    expect(screen.getByLabelText("shadow_surge HTML fallback")).toBeInTheDocument();
+    expect(screen.getByLabelText("shadow cue pattern")).toBeInTheDocument();
+    expect(screen.getByText("shadow_surge · HTML fallback")).toBeInTheDocument();
   });
 
   it("projects accepted battle actions into the battle renderer fallback", async () => {

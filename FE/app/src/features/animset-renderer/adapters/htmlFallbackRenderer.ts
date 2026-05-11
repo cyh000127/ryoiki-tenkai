@@ -188,6 +188,8 @@ function createEffectCue(
   const core = document.createElement("span");
   core.className = "animset-runtime__effect-core";
 
+  const pattern = createEffectPattern(profile.cuePattern);
+
   const label = document.createElement("span");
   label.className = "animset-runtime__effect-label";
   label.textContent = activated ? profile.completionLabel : profile.activationLabel;
@@ -196,8 +198,24 @@ function createEffectCue(
   detail.className = "animset-runtime__effect-detail";
   detail.textContent = `${profile.effectId} · ${getUnitySupportLabel(profile.supportsUnity)}`;
 
-  cue.append(ring, core, label, detail);
+  cue.append(ring, core, pattern, label, detail);
   return cue;
+}
+
+function createEffectPattern(pattern: ReturnType<typeof resolveSkillEffectProfile>["cuePattern"]): HTMLElement {
+  const layer = document.createElement("span");
+  layer.className = "animset-runtime__effect-pattern";
+  layer.dataset.effectPattern = pattern;
+  layer.setAttribute("aria-label", `${pattern} cue pattern`);
+
+  for (let index = 0; index < 3; index += 1) {
+    const mark = document.createElement("span");
+    mark.className = "animset-runtime__effect-mark";
+    mark.dataset.index = String(index + 1);
+    layer.append(mark);
+  }
+
+  return layer;
 }
 
 function getUnitySupportLabel(supportsUnity: boolean): string {

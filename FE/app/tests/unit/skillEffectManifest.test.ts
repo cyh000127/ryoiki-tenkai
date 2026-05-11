@@ -13,18 +13,21 @@ describe("skillEffectManifest", () => {
     const domain = resolveSkillEffectProfile("jjk_gojo_infinite_void");
 
     expect(red).toMatchObject({
+      cuePattern: "burst",
       effectId: "red_burst",
       replayPolicy: "sustain-after-complete",
       supportsUnity: true,
       tone: "red"
     });
     expect(purple).toMatchObject({
+      cuePattern: "collision",
       effectId: "purple_impact",
       replayPolicy: "sustain-after-complete",
       supportsUnity: true,
       tone: "purple"
     });
     expect(domain).toMatchObject({
+      cuePattern: "domain",
       effectId: "void_crush",
       replayPolicy: "sustain-after-complete",
       supportsUnity: true,
@@ -38,8 +41,10 @@ describe("skillEffectManifest", () => {
 
     expect(shrine.supportsUnity).toBe(false);
     expect(shrine.replayPolicy).toBe("fallback-static");
+    expect(shrine.cuePattern).toBe("slash");
     expect(shadow.supportsUnity).toBe(false);
     expect(shadow.replayPolicy).toBe("fallback-static");
+    expect(shadow.cuePattern).toBe("shadow");
   });
 
   it("keeps presentation impactVfxId aligned with the effect manifest", () => {
@@ -55,6 +60,7 @@ describe("skillEffectManifest", () => {
 
     expect(unknown).toMatchObject({
       effectId: "generic_skill_pulse",
+      cuePattern: "pulse",
       skillId: "custom_pending_skill",
       supportsUnity: false,
       tone: "neutral"

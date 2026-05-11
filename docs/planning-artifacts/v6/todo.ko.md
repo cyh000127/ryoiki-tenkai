@@ -83,6 +83,7 @@
   - 사용자는 해당 스킬이 아직 Unity 이펙트 대상이 아니라는 점을 짧게 이해할 수 있습니다.
 - 구현 상태: 정책 유지. fallback renderer의 완료 상태 테스트를 추가했다.
 - 구현 상태: 연습장 상세와 HTML fallback cue의 effect policy 노출은 `docs/implementation-artifacts/v6-6-practice-effect-detail.ko.md`에 기록했다.
+- 구현 상태: fallback-only 술식의 cue pattern 분리는 `docs/implementation-artifacts/v6-7-fallback-cue-patterns.ko.md`에 기록했다.
 
 ## 우선순위 6. Practice Smoke와 문서 갱신
 
